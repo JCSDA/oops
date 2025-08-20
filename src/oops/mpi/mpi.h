@@ -12,10 +12,11 @@
 
 #include <Eigen/Dense>
 
-
 #include <string>
 #include <utility>
 #include <vector>
+
+#include "atlas/field.h"
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
@@ -102,33 +103,10 @@ void broadcast(const eckit::mpi::Comm & comm, SERIALIZABLE & obj, const size_t r
 
 // ------------------------------------------------------------------------------------------------
 
-template <typename SERIALIZABLE>
-void reduceInPlace(const eckit::mpi::Comm & comm, SERIALIZABLE & obj, const size_t root) {
-  util::Timer timer("oops::mpi", "reduceInPlace");
-  size_t sz = obj.serialSize();
-  std::vector<double> buf;
-  obj.serialize(buf);
-  comm.reduceInPlace(buf.data(), sz, eckit::mpi::sum(), root);
-  size_t ii = 0;
-  if (comm.rank() == root) {
-    obj.deserialize(buf, ii);
-    ASSERT(ii == sz);
-  }
-}
-
+void reduceInPlace(const eckit::mpi::Comm & comm, atlas::FieldSet & fields, const size_t root);
 // ------------------------------------------------------------------------------------------------
 
-template <typename SERIALIZABLE>
-void allReduceInPlace(const eckit::mpi::Comm & comm, SERIALIZABLE & obj) {
-  util::Timer timer("oops::mpi", "allReduceInPlace");
-  size_t sz = obj.serialSize();
-  std::vector<double> buf;
-  obj.serialize(buf);
-  comm.allReduceInPlace(buf.data(), sz, eckit::mpi::sum());
-  size_t ii = 0;
-  obj.deserialize(buf, ii);
-  ASSERT(ii == sz);
-}
+void allReduceInPlace(const eckit::mpi::Comm & comm, atlas::FieldSet & fields);
 
 // ------------------------------------------------------------------------------------------------
 

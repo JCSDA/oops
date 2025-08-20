@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -18,37 +19,45 @@
 namespace util {
 
 // -----------------------------------------------------------------------------
+/// Serializes an object into an existing string buffer with padding
+/// for MPI communication
+template <typename T>
+void serializeForGather(std::vector<char> & buffer, const T & obj, std::ostream & os,
+                        size_t maxlen = 10000) {
+  std::stringstream ss;
+  ss.setf(os.flags());
+  ss.precision(os.precision());
+  ss << obj;
+  std::string sloc = ss.str();
+
+  size_t start_pos = buffer.size();
+  buffer.resize(buffer.size() + maxlen);
+
+  // Copy string to buffer
+  std::copy(sloc.begin(), sloc.end(), buffer.begin() + start_pos);
+
+  // Pad remaining space with '#'
+  std::fill(buffer.begin() + start_pos + sloc.size(), buffer.begin() + start_pos + maxlen, '#');
+}
+
+// -----------------------------------------------------------------------------
+
+/// Gathers character buffers from all tasks and prints them in order on rank 0
+void gatherAndPrint(std::ostream & os, const std::vector<char> & buffer,
+                    const eckit::mpi::Comm & comm, size_t maxlen = 10000);
+
+// -----------------------------------------------------------------------------
 
 /// Collects prints from all the tasks in communicator to print in reproducible order
 /// on task 0.
 template <typename T>
 void gatherPrint(std::ostream & os, const T & obj, const eckit::mpi::Comm & comm) {
   if (comm.size() > 1) {
-    size_t maxlen = 10000;
-
-    std::stringstream ss;
-    ss.setf(os.flags());
-    ss.precision(os.precision());
-    ss << obj;
-    std::string sloc = ss.str();
-    std::vector<char> vloc(sloc.begin(), sloc.end());
-    for (size_t jj = vloc.size(); jj < maxlen; ++jj) vloc.push_back('#');
-    std::vector<char> vglob(maxlen*comm.size());
-
-    comm.gather(vloc, vglob, 0);
-
-    if (comm.rank() == 0) {
-      auto it = vglob.begin();
-      for (size_t jpe = 0; jpe < comm.size(); ++jpe) {
-        std::string spe(it, it + maxlen);
-        std::size_t last = spe.find_last_not_of('#');
-        if (last != std::string::npos) spe.erase(last+1);
-        os << spe;
-        it += maxlen;
-      }
-    }
+    std::vector<char> buffer;
+    serializeForGather(buffer, obj, os);
+    gatherAndPrint(os, buffer, comm);
   } else {
-    oops::Log::warning() << "No need to call gatherPrint";
+    os << obj;
   }
 }
 

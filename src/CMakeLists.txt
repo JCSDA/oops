@@ -382,6 +382,7 @@ oops/util/FunctionSpaceHelpers.h
 oops/util/for_each.cc
 oops/util/for_each.h
 oops/util/formats.h
+oops/util/gatherPrint.cc
 oops/util/gatherPrint.h
 oops/util/IntSetParser.cc
 oops/util/IntSetParser.h

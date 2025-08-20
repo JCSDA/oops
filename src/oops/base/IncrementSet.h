@@ -11,6 +11,7 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "oops/base/DataSetBase.h"
@@ -70,9 +71,14 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
   void setEigen(const Eigen::MatrixXd &, const GeometryIterator_ &, const size_t &);
 
   IncrementSet ens_mean() const;
+  IncrementSet ens_var() const;
   IncrementSet ens_stddev() const;
+  /// @brief  Compute ensemble statistics: mean and variance
+  /// @return A tuple containing the ensemble mean and variance
+  std::tuple<IncrementSet, IncrementSet> ens_stats() const;
 
  private:
+  IncrementSet ens_var(const IncrementSet &) const;
   std::string classname() const {return "IncrementSet";}
 };
 
@@ -401,12 +407,12 @@ IncrementSet<MODEL> IncrementSet<MODEL>::ens_mean() const {
     }
     if (this->commEns().size() > 1) {
       // sum up values across ensemble communicator
-      oops::mpi::allReduceInPlace(this->commEns(), mean[jt]);
+      oops::mpi::allReduceInPlace(this->commEns(), mean[jt].fieldSet().fieldSet());
+      mean[jt].synchronizeFields();
     }
     // Divide by total number of members to get average
     mean[jt] *= fact;
   }
-
   Log::trace() << "IncrementSet::ens_mean done" << std::endl;
   return mean;
 }
@@ -414,34 +420,63 @@ IncrementSet<MODEL> IncrementSet<MODEL>::ens_mean() const {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-IncrementSet<MODEL> IncrementSet<MODEL>::ens_stddev() const {
-  Log::trace() << "IncrementSet::ens_stddev start" << std::endl;
+IncrementSet<MODEL> IncrementSet<MODEL>::ens_var(const IncrementSet<MODEL> & ensmean) const {
+  Log::trace() << "IncrementSet::ens_var start" << std::endl;
   ASSERT(this->ens_size() > 1);
-  if (this->commEns().size() > 1) {
-    throw eckit::NotImplemented(
-      "IncrementSet::ens_stddev not implemented for distributed ensembles",
-      Here());
-  }
 
-  IncrementSet stddev(this->geometry(), this->variables(), this->times(), this->commTime());
-  // Ensemble mean
-  IncrementSet ensmean = this->ens_mean();
+  IncrementSet var(this->geometry(), this->variables(), this->times(), this->commTime());
 
   // Calculate the variance
   const double rr = 1.0/(static_cast<double>(this->ens_size()) - 1.0);
   for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
     for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
-    Increment_ pert((*this)(jt, jm));
-    pert -= ensmean[jt];
-    pert.schur_product_with(pert);
-    stddev[jt].axpy(rr, pert);
+      Increment_ pert((*this)(jt, jm));
+      pert -= ensmean[jt];
+      pert.schur_product_with(pert);
+      var[jt] += pert;
     }
+    if (this->commEns().size() > 1) {
+      // sum up values across ensemble communicator
+      oops::mpi::allReduceInPlace(this->commEns(), var[jt].fieldSet().fieldSet());
+      var[jt].synchronizeFields();
+    }
+    var[jt] *= rr;
+  }
+
+  Log::trace() << "IncrementSet::ens_var done" << std::endl;
+  return var;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+IncrementSet<MODEL> IncrementSet<MODEL>::ens_var() const {
+  IncrementSet ensmean = this->ens_mean();
+  return this->ens_var(ensmean);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+IncrementSet<MODEL> IncrementSet<MODEL>::ens_stddev() const {
+  Log::trace() << "IncrementSet::ens_stddev start" << std::endl;
+  IncrementSet stddev = this->ens_var();
+  for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
     // Square root to get standard deviation
     stddev[jt].sqrt();
   }
-
   Log::trace() << "IncrementSet::ens_stddev done" << std::endl;
   return stddev;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+std::tuple<IncrementSet<MODEL>, IncrementSet<MODEL>>
+           IncrementSet<MODEL>::ens_stats() const {
+  IncrementSet ensmean = this->ens_mean();
+  IncrementSet ensvar = this->ens_var(ensmean);
+  return std::make_tuple(ensmean, ensvar);
 }
 
 // -----------------------------------------------------------------------------

@@ -14,6 +14,8 @@
 #include <string>
 #include <utility>
 
+#include "atlas/field.h"
+
 #include "eckit/exception/Exceptions.h"
 #include "oops/util/DateTime.h"
 
@@ -95,6 +97,74 @@ const eckit::mpi::Comm & world() {
 
 const eckit::mpi::Comm & myself() {
   return eckit::mpi::self();
+}
+
+// ------------------------------------------------------------------------------------------------
+
+void reduceInPlace(const eckit::mpi::Comm & comm, atlas::FieldSet & fields, const size_t root) {
+  util::Timer timer("oops::mpi", "reduceInPlace");
+  size_t sz = 0;
+  for (const auto & field : fields) {
+    sz += field.size();
+  }
+  std::vector<double> buf(sz);
+
+  size_t index = 0;
+  for (const auto & field : fields) {
+    const auto & view = atlas::array::make_view<double, 2>(field);
+    for (size_t i = 0; i < field.shape(0); i++) {
+      for (size_t j = 0; j < field.shape(1); j++) {
+        buf[index++] = view(i, j);
+      }
+    }
+  }
+
+  comm.reduceInPlace(buf.data(), sz, eckit::mpi::sum(), root);
+
+  index = 0;
+  for (auto & field : fields) {
+    auto view = atlas::array::make_view<double, 2>(field);
+    for (size_t i = 0; i < view.shape(0); i++) {
+      for (size_t j = 0; j < view.shape(1); j++) {
+        view(i, j) = buf[index++];
+      }
+    }
+  }
+  ASSERT(index == sz);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+void allReduceInPlace(const eckit::mpi::Comm & comm, atlas::FieldSet & fields) {
+  util::Timer timer("oops::mpi", "allReduceInPlace");
+  size_t sz = 0;
+  for (const auto & field : fields) {
+    sz += field.size();
+  }
+  std::vector<double> buf(sz);
+
+  size_t index = 0;
+  for (const auto & field : fields) {
+    const auto & view = atlas::array::make_view<double, 2>(field);
+    for (size_t i = 0; i < field.shape(0); i++) {
+      for (size_t j = 0; j < field.shape(1); j++) {
+        buf[index++] = view(i, j);
+      }
+    }
+  }
+
+  comm.allReduceInPlace(buf.data(), sz, eckit::mpi::sum());
+
+  index = 0;
+  for (auto & field : fields) {
+    auto view = atlas::array::make_view<double, 2>(field);
+    for (size_t i = 0; i < view.shape(0); i++) {
+      for (size_t j = 0; j < view.shape(1); j++) {
+        view(i, j) = buf[index++];
+      }
+    }
+  }
+  ASSERT(index == sz);
 }
 
 // ------------------------------------------------------------------------------------------------

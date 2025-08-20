@@ -49,6 +49,7 @@ class DataSetBase : public util::Printable {
   }
 
   const size_t & local_ens_size() const {return localmembers_;}
+  const std::vector<size_t> & local_ens() const {return mymembers_;}
   const size_t & local_time_size() const {return localtimes_;}
   DATA & operator()(const size_t it, const size_t im) {return this->data(it, im);}
   const DATA & operator()(const size_t it, const size_t im) const {return this->data(it, im);}
@@ -412,20 +413,29 @@ void DataSetBase<DATA, GEOM>::read(const GEOM & resol, const eckit::Configuratio
 template<typename DATA, typename GEOM>
 void DataSetBase<DATA, GEOM>::write(const eckit::Configuration & config) const {
   Log::trace() << "DataSetBase::write start" << std::endl;
-  if (nmembers_ > 1) throw eckit::NotImplemented("Ensemble write not implented", Here());
-
-  if (config.has("states")) {
-    std::vector<eckit::LocalConfiguration> confs;
-    config.get("states", confs);
-    ASSERT(confs.size() == ntimes_);
-    for (size_t jt = 0; jt < localtimes_; ++jt) {
-      size_t it = commTime_.rank() * localtimes_ + jt;
-      if (config.has("member")) confs[it].set("member", config.getInt("member"));
-      dataset_[jt]->write(confs[it]);
+  for (size_t jm = 0; jm < localmembers_; ++jm) {
+    if (config.has("states")) {
+      std::vector<eckit::LocalConfiguration> confs;
+      config.get("states", confs);
+      ASSERT(confs.size() == ntimes_);
+      for (size_t jt = 0; jt < localtimes_; ++jt) {
+        size_t it = commTime_.rank() * localtimes_ + jt;
+        if (nmembers_ > 1) {
+          // Support behavior for multiple members
+          confs[it].set("member", mymembers_[jm]);
+        } else if (config.has("member")) {
+          // Support behavior for single member with member specified
+          // in the configuration
+          confs[it].set("member", config.getInt("member"));
+        }
+        this->data(jt, jm).write(confs[it]);
+      }
+    } else {
+      ASSERT(ntimes_ == 1);
+      eckit::LocalConfiguration writeConf(config);
+      if (nmembers_ > 1) writeConf.set("member", mymembers_[jm]);
+      this->data(0, jm).write(writeConf);
     }
-  } else {
-    ASSERT(dataset_.size() == 1);
-    dataset_[0]->write(config);
   }
   Log::trace() << "DataSetBase::write done" << std::endl;
 }
@@ -569,8 +579,11 @@ void DataSetBase<DATA, GEOM>::print(std::ostream & os) const {
     if (dataset_.size() > 1) throw eckit::NotImplemented("gatherprint not good enough", Here());
     gatherPrint(os, *dataset_[0], commTime_);
   } else if (commEns_.size() > 1) {
-    if (dataset_.size() > 1) throw eckit::NotImplemented("gatherprint not good enough", Here());
-    gatherPrint(os, *dataset_[0], commEns_);
+    std::vector<char> buffer;
+    for (size_t jj = 0; jj < this->size(); ++jj) {
+      util::serializeForGather(buffer, *dataset_[jj], os);
+    }
+    util::gatherAndPrint(os, buffer, commEns_);
   } else {
     for (const auto & data : dataset_) os << *data;
   }

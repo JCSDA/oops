@@ -496,7 +496,8 @@ void Localization<MODEL>::multiply(Increment4D_ & dx) const {
       }
 
       // Reduce on mytime_ 0
-      oops::mpi::reduceInPlace(comm_, dx[0], 0);
+      oops::mpi::reduceInPlace(comm_, dx[0].fieldSet().fieldSet(), 0);
+      dx[0].synchronizeFields();
 
       if (mytime_ == 0) {
         // Apply 3D localization
