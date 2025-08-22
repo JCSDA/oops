@@ -20,32 +20,35 @@ const std::pair<double, double> HtlmRegularizationPart::limitsLon = {0.0, 360.0}
 // Default HtlmRegularizationPart::boundingLats_; -90.0 to 90.0 degrees
 const std::pair<double, double> HtlmRegularizationPart::limitsLat = {-90.0, 90.0};
 
-HtlmRegularizationPart::HtlmRegularizationPart(const HtlmRegularizationPartParameters & params,
+HtlmRegularizationPart::HtlmRegularizationPart(const eckit::Configuration & config,
                                                const std::vector<std::string> & allVariables,
                                                const std::vector<size_t> & allLevels)
-: params_(params), value_(params_.value.value()),
-  variables_((params_.variables.value() != boost::none) ?
-    *params_.variables.value() : allVariables), levels_(allLevels), boundingLons_(limitsLon),
+: regPartConfig_(config), value_(regPartConfig_.getDouble("value")),
+  variables_((regPartConfig_.has("variables")) ?
+    regPartConfig_.getStringVector("variables") : allVariables),
+                       levels_(allLevels), boundingLons_(limitsLon),
   boundingLats_(limitsLat), containsAllGridPoints_(true) {
   if (!AIsSubsetOfB(variables_, allVariables)) {
     ABORT("HtlmRegularizationPart: \"variables\" must be a subset of H-TLM update variables");
   }
-  if (params_.levels.value() != boost::none) {
-    levels_ = *params.levels.value();
+  if (regPartConfig_.has("levels")) {
+    levels_ = regPartConfig_.getUnsignedVector("levels");
     if (!AIsSubsetOfB(levels_, allLevels)) {
       ABORT("HtlmRegularizationPart: \"levels\" must be a subset of model levels indexed from 0");
     }
     containsAllGridPoints_ = false;
   }
-  if (params_.boundingLons.value() != boost::none) {
-    boundingLons_ = *params.boundingLons.value();
+  if (regPartConfig_.has("bounding lons")) {
+    std::vector<double> blons = regPartConfig_.getDoubleVector("bounding lons");
+    boundingLons_ = {blons[0], blons[1]};
     if (!allOfAAreInRangeOfB(boundingLons_, limitsLon)) {
       ABORT("HtlmRegularizationPart: \"bounding lons\" must be between 0 and 360 degrees");
     }
     containsAllGridPoints_ = false;
   }
-  if (params_.boundingLats.value() != boost::none) {
-    boundingLats_ = *params.boundingLats.value();
+  if (regPartConfig_.has("bounding lats")) {
+    std::vector<double> blats = regPartConfig_.getDoubleVector("bounding lats");
+    boundingLats_ = {blats[0], blats[1]};
     if (!allOfAAreInRangeOfB(boundingLats_, limitsLat)) {
       ABORT("HtlmRegularizationPart: \"bounding lats\" must be between -90 and 90 degrees");
     }
@@ -64,9 +67,9 @@ bool HtlmRegularizationPart::allOfAAreInRangeOfB(const std::pair<double, double>
 //--------------------------------------------------------------------------------------------------
 
 HtlmRegularizationComponentDependent::HtlmRegularizationComponentDependent(
-                                                        const HtlmRegularizationParameters & params,
+                                                        const eckit::Configuration & config,
                                                         atlas::FieldSet templateFieldSet)
-: HtlmRegularization(params), nLevels_(templateFieldSet[0].shape(1)),
+: HtlmRegularization(config), nLevels_(templateFieldSet[0].shape(1)),
   nLocations_(templateFieldSet[0].shape(0)) {
   for (auto & templateField : templateFieldSet) {
     auto templateArray = atlas::array::make_view<double, 2>(templateField);
@@ -78,9 +81,10 @@ HtlmRegularizationComponentDependent::HtlmRegularizationComponentDependent(
   // ...for ::levels_; all of the model levels indexed from 0
   std::vector<size_t> allLevels(nLevels_);
   std::iota(std::begin(allLevels), std::end(allLevels), 0);
-  std::vector<HtlmRegularizationPartParameters> allPartParameters = *params_.parts.value();
-  for (auto & partParameters : allPartParameters) {
-    HtlmRegularizationPart part(partParameters, allVariables, allLevels);
+  std::vector<eckit::LocalConfiguration> allPartConfigs;
+  config.get("parts", allPartConfigs);
+  for (auto & partConfig : allPartConfigs) {
+    HtlmRegularizationPart part(partConfig, allVariables, allLevels);
     applyPart(part, templateFieldSet);
     // Note: this loop applies parts in the order they are listed in the configuration, which will
     // result in overwriting of values if any parts overlap in variable-region space

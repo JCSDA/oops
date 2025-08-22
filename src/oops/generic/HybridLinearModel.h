@@ -62,6 +62,7 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
 
  private:
   void print(std::ostream &) const override {}
+  const eckit::LocalConfiguration coeffsConf_;
   const util::Duration updateTstep_;
   const Variables vars_;  // superset of coeffs_::updateVars_
   std::unique_ptr<SimpleLinearModel_> simpleLinearModel_;
@@ -73,13 +74,12 @@ class HybridLinearModel : public LinearModelBase<MODEL> {
 template<typename MODEL>
 HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & updateGeometry,
                                             const eckit::Configuration & config)
-: updateTstep_(config.getString("update tstep")), vars_(config, "variables"),
-  coeffs_(config.getSubConfiguration("coefficients"), updateGeometry, updateTstep_) {
+: coeffsConf_(config, "coefficients"), updateTstep_(config.getString("update tstep")),
+  vars_(config, "variables"), coeffs_(coeffsConf_, updateGeometry, updateTstep_) {
   Log::trace() << "HybridLinearModel<MODEL>::HybridLinearModel starting" << std::endl;
   // Set up simpleLinearModel_
   const eckit::LocalConfiguration slmConf(config, "simple linear model");
-  const util::TimeWindow timeWindow(config.getSubConfiguration("coefficients").
-                                    getSubConfiguration("time window"));
+  const util::TimeWindow timeWindow(coeffsConf_.getSubConfiguration("time window"));
   if (slmConf.getBool("residual form", false)) {
     simpleLinearModel_ = std::make_unique<SLMResidualForm_>(slmConf, updateGeometry, vars_,
                                                             timeWindow.start());

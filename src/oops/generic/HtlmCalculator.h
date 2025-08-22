@@ -14,41 +14,32 @@
 #include <unordered_map>
 #include <vector>
 
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementSet.h"
 #include "oops/generic/HtlmEnsemble.h"
 #include "oops/generic/HtlmRegularization.h"
 
 namespace oops {
-
-template <typename MODEL>
-class HtlmCalculatorParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(HtlmCalculatorParameters, Parameters);
-
- public:
-  Parameter<HtlmRegularizationParameters> regularization{"regularization", {}, this};
-};
 
 //------------------------------------------------------------------------------
 
 template <typename MODEL>
 class HtlmCalculator {
   typedef Geometry<MODEL>                                          Geometry_;
-  typedef HtlmCalculatorParameters<MODEL>                          Parameters_;
   typedef HtlmEnsemble<MODEL>                                      HtlmEnsemble_;
   typedef Increment<MODEL>                                         Increment_;
-  typedef IncrementEnsemble<MODEL>                                 IncrementEnsemble_;
+  typedef IncrementSet<MODEL>                                      IncrementSet_;
 
  public:
-  HtlmCalculator(const Parameters_ &,
+  HtlmCalculator(const eckit::Configuration &,
                  const Variables &,
                  const Geometry_ &,
                  const atlas::idx_t,
                  const HtlmEnsemble_ &,
                  const std::vector<atlas::idx_t> &);
-  void setOfCoeffs(const IncrementEnsemble_ &, const IncrementEnsemble_ &, atlas::FieldSet &) const;
+  void setOfCoeffs(const IncrementSet_ &, const IncrementSet_ &, atlas::FieldSet &) const;
 
  private:
-  const Parameters_ & params_;
+  const eckit::LocalConfiguration config_;
   const Variables & updateVars_;
   const atlas::idx_t nLocations_;
   const atlas::idx_t nLevels_;
@@ -64,42 +55,43 @@ class HtlmCalculator {
   std::unique_ptr<HtlmRegularization> regularization_;
 
   void singularValueDecomposition(const atlas::idx_t, const atlas::array::Range &,
-                                  const IncrementEnsemble_ &) const;
+                                  const IncrementSet_ &) const;
   void compute(const atlas::idx_t, const atlas::idx_t, const atlas::array::Range &,
-               const IncrementEnsemble_ &, atlas::FieldSet &) const;
+               const IncrementSet_ &, atlas::FieldSet &) const;
 };
 
 //------------------------------------------------------------------------------
 
 template <typename MODEL>
-HtlmCalculator<MODEL>::HtlmCalculator(const Parameters_ & params,
+HtlmCalculator<MODEL>::HtlmCalculator(const eckit::Configuration & config,
                                       const Variables & updateVars,
                                       const Geometry_ & updateGeometry,
                                       const atlas::idx_t influenceSize,
                                       const HtlmEnsemble_ & ensemble,
                                       const std::vector<atlas::idx_t> & owned)
-: params_(params), updateVars_(updateVars), nLocations_(updateGeometry.functionSpace().size()),
+: config_(config), updateVars_(updateVars), nLocations_(updateGeometry.functionSpace().size()),
   nLevels_(updateGeometry.variableSizes(updateVars_)[0]), influenceSize_(influenceSize),
   halfInfluenceSize_(influenceSize_ / 2),
   ensembleSize_(ensemble.size()), vectorSize_(influenceSize_ * updateVars_.size()), owned_(owned),
   rmsVals_(ensemble.getRmsVals(updateVars_, nLevels_)), M_(vectorSize_, ensembleSize_),
   linearErrorVector_(ensembleSize_), SVD_(vectorSize_, vectorSize_, Eigen::ComputeThinU) {
-  // Set up regularization
-  if (params_.regularization.value().parts.value() == boost::none) {
-    regularization_ = std::make_unique<HtlmRegularization>(params_.regularization.value());
+  // Set up regularization, can be empty
+  const eckit::LocalConfiguration regConfig = config_.getSubConfiguration("regularization");
+  if (!regConfig.has("parts"))  {
+    regularization_ = std::make_unique<HtlmRegularization>(regConfig);
   } else {
     Increment_ regularizationIncrement(updateGeometry, updateVars_, util::DateTime());
     atlas::FieldSet regularizationFieldSet = regularizationIncrement.fieldSet().fieldSet();
     regularization_ = std::make_unique<HtlmRegularizationComponentDependent>(
-      params_.regularization.value(), regularizationFieldSet);
+      regConfig, regularizationFieldSet);
   }
 }
 
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HtlmCalculator<MODEL>::setOfCoeffs(const IncrementEnsemble_ & linearEnsemble,
-                                        const IncrementEnsemble_ & linearErrors,
+void HtlmCalculator<MODEL>::setOfCoeffs(const IncrementSet_ & linearEnsemble,
+                                        const IncrementSet_ & linearErrors,
                                         atlas::FieldSet & coeffsFSet) const {
   // Loop over grid points and levels, and at each:
   // - form the preconditioned matrix of influencing components across each ensemble member, M;
@@ -132,7 +124,7 @@ void HtlmCalculator<MODEL>::setOfCoeffs(const IncrementEnsemble_ & linearEnsembl
 template<typename MODEL>
 void HtlmCalculator<MODEL>::singularValueDecomposition(const atlas::idx_t i,
                                                        const atlas::array::Range & range,
-                                                       const IncrementEnsemble_ & linearEnsemble)
+                                                       const IncrementSet_ & linearEnsemble)
 const {
   // M is a matrix where each column forms a vector of (no. variables) segments, each of length
   // influenceSize_, and each column is taken from one ensemble member
@@ -155,7 +147,7 @@ const {
 template<typename MODEL>
 void HtlmCalculator<MODEL>::compute(const atlas::idx_t i, const atlas::idx_t k,
                                     const atlas::array::Range & range,
-                                    const IncrementEnsemble_ & linearErrors,
+                                    const IncrementSet_ & linearErrors,
                                     atlas::FieldSet & coeffsFSet) const {
   for (const auto & var : updateVars_.variables()) {
     // Produce VectorXd of linear errors at var, i, k for each ensemble member

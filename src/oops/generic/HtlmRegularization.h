@@ -13,32 +13,41 @@
 #include <vector>
 
 #include "atlas/field/FieldSet.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace oops {
 
-/// \brief Configuration parameters for a single "part" when constructing regularizationFieldSet_
-/// using "parts". Each part specifies which variables and region to apply a particular value to.
-class HtlmRegularizationPartParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(HtlmRegularizationPartParameters, Parameters);
+/*
+ * Configuration options for a single "part" in regularizationFieldSet_:
+ *
+ * Each part defines a region to which a regularization value is applied.
+ * These are typically specified in a list under a top-level "parts" key.
+ *
+ * Keys for each part:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * "value"           : (Required) The regularization value to apply in the specified region.
+ *
+ * "variables"       : (Optional) List of variable names to apply the value to.
+ *                     - Must be a subset of the variables in the FieldSet passed to the
+ *                       HtlmRegularization constructor.
+ *                     - Defaults to all variables if not specified.
+ *
+ * "bounding lons"   : (Optional) Longitude bounds as a pair (minLon, maxLon).
+ *                     - Defines an eastward band from minLon to maxLon.
+ *                     - Defaults to covering all longitudes.
+ *
+ * "bounding lats"   : (Optional) Latitude bounds as a pair (minLat, maxLat).
+ *                     - Defines the north-south extent of the region.
+ *                     - Defaults to covering all latitudes.
+ *
+ * "levels"          : (Optional) List of vertical levels (indices) to apply the value to.
+ *                     - Defaults to all levels if not specified.
+ */
 
- public:
-  RequiredParameter<double> value{"value", this};
-  OptionalParameter<std::vector<std::string>> variables{"variables", this};  // Must be a subset of
-  // variables in FieldSet given as argument to HtlmRegularization constructor. Defaults to all.
-  OptionalParameter<std::pair<double, double>> boundingLons{"bounding lons", this};  // Band
-  // proceeds eastward from lower to higher value. Defaults to including all longitudes.
-  OptionalParameter<std::pair<double, double>> boundingLats{"bounding lats", this};  // Defaults to
-  // including all latitudes.
-  OptionalParameter<std::vector<size_t>> levels{"levels", this};  // Defaults to all.
-};
 
 /// \brief A single part for construction by parts.
 class HtlmRegularizationPart {
  public:
-  HtlmRegularizationPart(const HtlmRegularizationPartParameters &,
+  HtlmRegularizationPart(const eckit::Configuration &,
                          const std::vector<std::string> &,
                          const std::vector<size_t> &);
   const std::vector<std::string> & getVariables() const {return variables_;}
@@ -57,7 +66,7 @@ class HtlmRegularizationPart {
   static const std::pair<double, double> limitsLon;
   static const std::pair<double, double> limitsLat;
 
-  const HtlmRegularizationPartParameters params_;
+  const eckit::LocalConfiguration regPartConfig_;
   const double value_;
   const std::vector<std::string> variables_;
   std::vector<size_t> levels_;
@@ -66,26 +75,32 @@ class HtlmRegularizationPart {
   bool containsAllGridPoints_;
 };
 
-/// \brief Configuration parameters for the HtlmRegularization class. If just a base value is
-/// specified, then this is returned with each call to ::getRegularizationValue(). If a different
-/// method, such as by parts (see above), is requested by way of specifying an optional parameter,
-/// then an atlas::FieldSet is used for storage of values, and they are retrieved from this.
-class HtlmRegularizationParameters : public Parameters {
-  OOPS_CONCRETE_PARAMETERS(HtlmRegularizationParameters, Parameters);
-
- public:
-  Parameter<double> baseValue{"base value", 0.0, this};
-  OptionalParameter<std::vector<HtlmRegularizationPartParameters>> parts{"parts", this};
-};
+/*
+ * Configuration options for HtlmRegularization:
+ *
+ * This configuration controls how regularization values are applied. There are two modes:
+ * 1. Uniform regularization using a single "base value".
+ * 2. Spatially varying regularization using a list of "parts" (see part-level config above).
+ *
+ * Keys:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * "base value" : (Optional) A scalar value used uniformly across all variables and regions.
+ *                - Default: 0.0
+ *                - If no "parts" are specified, this value is returned by ::getRegularizationValue().
+ *
+ * "parts"      : (Optional) A list of configuration blocks, each defining a localized regularization.
+ */
 
 /// \brief Classes for setting and storage of values used during regularization (ridge regression)
 /// when using a hybrid tangent linear model (H-TLM). See https://doi.org/10.1175/MWR-D-20-0088.1
 /// Section 4b. Base class handles single-value-only case, derived class handles component-dependent
 /// values case.
+
 class HtlmRegularization {
  public:
-  explicit HtlmRegularization(const HtlmRegularizationParameters & params)
-    : params_(params), baseValue_(params_.baseValue.value()) {}
+  explicit HtlmRegularization(const eckit::Configuration & config)
+    : regConfig_(config), baseValue_(regConfig_.has("base value") ?
+        regConfig_.getDouble("base value") : static_cast<double>(0.0)) {}
   virtual ~HtlmRegularization() = default;
   static const std::string classname() {return "oops::HtlmRegularization";}
   virtual const double & getRegularizationValue(const std::string &,
@@ -93,13 +108,13 @@ class HtlmRegularization {
                                                 const size_t) const {return baseValue_;}
 
  protected:
-  const HtlmRegularizationParameters params_;
+  const eckit::LocalConfiguration regConfig_;
   const double baseValue_;
 };
 
 class HtlmRegularizationComponentDependent : public HtlmRegularization {
  public:
-  HtlmRegularizationComponentDependent(const HtlmRegularizationParameters &, atlas::FieldSet);
+  HtlmRegularizationComponentDependent(const eckit::Configuration &, atlas::FieldSet);
   virtual ~HtlmRegularizationComponentDependent() = default;
   virtual const double & getRegularizationValue(const std::string &,
                                                 const size_t,
