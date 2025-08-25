@@ -1865,4 +1865,37 @@ void readFieldSet(const eckit::mpi::Comm & comm,
 
 // -----------------------------------------------------------------------------
 
+std::vector<double> fieldSetToBuffer(const atlas::FieldSet & fields) {
+  size_t sz = 0;
+  for (const auto & field : fields) {
+    sz += field.size();
+  }
+  std::vector<double> buf(sz);
+  size_t index = 0;
+  for (const auto & field : fields) {
+    const auto & view = atlas::array::make_view<double, 2>(field);
+    for (size_t i = 0; i < field.shape(0); i++) {
+      for (size_t j = 0; j < field.shape(1); j++) {
+        buf[index++] = view(i, j);
+      }
+    }
+  }
+  return buf;
+}
+
+// -----------------------------------------------------------------------------
+void fieldSetFromBuffer(atlas::FieldSet & fields, const std::vector<double> & buf) {
+  size_t index = 0;
+  for (auto & field : fields) {
+    auto view = atlas::array::make_view<double, 2>(field);
+    for (size_t i = 0; i < view.shape(0); i++) {
+      for (size_t j = 0; j < view.shape(1); j++) {
+        view(i, j) = buf[index++];
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 }  // namespace util

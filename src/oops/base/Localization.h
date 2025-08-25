@@ -86,7 +86,7 @@ class Localization : public util::Printable,
 
   // Communication method (standard, fast, aggressive)
   // standard: reproducible, axpy based on increment interfaces
-  // fast: reproducible, axpy performed on serialized vectors
+  // fast: reproducible, axpy performed on eigen vectors
   // aggressive (only in the case without time decay):
   //     non reproducible (to machine precision), sums by mpi reduction
   const std::string commMode_;
@@ -251,31 +251,28 @@ void Localization<MODEL>::randomize(Increment4D_ & dx) const {
         oops::mpi::sendReceiveReplace(comm_, dxtmp, dest, 0, src, 0);
       }
     } else if (commMode_ == "fast") {
-      // Serialize the output
-      std::vector<double> dx_s;
-      dx[0].serialize(dx_s);
-      size_t sz = dx[0].serialSize();
-      Eigen::Map<Eigen::VectorXd> dx_v(dx_s.data(), sz);
+      // Copy output into a vector
+      std::vector<double> dx_s = util::fieldSetToBuffer(dx[0].fieldSet().fieldSet());
+      Eigen::Map<Eigen::VectorXd> dx_v(dx_s.data(), dx_s.size());
 
-      // Serialize the temporary increment
-      std::vector<double> dxtmp_s;
-      dxtmp.serialize(dxtmp_s);
-      Eigen::Map<Eigen::VectorXd> dxtmp_v(dxtmp_s.data(), sz);
+      // Copy the temporary increment into a vector
+      std::vector<double> dxtmp_s = util::fieldSetToBuffer(dxtmp.fieldSet().fieldSet());
+      Eigen::Map<Eigen::VectorXd> dxtmp_v(dxtmp_s.data(), dxtmp_s.size());
 
-      // Apply lower triangular matrix of weights on serialized vector
+      // Apply lower triangular matrix of weights on the vector
       for (size_t j=0; j <= mytime_; ++j) {
         dx_v += TDLower_(mytime_, mytime_-j) * dxtmp_v;
         size_t dest = mytime_ + 1;
         if (mytime_ == ntimes_ - 1 ) dest = comm_.procNull();
         size_t src = mytime_ - 1;
         if (mytime_ == j) src = comm_.procNull();
-        eckit::mpi::Status status = comm_.sendReceiveReplace(dxtmp_s.data(), sz,
+        eckit::mpi::Status status = comm_.sendReceiveReplace(dxtmp_s.data(), dxtmp_s.size(),
                                                              dest, 0, src, 0);
         }
 
-      // Deserialize and store the result
-      size_t ii = 0;
-      dx[0].deserialize(dx_s, ii);
+      // Update the increment from the vector
+      util::fieldSetFromBuffer(dx[0].fieldSet().fieldSet(), dx_s);
+      dx[0].synchronizeFields();
     }
   } else {
     // Duplicated localization without time decay
@@ -420,97 +417,63 @@ void Localization<MODEL>::multiply(Increment4D_ & dx) const {
   //             (Id)                 (x_3)   (Id)                      (L_3D ( x_1 + x_2 + x_3 ))
   // Reference in section 3.4.2. of https://rmets.onlinelibrary.wiley.com/doi/full/10.1002/qj.2325.
 
+    // Save all the times
+    const std::vector<util::DateTime> times(dx.validTimes());
+    // Do local sum of all local ensemble increments
+    for (size_t jt = 1; jt < dx.local_time_size(); ++jt) {
+      dx[0].axpy(1.0, dx[jt], false);
+    }
+    // Standard communication mode for getting sum of all ensemble increments on task 0:
+    // MPI send/receive and Increment::axpy
     if (commMode_ == "standard") {
-      std::vector<util::DateTime> times(dx.validTimes());
-      for (size_t jt = 1; jt < dx.local_time_size(); ++jt) {
-        dx[0].axpy(1.0, dx[jt], false);
-      }
-
-      if (dx.commTime().rank() > 0) {
-        oops::mpi::send(dx.commTime(), dx[0], 0, 0);
+      if (comm_.rank() > 0) {
+        oops::mpi::send(comm_, dx[0], 0, 0);
       } else {
         Increment_ dxtmp(dx[0], false);
-        for (size_t jj = 1; jj < dx.commTime().size(); ++jj) {
+        for (size_t jj = 1; jj < comm_.size(); ++jj) {
           oops::mpi::receive(comm_, dxtmp, jj, 0);
           dx[0].axpy(1.0, dxtmp, false);
         }
-
-        // Apply 3D localization
-        loc_->multiply(dx[0]);
       }
-      // Broadcast
-      oops::mpi::broadcast(dx.commTime(), dx[0], 0);
-
-      dx[0].updateTime(times[0] - dx[0].validTime());
-      for (size_t jt = 1; jt < dx.local_time_size(); ++jt) {
-        dx[jt] = dx[0];
-        dx[jt].updateTime(times[jt] - dx[jt].validTime());
-      }
-
+    // "Fast" communication mode: MPI send/receive with operations on Eigen
     } else if (commMode_ == "fast") {
-      if (dx.local_time_size() > 1)
-        throw eckit::NotImplemented("4D localization not fully implemented", Here());
-      // Set time to 0
-      util::DateTime t0(0, 0);
-      dx[0].updateTime(t0-dx[0].validTime());
-
-      // Serialize the input
-      std::vector<double> dx_s;
-      dx[0].serialize(dx_s);
-      size_t sz = dx[0].serialSize();
-      Eigen::Map<Eigen::VectorXd> dx_v(dx_s.data(), sz);
-
+      // Copy the input into a vector
+      std::vector<double> dx_s = util::fieldSetToBuffer(dx[0].fieldSet().fieldSet());
+      Eigen::Map<Eigen::VectorXd> dx_v(dx_s.data(), dx_s.size());
       if (mytime_ > 0) {
         // Send to root task
-        comm_.send(dx_s.data(), sz, 0, 0);
+        comm_.send(dx_s.data(), dx_s.size(), 0, 0);
       } else {
         // Sum over timeslots
-        Eigen::VectorXd dxtmp_v(sz);
+        Eigen::VectorXd dxtmp_v(dx_s.size());
         eckit::mpi::Status status;
         for (size_t jj = 1; jj < ntimes_; ++jj) {
-          status = comm_.receive(dxtmp_v.data(), sz, static_cast<int>(jj), 0);
+          status = comm_.receive(dxtmp_v.data(), dxtmp_v.size(), static_cast<int>(jj), 0);
           dx_v += dxtmp_v;
         }
-
-        // Apply 3D localization
-        size_t ii = 0;
-        dx[0].deserialize(dx_s, ii);
-        dx[0].updateTime(tsub - dx[0].validTime());
-        loc_->multiply(dx[0]);
+        // Copy back into the first increment
+        util::fieldSetFromBuffer(dx[0].fieldSet().fieldSet(), dx_s);
+        dx[0].synchronizeFields();
       }
-      // Broadcast
-      oops::mpi::broadcast(comm_, dx[0], 0);
-
-      if (mytime_ > 0) {
-        // Set time back to original value
-        dx[0].updateTime(tsub - dx[0].validTime());
-      }
-
+    // "Aggressive" communication mode: MPI reduce on fieldsets
     } else if (commMode_ == "aggressive") {
-      if (dx.local_time_size() > 1)
-        throw eckit::NotImplemented("4D localization not fully implemented", Here());
-      if (mytime_ > 0) {
-        // Set time to 0
-        util::DateTime t0(0, 0);
-        dx[0].updateTime(t0-dx[0].validTime());
-      }
-
-      // Reduce on mytime_ 0
+      // Reduce on task 0 and update the increment
       oops::mpi::reduceInPlace(comm_, dx[0].fieldSet().fieldSet(), 0);
       dx[0].synchronizeFields();
+    }
 
-      if (mytime_ == 0) {
-        // Apply 3D localization
-        loc_->multiply(dx[0]);
-      }
-
-      // Broadcast
-      oops::mpi::broadcast(comm_, dx[0], 0);
-
-      if (mytime_ > 0) {
-        // Set time back to original value
-        dx[0].updateTime(tsub - dx[0].validTime());
-      }
+    // Apply localization only on the first task
+    if (comm_.rank() == 0) {
+      // Apply 3D localization
+      loc_->multiply(dx[0]);
+    }
+    // Broadcast the result to all tasks
+    oops::mpi::broadcast(comm_, dx[0], 0);
+    // Update times to correct times and set all local ensemble members accordingly
+    dx[0].updateTime(times[0] - dx[0].validTime());
+    for (size_t jt = 1; jt < dx.local_time_size(); ++jt) {
+      dx[jt] = dx[0];
+      dx[jt].updateTime(times[jt] - dx[jt].validTime());
     }
   }
 

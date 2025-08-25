@@ -149,6 +149,15 @@ void readFieldSet(const eckit::mpi::Comm &,
                   const eckit::Configuration &,
                   atlas::FieldSet &);
 
+/// @brief  Convert a FieldSet to a 1D buffer.
+/// @param  fieldSet The FieldSet to convert.
+/// @return A 1D vector containing the data from the FieldSet.
+std::vector<double> fieldSetToBuffer(const atlas::FieldSet &);
+/// @brief  Convert a 1D buffer to a FieldSet.
+/// @param  buf The 1D buffer to convert.
+/// @param  fieldSet The FieldSet to populate.
+void fieldSetFromBuffer(atlas::FieldSet &, const std::vector<double> &);
+
 // -----------------------------------------------------------------------------
 
 }  // namespace util
