@@ -16,8 +16,10 @@
 #include "eckit/mpi/Comm.h"
 
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/for_each.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
+#include "oops/util/reduction.h"
 
 namespace util {
 
@@ -50,21 +52,12 @@ void addFieldSets(atlas::FieldSet & fset,
   // Loop over additive fields. The RHS FieldSet may contain only a subset of Fields from the
   // input/output FieldSet. If this is the case, no work is done for fields present only in the LHS.
   for (auto & addField : addFset) {
-    // Get field with the same name
     atlas::Field field = fset.field(addField.name());
-
-    // Get data and add
-    if (field.rank() == 2 && addField.rank() == 2) {
-      auto view = atlas::array::make_view<double, 2>(field);
-      const auto addView = atlas::array::make_view<double, 2>(addField);
-      for (int jnode = 0; jnode < field.shape(0); ++jnode) {
-        for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-          view(jnode, jlevel) += addView(jnode, jlevel);
-        }
-      }
-    } else {
-      throw eckit::Exception("addFieldSets: wrong rank", Here());
-    }
+    util::for_each_value(
+      util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
+      [](const double rhs, double & lhs) { lhs += rhs; },
+      addField,
+      field);
 
     // If either term in the sum is out-of-date, then the result will be out-of-date
     field.set_dirty(field.dirty() || addField.dirty());
@@ -82,21 +75,12 @@ void subtractFieldSets(atlas::FieldSet & fset,
   // Loop over subtracted fields. The RHS FieldSet may contain only a subset of Fields from the
   // input/output FieldSet. If this is the case, no work is done for fields present only in the LHS.
   for (auto & subField : subFset) {
-    // Get field with the same name
     atlas::Field field = fset.field(subField.name());
-
-    // Get data and sub
-    if (field.rank() == 2 && subField.rank() == 2) {
-      auto view = atlas::array::make_view<double, 2>(field);
-      const auto subView = atlas::array::make_view<double, 2>(subField);
-      for (int jnode = 0; jnode < field.shape(0); ++jnode) {
-        for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-          view(jnode, jlevel) -= subView(jnode, jlevel);
-        }
-      }
-    } else {
-      throw eckit::Exception("subFieldSets: wrong rank", Here());
-    }
+    util::for_each_value(
+      util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
+      [](const double rhs, double & lhs) { lhs -= rhs; },
+      subField,
+      field);
 
     // If either term in the subtraction is out-of-date, then the result will be out-of-date
     field.set_dirty(field.dirty() || subField.dirty());
@@ -108,23 +92,17 @@ void subtractFieldSets(atlas::FieldSet & fset,
 // -----------------------------------------------------------------------------
 
 void multiplyFieldSet(atlas::FieldSet & fset,
-                      const double & mul) {
+                      const double mul) {
   oops::Log::trace() << "multiplyFieldSet starting" << std::endl;
 
   // Loop over fields
   for (auto & field : fset) {
-    // Get data and multiply
-    if (field.rank() == 2) {
-      auto view = atlas::array::make_view<double, 2>(field);
-      for (int jnode = 0; jnode < field.shape(0); ++jnode) {
-        for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-          view(jnode, jlevel) *= mul;
-        }
-      }
-    } else {
-      throw eckit::Exception("multiplyFieldSet: wrong rank", Here());
-    }
+    util::for_each_value(
+      util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
+      [=](double & val) { val *= mul; },
+      field);
   }
+
   oops::Log::trace() << "multiplyFieldSet done" << std::endl;
 }
 
@@ -137,21 +115,12 @@ void multiplyFieldSets(atlas::FieldSet & fset,
   // Loop over multiplier fields. The RHS FieldSet may contain only a subset of Fields from the
   // input/output FieldSet. If this is the case, no work is done for fields present only in the LHS.
   for (const auto & mulField : mulFset) {
-    // Get field with the same name
     atlas::Field field = fset.field(mulField.name());
-
-    // Get data and multiply
-    if (field.rank() == 2 && mulField.rank() == 2) {
-      auto view = atlas::array::make_view<double, 2>(field);
-      const auto mulView = atlas::array::make_view<double, 2>(mulField);
-      for (int jnode = 0; jnode < field.shape(0); ++jnode) {
-        for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-          view(jnode, jlevel) *= mulView(jnode, jlevel);
-        }
-      }
-    } else {
-      throw eckit::Exception("multiplyFieldSets: wrong rank", Here());
-    }
+    util::for_each_value(
+      util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
+      [](const double rhs, double & lhs) { lhs *= rhs; },
+      mulField,
+      field);
 
     // If either term in the product is out-of-date, then the result will be out-of-date
     field.set_dirty(field.dirty() || mulField.dirty());
@@ -162,100 +131,14 @@ void multiplyFieldSets(atlas::FieldSet & fset,
 
 // -----------------------------------------------------------------------------
 
-double dotProductFieldsLocal(const atlas::Field & field1,
-                             const atlas::Field & field2) {
-  oops::Log::trace() << "dotProductFieldsLocal starting" << std::endl;
-
-  // Check fields names
-  ASSERT(field1.name() == field2.name());
-
-  // Compute local dot product
-  double dp = 0.0;
-
-  if (field1.rank() == 2 && field2.rank() == 2) {
-    // Check fields consistency
-    ASSERT(field1.shape(0) == field2.shape(0));
-    ASSERT(field1.shape(1) == field2.shape(1));
-
-    // Add contributions
-    auto view1 = atlas::array::make_view<double, 2>(field1);
-    auto view2 = atlas::array::make_view<double, 2>(field2);
-    if (field1.functionspace().type() == "Spectral") {
-      const atlas::functionspace::Spectral fs(field1.functionspace());
-      const atlas::idx_t N = fs.truncation();
-      const auto zonal_wavenumbers = fs.zonal_wavenumbers();
-      const atlas::idx_t nb_zonal_wavenumbers = zonal_wavenumbers.size();
-      int jnode = 0;
-      for (int jm=0; jm < nb_zonal_wavenumbers; ++jm) {
-        const atlas::idx_t m1 = zonal_wavenumbers(jm);
-        for (std::size_t n1 = m1; n1 <= static_cast<std::size_t>(N); ++n1) {
-          if (m1 == 0) {
-            // Real part only
-            for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-              if (view1(jnode, jlevel) != util::missingValue<double>()
-                && view2(jnode, jlevel) != util::missingValue<double>()) {
-                dp += view1(jnode, jlevel)*view2(jnode, jlevel);
-              }
-            }
-            ++jnode;
-
-            // No imaginary part
-            ++jnode;
-          } else {
-            // Real part
-            for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-              if (view1(jnode, jlevel) != util::missingValue<double>()
-                && view2(jnode, jlevel) != util::missingValue<double>()) {
-                dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
-              }
-            }
-            ++jnode;
-
-            // Imaginary part
-            for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-              if (view1(jnode, jlevel) != util::missingValue<double>()
-                && view2(jnode, jlevel) != util::missingValue<double>()) {
-                dp += 2.0*view1(jnode, jlevel)*view2(jnode, jlevel);
-              }
-            }
-            ++jnode;
-          }
-        }
-      }
-    } else {
-      const auto ghostView = atlas::array::make_view<int, 1>(field1.functionspace().ghost());
-      for (atlas::idx_t jnode = 0; jnode < field1.shape(0); ++jnode) {
-        if (ghostView(jnode) == 0) {
-          for (atlas::idx_t jlevel = 0; jlevel < field1.shape(1); ++jlevel) {
-            if (view1(jnode, jlevel) != util::missingValue<double>()
-              && view2(jnode, jlevel) != util::missingValue<double>()) {
-              dp += view1(jnode, jlevel)*view2(jnode, jlevel);
-            }
-          }
-        }
-      }
-    }
-  } else {
-    throw eckit::Exception("dotProductFieldsLocal: wrong rank", Here());
-  }
-
-  // Return local dot product
-  oops::Log::trace() << "dotProductFieldsLocal done" << std::endl;
-  return dp;
-}
-
-// -----------------------------------------------------------------------------
-
 double dotProductFields(const atlas::Field & field1,
                         const atlas::Field & field2,
                         const eckit::mpi::Comm & comm) {
-  // Compute local dot product
-  double dp = dotProductFieldsLocal(field1, field2);
+  // Compute task-local dot product, then sum over tasks
+  double dp = util::dot_product_on_task(field1, field2);
 
-  // Allreduce
   comm.allReduceInPlace(dp, eckit::mpi::sum());
 
-  // Return dot product
   return dp;
 }
 
@@ -267,20 +150,16 @@ double dotProductFieldSets(const atlas::FieldSet & fset1,
                            const eckit::mpi::Comm & comm) {
   oops::Log::trace() << "dotProductFieldSets starting" << std::endl;
 
-  // Compute dot product
+  // Compute task-local dot product for Fields in both FieldSets, then sum over tasks
   double dp = 0.0;
-
   for (const auto & var : vars) {
-    // Check fields presence
     if (fset1.has(var) && fset2.has(var)) {
-      dp += dotProductFieldsLocal(fset1.field(var), fset2.field(var));
+      dp += util::dot_product_on_task(fset1.field(var), fset2.field(var));
     }
   }
 
-  // Allreduce
   comm.allReduceInPlace(dp, eckit::mpi::sum());
 
-  // Return dot product
   oops::Log::trace() << "dotProductFieldSets done" << std::endl;
   return dp;
 }
@@ -309,27 +188,26 @@ void divideFieldSets(atlas::FieldSet & fset,
   // Loop over divider fields. The RHS FieldSet may contain only a subset of Fields from the
   // input/output FieldSet. If this is the case, no work is done for fields present only in the LHS.
   for (const auto & divField : divFset) {
-    // Get field with the same name
+    bool found_div_by_zero = false;
     atlas::Field field = fset.field(divField.name());
-
-    // Get data and divide
-    if (field.rank() == 2 && divField.rank() == 2) {
-      const auto divView = atlas::array::make_view<double, 2>(divField);
-      auto view = atlas::array::make_view<double, 2>(field);
-      for (int jnode = 0; jnode < field.shape(0); ++jnode) {
-        for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-          if (std::abs(divView(jnode, jlevel)) > 0.0) {
-            view(jnode, jlevel) /= divView(jnode, jlevel);
-          } else if (std::abs(view(jnode, jlevel)) > 0.0) {
-            // If the numerator is 0, then it's ok for the denominator to be 0; this is probably
-            // a case of 0/0 in the halo, and we opt to return 0 (i.e., no change to the field).
-            // If the numerator is finite (= this else branch), this is a divide-by-zero error:
-            throw eckit::Exception("divideFieldSets: divide by zero", Here());
-          }
+    util::for_each_value(
+      util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
+      [&](const double rhs, double & lhs) {
+        if (std::abs(rhs) > 0.0) {
+          lhs /= rhs;
+        } else if (std::abs(lhs) > 0.0) {
+          // If the numerator is 0, then it's ok for the denominator to be 0; this is probably
+          // a case of 0/0 in the halo, and we opt to return 0 (i.e., no change to the field).
+          // If the numerator is finite (= this else branch), this is a divide-by-zero error:
+          found_div_by_zero = true;
         }
-      }
-    } else {
-      throw eckit::Exception("divideFieldSets: wrong rank", Here());
+      },
+      divField,
+      field);
+
+    if (found_div_by_zero) {
+      throw eckit::Exception("divideFieldSets: divide by zero for field " + divField.name(),
+                             Here());
     }
 
     // If either term in the division is out-of-date, then the result will be out-of-date
@@ -342,37 +220,34 @@ void divideFieldSets(atlas::FieldSet & fset,
 // -----------------------------------------------------------------------------
 
 void divideFieldSets(atlas::FieldSet & fset,
-                     const  atlas::FieldSet & divFset,
-                     const  atlas::FieldSet & maskFset) {
+                     const atlas::FieldSet & divFset,
+                     const atlas::FieldSet & maskFset) {
   oops::Log::trace() << "divideFieldSets with mask starting" << std::endl;
 
   // Loop over divider fields. The RHS FieldSet may contain only a subset of Fields from the
   // input/output FieldSet. If this is the case, no work is done for fields present only in the LHS.
   for (const auto & divField : divFset) {
-    // Get field with the same name
+    bool found_div_by_zero = false;
     atlas::Field field = fset.field(divField.name());
-
-    // Get mask field with the same name
     atlas::Field mask = maskFset.field(divField.name());
-
-    // Get data and divide
-    if (field.rank() == 2 && divField.rank() == 2 && mask.rank() == 2) {
-      const auto divView = atlas::array::make_view<double, 2>(divField);
-      const auto maskView = atlas::array::make_view<double, 2>(mask);
-      auto view = atlas::array::make_view<double, 2>(field);
-      for (int jnode = 0; jnode < field.shape(0); ++jnode) {
-        for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-          if (std::abs(maskView(jnode, jlevel)) > 0.0) {
-            if (std::abs(divView(jnode, jlevel)) > 0.0) {
-              view(jnode, jlevel) /= divView(jnode, jlevel);
-            } else {
-                throw eckit::Exception("divideFieldSets with mask: divide by zero", Here());
-            }
+    util::for_each_value(
+      util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
+      [&](const double rhs, const double mask, double & lhs) {
+        if (std::abs(mask) > 0.0) {
+          if (std::abs(rhs) > 0.0) {
+            lhs /= rhs;
+          } else if (std::abs(lhs) > 0.0) {
+            found_div_by_zero = true;
           }
         }
-      }
-    } else {
-      throw eckit::Exception("divideFieldSets with mask: wrong rank", Here());
+      },
+      divField,
+      mask,
+      field);
+
+    if (found_div_by_zero) {
+      throw eckit::Exception("divideFieldSets: divide by zero for field " + divField.name(),
+                             Here());
     }
 
     // If either term in the division is out-of-date, then the result will be out-of-date
@@ -389,17 +264,21 @@ void sqrtFieldSet(atlas::FieldSet & fset) {
 
   // Loop over fields
   for (auto field : fset) {
-    // Get data and take square-root
-    if (field.rank() == 2) {
-      auto view = atlas::array::make_view<double, 2>(field);
-      for (int jnode = 0; jnode < field.shape(0); ++jnode) {
-        for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-          ASSERT(view(jnode, jlevel) >= 0.0);
-          view(jnode, jlevel) = std::sqrt(view(jnode, jlevel));
+    bool found_negative_sqrt = false;
+    util::for_each_value(
+      util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
+      [&](double & val) {
+        if (val >= 0.0) {
+          val = std::sqrt(val);
+        } else {
+          found_negative_sqrt = true;
         }
-      }
-    } else {
-      throw eckit::Exception("sqrtFieldSet: wrong rank", Here());
+      },
+      field);
+
+    if (found_negative_sqrt) {
+      throw eckit::Exception("sqrtFieldSet: negative square root for field " + field.name(),
+                             Here());
     }
   }
 

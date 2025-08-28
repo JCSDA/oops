@@ -112,11 +112,20 @@ bool hasContiguousOwnedPoints(const AtlasField& f) {
 // TODO(adamsl): remove this specialization when Atlas version >= 0.43.0
 template <typename AtlasField, std::enable_if_t<no_halo_member_v<AtlasField>, int> = 0>
 bool hasContiguousOwnedPoints(const AtlasField& f) {
-  // Note: We can return true by default because JEDI configurations will *nearly always* place
-  // the owned points at the beginning of the horizontal index space. However, this is not
-  // guaranteed. The implication of defaulting to true in atlas < 0.43 is that we will have to
-  // manually check for the bounds of the index space for certain function spaces.
-  return true;
+  // Note: This routine is used to make optimization decisions. Currently it assumes that
+  // all StructureColumn and CubedSphereNodeColumns function spaces have contiguous owned
+  // points.
+  const auto& fspace = f.functionspace();
+  if (auto sc = atlas::functionspace::StructuredColumns(fspace)) {
+    return true;
+  } else if (auto nc = atlas::functionspace::NodeColumns(fspace);
+              nc &&
+              nc.mesh().nodes().has_field("tij") &&
+              atlas::functionspace::CubedSphereNodeColumns(fspace)) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 template <typename AtlasField, std::enable_if_t<has_halo_member_v<AtlasField>, int> = 0>
@@ -125,7 +134,9 @@ getContiguousHorizontalIndexSpace(const AtlasField& f, bool include_halo) {
   if (include_halo) {
     return std::make_pair(0, f.shape(0));
   } else {
-    ASSERT(hasContiguousOwnedPoints(f) && f.halo().appended());
+    ASSERT(hasContiguousOwnedPoints(f));
+
+    ASSERT(f.halo().appended());
     return std::make_pair(0, f.halo().begin());
   }
 }
@@ -143,21 +154,16 @@ getContiguousHorizontalIndexSpace(const AtlasField& f, bool include_halo) {
                atlas::functionspace::CubedSphereNodeColumns(fspace)) {
       return atlas::functionspace::CubedSphereNodeColumns(fspace).sizeOwned();
     } else {
-      // Note: Since hasContiguousOwnedPoints defaults to true, we need to support all
-      // FunctionSpace types here, not just the ones with a sizeOwned() method.
-      auto ghost = atlas::array::make_view<int, 1>(fspace.ghost());
-      for (atlas::idx_t i = 0; i < ghost.shape(0); ++i) {
-        if (ghost(i) != 0) {
-          return i;
-        }
-      }
-      return ghost.shape(0);
+      throw eckit::NotImplemented(
+        "FunctionSpace type not assumed to have contiguous owned points: " + fspace.type(), Here());
     }
   };
 
   if (include_halo) {
     return std::make_pair(0, f.shape(0));
   } else {
+    ASSERT(hasContiguousOwnedPoints(f));
+
     return std::make_pair(0, getOwnedSizeOrFail(f.functionspace()));
   }
 }
@@ -589,9 +595,32 @@ void for_each_column(
   auto viewsTuple = details::make_view_tuple(fieldsTuple);
 
   if (range == IndexRange::exclude_halo && !details::hasContiguousOwnedPoints(firstField)) {
-    // TODO(adamsl): use a mask to exclude halo points.
-    throw eckit::NotImplemented(
-        "Excluding halo values is not implemented for non-contiguous halos.", Here());
+    // When owned points are not contiguous, we must examine ghost field
+    const auto ghost = atlas::array::make_view<int, 1>(firstField.functionspace().ghost());
+    const atlas::idx_t iMax = firstField.shape(0);
+    if (pattern == ExecutionPattern::parallel) {
+      // Disable OpenMP parallelization for old Intel compilers to avoid compiler errors
+#ifndef __INTEL_COMPILER
+      #pragma omp parallel for
+#endif
+      for (atlas::idx_t i = 0; i < iMax; ++i) {
+        if (ghost(i) == 0) {
+          std::apply([&](auto&&... views) {
+            f(views.slice(i, atlas::array::Range::all())...);
+          }, viewsTuple);
+        }
+      }
+    } else if (pattern == ExecutionPattern::serial) {
+      for (atlas::idx_t i = 0; i < iMax; ++i) {
+        if (ghost(i) == 0) {
+          std::apply([&](auto&&... views) {
+            f(views.slice(i, atlas::array::Range::all())...);
+          }, viewsTuple);
+        }
+      }
+    } else {
+      throw eckit::BadParameter("Unknown execution pattern.", Here());
+    }
   } else {
     const bool include_halo = range == IndexRange::include_halo;
     const auto range_pair = details::getContiguousHorizontalIndexSpace(firstField, include_halo);
