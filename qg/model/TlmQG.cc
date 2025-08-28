@@ -24,14 +24,10 @@
 #include "model/IncrementQG.h"
 #include "model/ModelBias.h"
 #include "model/ModelBiasIncrement.h"
-#include "model/ModelQG.h"
 #include "model/QgFortran.h"
-#include "model/QgTraits.h"
 #include "model/StateQG.h"
 
 namespace qg {
-// -----------------------------------------------------------------------------
-static oops::interface::LinearModelMaker<QgTraits, TlmQG> makerQGTLM_("QgTLM");
 // -----------------------------------------------------------------------------
 TlmQG::TlmQG(const GeometryQG & resol, const eckit::Configuration & tlConf)
   : keyConfig_(0), tstep_(util::Duration(tlConf.getString("tstep"))), resol_(resol), traj_(),

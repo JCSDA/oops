@@ -13,16 +13,15 @@
 
 #include <ostream>
 #include <string>
+#include <vector>
 
 #include "eckit/config/Configuration.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/ModelBase.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#include "lorenz95/L95Traits.h"
 #include "lorenz95/Resolution.h"
 
 namespace lorenz95 {
@@ -33,10 +32,11 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 
-class ModelL95 : public oops::interface::ModelBase<L95Traits>,
+class ModelL95 : public util::Printable,
                  private util::ObjectCounter<ModelL95> {
  public:
   static const std::string classname() {return "lorenz95::ModelL95";}
+  static std::vector<std::string> names() {return {"L95"};}
 
   ModelL95(const Resolution &, const eckit::Configuration &);
   ~ModelL95();
@@ -52,7 +52,7 @@ class ModelL95 : public oops::interface::ModelBase<L95Traits>,
   const oops::Variables & variables() const {return vars_;}
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
   void tendencies(const FieldL95 &, const double &, FieldL95 &) const;
 
 // Data

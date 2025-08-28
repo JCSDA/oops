@@ -22,6 +22,7 @@
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
 #include "oops/base/StructuredGridPostProcessor.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -43,7 +44,9 @@ template <typename MODEL> class Forecast : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  explicit Forecast(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
+  explicit Forecast(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
+    instantiateModelFactory<MODEL>();
+  }
 // -----------------------------------------------------------------------------
   virtual ~Forecast() {}
 // -----------------------------------------------------------------------------

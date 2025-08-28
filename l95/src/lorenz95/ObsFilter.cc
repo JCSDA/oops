@@ -10,6 +10,12 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "oops/util/Logger.h"
+
+#include "lorenz95/GomL95.h"
+#include "lorenz95/ObsData1D.h"
+#include "lorenz95/ObsTable.h"
+#include "lorenz95/ObsVec1D.h"
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {

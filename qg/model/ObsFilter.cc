@@ -9,6 +9,12 @@
 
 #include "eckit/config/Configuration.h"
 
+#include "model/GomQG.h"
+#include "model/ObsDataQG.h"
+#include "model/ObsDiagsQG.h"
+#include "model/ObsSpaceQG.h"
+#include "model/ObsVecQG.h"
+
 // -----------------------------------------------------------------------------
 namespace qg {
 // -----------------------------------------------------------------------------

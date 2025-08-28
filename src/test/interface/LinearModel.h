@@ -40,6 +40,7 @@
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
 #include "oops/mpi/mpi.h"
@@ -392,6 +393,7 @@ class LinearModel : public oops::Test {
   // Then, continue with the base-class method.
   int execute(const eckit::Configuration & globalConf) const override {
     typedef LinearModelFixture<MODEL> Test_;
+    oops::instantiateModelFactory<MODEL>();
 
     TestEnvironment::getInstance().setup(globalConf);
 

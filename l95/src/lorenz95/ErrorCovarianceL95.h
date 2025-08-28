@@ -21,7 +21,6 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
-#include "L95TraitsFwd.h"
 #include "IdChangeVarTLADL95.h"
 
 // Forward declarations

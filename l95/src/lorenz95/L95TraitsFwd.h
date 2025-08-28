@@ -15,24 +15,6 @@
 
 namespace lorenz95 {
 
-class Resolution;
-class Iterator;
-
-class StateL95;
-class IncrementL95;
-class ErrorCovarianceL95;
-class InterpolatorL95;
-
-class IdChangeVariable;
-class IdChangeVarTLADL95;
-
-class ModelBias;
-class ModelBiasCorrection;
-class ModelBiasCovariance;
-class ModelData;
-
-class NormGradientL95;
-
 class ObsTable;
 class ObsVec1D;
 template <typename DATATYPE> class ObsData1D;
@@ -49,30 +31,6 @@ class ObsFilter;
 
 class GomL95;
 class LocsL95;
-
-struct L95Traits {
-  static std::string name() {return "Lorenz 95";}
-  static std::string nameCovar() {return "L95Error";}
-  static std::string nameCovar4D() {return "L95Error";}
-
-  typedef lorenz95::Resolution             Geometry;
-  typedef lorenz95::Iterator               GeometryIterator;
-
-  typedef lorenz95::StateL95               State;
-  typedef lorenz95::IncrementL95           Increment;
-  typedef lorenz95::ErrorCovarianceL95     Covariance;
-  typedef lorenz95::InterpolatorL95        LocalInterpolator;
-
-  typedef lorenz95::IdChangeVariable       VariableChange;
-  typedef lorenz95::IdChangeVarTLADL95     LinearVariableChange;
-
-  typedef lorenz95::NormGradientL95        NormGradient;
-
-  typedef lorenz95::ModelBias              ModelAuxControl;
-  typedef lorenz95::ModelBiasCorrection    ModelAuxIncrement;
-  typedef lorenz95::ModelBiasCovariance    ModelAuxCovariance;
-  typedef lorenz95::ModelData              ModelData;
-};
 
 struct L95ObsTraits {
   static std::string name() {return "Lorenz 95 Obs";}

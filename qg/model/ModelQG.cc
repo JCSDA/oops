@@ -25,8 +25,6 @@
 
 namespace qg {
 // -----------------------------------------------------------------------------
-static oops::interface::ModelMaker<QgTraits, ModelQG> makermodel_("QG");
-// -----------------------------------------------------------------------------
 ModelQG::ModelQG(const GeometryQG & resol, const eckit::Configuration & config)
   : keyConfig_(0), tstep_(util::Duration(config.getString("tstep"))),
     geom_(resol), vars_({"x"})

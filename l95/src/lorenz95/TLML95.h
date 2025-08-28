@@ -14,15 +14,12 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include <vector>
 
-#include <boost/noncopyable.hpp>
-
-#include "oops/interface/LinearModelBase.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#include "lorenz95/L95Traits.h"
 #include "lorenz95/ModelL95.h"
 
 // Forward declarations
@@ -36,33 +33,37 @@ namespace util {
 
 namespace lorenz95 {
   class FieldL95;
+  class ModelTrajectory;
+  class IncrementL95;
+  class ModelBiasCorrection;
 
 // -----------------------------------------------------------------------------
 /// Lorenz 95 linear model definition.
 
-class TLML95: public oops::interface::LinearModelBase<L95Traits>,
+class TLML95: public util::Printable,
               private util::ObjectCounter<TLML95> {
  public:
   static const std::string classname() {return "lorenz95::TLML95";}
+  static std::vector<std::string> names() {return {"L95TLM"};}
 
   TLML95(const Resolution &, const eckit::Configuration &);
   ~TLML95();
 
 /// Model trajectory computation
-  void setTrajectory(const StateL95 &, StateL95 &, const ModelBias &) override;
+  void setTrajectory(const StateL95 &, StateL95 &, const ModelBias &);
 
 /// Run TLM and its adjoint
-  void initializeTL(IncrementL95 &) const override;
-  void stepTL(IncrementL95 &, const ModelBiasCorrection &) const override;
-  void finalizeTL(IncrementL95 &) const override;
+  void initializeTL(IncrementL95 &) const;
+  void stepTL(IncrementL95 &, const ModelBiasCorrection &) const;
+  void finalizeTL(IncrementL95 &) const;
 
-  void initializeAD(IncrementL95 &) const override;
-  void stepAD(IncrementL95 &, ModelBiasCorrection &) const override;
-  void finalizeAD(IncrementL95 &) const override;
+  void initializeAD(IncrementL95 &) const;
+  void stepAD(IncrementL95 &, ModelBiasCorrection &) const;
+  void finalizeAD(IncrementL95 &) const;
 
 /// Other utilities
-  const util::Duration & timeResolution() const override {return tstep_;}
-  const util::Duration & stepTrajectory() const override {return steptraj_;}
+  const util::Duration & timeResolution() const {return tstep_;}
+  const util::Duration & stepTrajectory() const {return steptraj_;}
 
  private:
   const ModelTrajectory * getTrajectory(const util::DateTime &) const;

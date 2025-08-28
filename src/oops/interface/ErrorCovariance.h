@@ -40,8 +40,6 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-// Should factory be here and generic covariances wrtten at the MODEL::Increment level? YT
-
 /// Wrapper for model space error covariances.
 /*!
  *  This class provides the operations associated with the model space error

@@ -21,6 +21,7 @@
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State4D.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/generic/PseudoModelState4D.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/State.h"
@@ -41,6 +42,8 @@ template <typename MODEL> void testPseudoModelState4D() {
   typedef oops::State4D<MODEL>         State4D_;
   typedef oops::ModelBase<MODEL>       ModelBase_;
   typedef oops::PseudoModelState4D<MODEL> PseudoModelState4D_;
+
+  oops::instantiateModelFactory<MODEL>();
 
   // Setup geometry, model bias, and initial conditions
   const eckit::LocalConfiguration geometryconf(TestEnvironment::config(), "geometry");

@@ -21,6 +21,7 @@
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
+#include "oops/util/Serializable.h"
 #include "oops/util/Timer.h"
 
 namespace eckit {

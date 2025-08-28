@@ -27,6 +27,7 @@
 #include "oops/base/Model.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
@@ -65,6 +66,7 @@ template <typename MODEL> class ModelFixture : private boost::noncopyable {
   }
 
   ModelFixture<MODEL>() {
+    oops::instantiateModelFactory<MODEL>();
     test_.reset(new eckit::LocalConfiguration(TestEnvironment::config(), "model test"));
 
     const eckit::LocalConfiguration resolConfig(TestEnvironment::config(), "geometry");

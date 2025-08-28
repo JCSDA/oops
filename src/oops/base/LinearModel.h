@@ -17,10 +17,10 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Geometry.h"
+#include "oops/base/LinearModelBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
-#include "oops/generic/LinearModelBase.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"
@@ -38,9 +38,9 @@ namespace oops {
 /// \brief Abstract linear forecast model used by high level algorithms and applications.
 ///
 /// Note: to see methods that need to be implemented in a generic linear forecast model
-/// implementation, see LinearModelBase class in generic/LinearModelBase.h. To see methods that need
+/// implementation, see LinearModelBase class in base/LinearModelBase.h. To see methods that need
 /// to be implemented in a MODEL-specific linear forecast model implementation, see
-/// interface::LinearModelBase class in interface/LinearModelBase.h.
+/// interface::LinearModel class in interface/LinearModel.h.
 ///
 // -----------------------------------------------------------------------------
 

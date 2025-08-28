@@ -30,6 +30,7 @@
 #include "oops/base/StateInfo.h"
 #include "oops/base/StateWriter.h"
 #include "oops/base/StructuredGridPostProcessor.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ObsDataVector.h"
@@ -62,6 +63,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
  public:
 // -----------------------------------------------------------------------------
   explicit HofX4D(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
+    instantiateModelFactory<MODEL>();
     instantiateObsErrorFactory<OBS>();
   }
 // -----------------------------------------------------------------------------

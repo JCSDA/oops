@@ -14,17 +14,14 @@
 #include <map>
 #include <ostream>
 #include <string>
+#include <vector>
 
-#include <boost/noncopyable.hpp>
-
-#include "oops/interface/LinearModelBase.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
-#include "oops/qg/ModelQG.h"
-#include "oops/qg/QgFortran.h"
-#include "oops/qg/QgTraits.h"
+#include "model/ModelQG.h"
+#include "model/QgFortran.h"
 
 // Forward declarations
 namespace eckit {
@@ -32,37 +29,40 @@ namespace eckit {
 }
 
 namespace qg {
+  class IncrementQG;
+  class ModelBias;
+  class ModelBiasIncrement;
 // -----------------------------------------------------------------------------
 /// QG linear model definition.
 /*!
  *  QG linear model definition and configuration parameters.
  */
 
-class TlmQG: public oops::interface::LinearModelBase<QgTraits>,
+class TlmQG: public util::Printable,
              private util::ObjectCounter<TlmQG> {
  public:
   static const std::string classname() {return "qg::TlmQG";}
+  static std::vector<std::string> names() {return {"QgTLM"};}
 
   TlmQG(const GeometryQG &, const eckit::Configuration &);
   ~TlmQG();
 
   /// Prepare model integration
-  void initializeTL(IncrementQG &) const override;
-  void initializeAD(IncrementQG &) const override;
+  void initializeTL(IncrementQG &) const;
+  void initializeAD(IncrementQG &) const;
 
   /// Model integration
-  void stepTL(IncrementQG &, const ModelBiasIncrement &) const override;
-  void stepAD(IncrementQG &, ModelBiasIncrement &) const override;
-  void setTrajectory(const StateQG &, StateQG &, const ModelBias &) override;
+  void stepTL(IncrementQG &, const ModelBiasIncrement &) const;
+  void stepAD(IncrementQG &, ModelBiasIncrement &) const;
+  void setTrajectory(const StateQG &, StateQG &, const ModelBias &);
 
   /// Finish model integration
-  void finalizeTL(IncrementQG &) const override;
-  void finalizeAD(IncrementQG &) const override;
+  void finalizeTL(IncrementQG &) const;
+  void finalizeAD(IncrementQG &) const;
 
 /// Other utilities
-  const util::Duration & timeResolution() const override {return tstep_;}
-  const util::Duration & stepTrajectory() const override {return steptraj_;}
-  const GeometryQG & resolution() const {return resol_;}
+  const util::Duration & timeResolution() const {return tstep_;}
+  const util::Duration & stepTrajectory() const {return steptraj_;}
 
  private:
   void print(std::ostream &) const override;

@@ -21,6 +21,7 @@
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/interface/Geometry.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/ModelAuxControl.h"
@@ -50,6 +51,8 @@ template <typename MODEL> class AdjointForecast : public Application {
  public:
 // -----------------------------------------------------------------------------
   explicit AdjointForecast(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
+    oops::instantiateModelFactory<MODEL>();
+    oops::instantiateLinearModelFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~AdjointForecast() {}
@@ -61,7 +64,6 @@ template <typename MODEL> class AdjointForecast : public Application {
 
     // Create the linear model
     const Geometry_ geomAD(eckit::LocalConfiguration(tlConf, "geometry"), this->getComm());
-    oops::instantiateLinearModelFactory<MODEL>();
     oops::PostProcessor<State_> post;
 
     const eckit::LocalConfiguration fcConf(fullConfig, "forecast");

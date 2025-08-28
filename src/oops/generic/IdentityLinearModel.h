@@ -10,8 +10,8 @@
 #include <string>
 
 #include "oops/base/Geometry.h"
+#include "oops/base/LinearModelBase.h"
 #include "oops/base/State.h"
-#include "oops/generic/LinearModelBase.h"
 #include "oops/interface/Increment.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/interface/ModelAuxIncrement.h"

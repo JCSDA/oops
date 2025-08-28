@@ -5,8 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_GENERIC_MODELBASE_H_
-#define OOPS_GENERIC_MODELBASE_H_
+#pragma once
 
 #include <map>
 #include <memory>
@@ -21,14 +20,9 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/State.h"
 #include "oops/interface/ModelAuxControl.h"
-#include "oops/util/AssociativeContainers.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"
-
-namespace eckit {
-  class Configuration;
-}
 
 namespace oops {
 
@@ -36,7 +30,7 @@ namespace oops {
 
 /// \brief Base class for generic implementations of the forecasting models.
 /// Use this class as a base class for generic implementations,
-/// and interface::ModelBase as a base class for MODEL-specific implementations.
+/// and interface::Model as a wrapper for MODEL-specific implementations.
 
 template <typename MODEL>
 class ModelBase : public util::Printable,
@@ -76,11 +70,6 @@ class ModelFactory {
  public:
   /// \brief Create and return a new model.
   static ModelBase<MODEL> * create(const Geometry_ &, const eckit::Configuration &);
-
-  /// \brief Return the names of all models that can be created by one of the registered makers.
-  static std::vector<std::string> getMakerNames() {
-    return keys(getMakers());
-  }
 
   virtual ~ModelFactory() = default;
 
@@ -132,12 +121,11 @@ ModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
                                                const eckit::Configuration & config) {
   Log::trace() << "ModelFactory<MODEL>::create starting" << std::endl;
   const std::string id = config.getString("name");
-  typename std::map<std::string, ModelFactory<MODEL>*>::iterator
-    jerr = getMakers().find(id);
-  if (jerr == getMakers().end()) {
+  typename std::map<std::string, ModelFactory<MODEL>*>::iterator imodel = getMakers().find(id);
+  if (imodel == getMakers().end()) {
     throw std::runtime_error(id + " does not exist in the model factory");
   }
-  ModelBase<MODEL> * ptr = jerr->second->make(geom, config);
+  ModelBase<MODEL> * ptr = imodel->second->make(geom, config);
   Log::trace() << "ModelFactory<MODEL>::create done" << std::endl;
   return ptr;
 }
@@ -145,5 +133,3 @@ ModelBase<MODEL> * ModelFactory<MODEL>::create(const Geometry_ & geom,
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
-
-#endif  // OOPS_GENERIC_MODELBASE_H_

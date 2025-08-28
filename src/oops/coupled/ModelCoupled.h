@@ -18,9 +18,9 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/base/Model.h"
+#include "oops/base/ModelBase.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/ModelBase.h"
-#include "oops/interface/ModelBase.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Printable.h"
@@ -28,7 +28,6 @@
 #include "oops/coupled/AuxCoupledModel.h"
 #include "oops/coupled/GeometryCoupled.h"
 #include "oops/coupled/StateCoupled.h"
-#include "oops/coupled/TraitCoupled.h"
 
 namespace oops {
 
@@ -37,22 +36,24 @@ namespace oops {
 /// sequentially and are not exchanging any information currently. The two models
 /// have to use the same time resolution.
 template <typename MODEL1, typename MODEL2>
-class ModelCoupled : public interface::ModelBase<TraitCoupled<MODEL1, MODEL2>> {
+class ModelCoupled : public util::Printable {
   typedef AuxCoupledModel<MODEL1, MODEL2>         AuxCoupledModel_;
   typedef GeometryCoupled<MODEL1, MODEL2>         GeometryCoupled_;
   typedef StateCoupled<MODEL1, MODEL2>            StateCoupled_;
 
  public:
+  static std::vector<std::string> names() {return {"Coupled"};}
+
   ModelCoupled(const GeometryCoupled_ &, const eckit::Configuration &);
   ~ModelCoupled() = default;
 
   // Run the forecast
-  void initialize(StateCoupled_ &) const override;
-  void step(StateCoupled_ &, const AuxCoupledModel_ &) const override;
-  void finalize(StateCoupled_ &) const override;
+  void initialize(StateCoupled_ &) const;
+  void step(StateCoupled_ &, const AuxCoupledModel_ &) const;
+  void finalize(StateCoupled_ &) const;
 
   // Information and diagnostics
-  const util::Duration & timeResolution() const override {return tstep_;}
+  const util::Duration & timeResolution() const {return tstep_;}
   void checkTimes(const StateCoupled_ &) const;
 
  private:
@@ -74,6 +75,8 @@ ModelCoupled<MODEL1, MODEL2>::ModelCoupled(const GeometryCoupled_ & geom,
   : tstep_(), geom_(new GeometryCoupled_(geom)), model1_(), model2_(),
     parallel_(geom.isParallel()) {
   Log::trace() << "ModelCoupled::ModelCoupled starting" << std::endl;
+  instantiateModelFactory<MODEL1>();
+  instantiateModelFactory<MODEL2>();
   const eckit::LocalConfiguration conf1(config, MODEL1::name());
   const eckit::LocalConfiguration conf2(config, MODEL2::name());
   if (parallel_) {

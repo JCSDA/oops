@@ -104,7 +104,6 @@ list( APPEND l95_test_input
   testinput/letkf_noobs.yaml
   testinput/letkf_qc.yaml
   testinput/linearmodel.yaml
-  testinput/linearmodelfactory.yaml
   testinput/linobsoperator.yaml
   testinput/localization.yaml
   testinput/makeobs3d.yaml
@@ -909,15 +908,6 @@ ecbuild_add_test( TARGET test_l95_getkf_offline_hofx_one_member
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf_offline_hofx_one_member.yaml
                   TEST_DEPENDS test_l95_hofx3d_for_getkf test_l95_getkf )
-
-#####################################################################
-# tests of factory and parameters classes
-#####################################################################
-
-ecbuild_add_test( TARGET test_l95_linearmodelfactory
-                  SOURCES lorenz95/LinearModelFactory.cc
-                  ARGS "testinput/linearmodelfactory.yaml"
-                  LIBS lorenz95 )
 
 #####################################################################
 # tests with simplified L95

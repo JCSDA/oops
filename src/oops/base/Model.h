@@ -16,9 +16,9 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Geometry.h"
+#include "oops/base/ModelBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
-#include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -34,9 +34,9 @@ namespace oops {
 /// \brief Abstract nonlinear forecast model used by high level algorithms and applications.
 ///
 /// Note: to see methods that need to be implemented in a generic forecast model
-/// implementation, see ModelBase class in generic/ModelBase.h. To see methods that need
+/// implementation, see ModelBase class in base/ModelBase.h. To see methods that need
 /// to be implemented in a MODEL-specific forecast model implementation, see
-/// interface::ModelBase class in interface/ModelBase.h.
+/// interface::Model class in interface/Model.h.
 ///
 // -----------------------------------------------------------------------------
 

@@ -17,13 +17,12 @@
 #include <vector>
 
 #include "oops/base/Variables.h"
-#include "oops/interface/ModelBase.h"
 #include "oops/util/Duration.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 #include "oops/qg/GeometryQG.h"
 #include "oops/qg/QgFortran.h"
-#include "oops/qg/QgTraits.h"
 
 namespace eckit {
   class Configuration;
@@ -37,10 +36,11 @@ namespace qg {
 // -----------------------------------------------------------------------------
 /// QG nonlinear model definition.
 
-class ModelQG: public oops::interface::ModelBase<QgTraits>,
+class ModelQG: public util::Printable,
                private util::ObjectCounter<ModelQG> {
  public:
   static const std::string classname() {return "qg::ModelQG";}
+  static std::vector<std::string> names() {return {"QG"};}
 
   ModelQG(const GeometryQG &, const eckit::Configuration &);
   ~ModelQG();

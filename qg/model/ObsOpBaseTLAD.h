@@ -18,7 +18,6 @@
 #include "oops/base/Variables.h"
 #include "oops/qg/ObsDataQG.h"
 #include "oops/qg/ObsSpaceQG.h"
-#include "oops/qg/QgTraitsFwd.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Printable.h"

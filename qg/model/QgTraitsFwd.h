@@ -23,6 +23,9 @@ class IncrementQG;
 class ErrorCovarianceQG;
 class InterpolatorQG;
 
+class ModelQG;
+class TlmQG;
+
 class ChangeVarQG;
 class ChangeVarTLADQG;
 
@@ -56,6 +59,9 @@ struct QgTraits {
   typedef qg::GeometryQG            Geometry;
 
   typedef qg::GeometryQGIterator    GeometryIterator;
+
+  typedef qg::ModelQG               Model;
+  typedef qg::TlmQG                 LinearModel;
 
   typedef qg::ChangeVarQG           VariableChange;
   typedef qg::ChangeVarTLADQG       LinearVariableChange;

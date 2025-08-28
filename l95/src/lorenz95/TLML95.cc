@@ -20,7 +20,6 @@
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/IncrementL95.h"
-#include "lorenz95/L95Traits.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelL95.h"
@@ -30,8 +29,6 @@
 
 
 namespace lorenz95 {
-// -----------------------------------------------------------------------------
-static oops::interface::LinearModelMaker<L95Traits, TLML95> makerTLML95_("L95TLM");
 // -----------------------------------------------------------------------------
 TLML95::TLML95(const Resolution & resol, const eckit::Configuration & tlConf)
   : resol_(resol), tstep_(util::Duration(tlConf.getString("tstep"))),

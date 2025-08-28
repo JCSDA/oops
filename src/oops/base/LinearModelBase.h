@@ -5,8 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#ifndef OOPS_GENERIC_LINEARMODELBASE_H_
-#define OOPS_GENERIC_LINEARMODELBASE_H_
+#pragma once
 
 #include <map>
 #include <memory>
@@ -35,7 +34,7 @@ namespace oops {
 
 /// \brief Base class for generic implementations of the linearized forecasting models.
 /// Use this class as a base class for generic implementations,
-/// and interface::LinearModelBase as a base class for MODEL-specific implementations.
+/// and interface::LinearModel as a wrapper for MODEL-specific implementations.
 template <typename MODEL>
 class LinearModelBase : public util::Printable,
                         private boost::noncopyable {
@@ -87,12 +86,6 @@ class LinearModelFactory {
  public:
   /// \brief Create and return a new linear model.
   static LinearModelBase<MODEL> * create(const Geometry_ &, const eckit::Configuration &);
-
-  /// \brief Return the names of all linear models that can be created by one of the registered
-  /// makers.
-  static std::vector<std::string> getMakerNames() {
-    return keys(getMakers());
-  }
 
   virtual ~LinearModelFactory() = default;
 
@@ -156,5 +149,3 @@ LinearModelBase<MODEL> * LinearModelFactory<MODEL>::create(const Geometry_ & geo
 // -----------------------------------------------------------------------------
 
 }  // namespace oops
-
-#endif  // OOPS_GENERIC_LINEARMODELBASE_H_

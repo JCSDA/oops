@@ -15,6 +15,9 @@
 // contains only forward declarations of the QG implementations of oops interfaces.
 // This file includes headers in which all these implementations are defined.
 
+#include "model/ModelQG.h"
+#include "model/TlmQG.h"
+
 #include "oops/qg/ChangeVarQG.h"
 #include "oops/qg/ChangeVarTLADQG.h"
 #include "oops/qg/ErrorCovarianceQG.h"

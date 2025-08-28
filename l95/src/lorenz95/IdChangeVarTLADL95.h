@@ -12,7 +12,6 @@
 #include <string>
 
 #include "oops/util/Printable.h"
-#include "L95Traits.h"
 
 // Forward declarations
 namespace eckit {

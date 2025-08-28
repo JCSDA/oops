@@ -11,8 +11,6 @@
 #include <memory>
 #include <ostream>
 
-#include "lorenz95/L95Traits.h"
-
 #include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
 

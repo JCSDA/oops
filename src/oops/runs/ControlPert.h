@@ -28,6 +28,7 @@
 #include "oops/base/StructuredGridPostProcessor.h"
 #include "oops/base/StructuredGridWriter.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
+#include "oops/generic/instantiateModelFactory.h"
 #include "oops/generic/instantiateNormFactory.h"
 #include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/mpi/mpi.h"
@@ -51,6 +52,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     instantiateMinFactory<MODEL, OBS>();
     instantiateNormFactory<MODEL>();
     instantiateObsErrorFactory<OBS>();
+    instantiateModelFactory<MODEL>();
     instantiateLinearModelFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------

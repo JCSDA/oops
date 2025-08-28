@@ -132,8 +132,10 @@ oops/base/InflationBase.h
 oops/base/instantiateCovarFactory.h
 oops/base/instantiateInflationFactory.h
 oops/base/LinearModel.h
+oops/base/LinearModelBase.h
 oops/base/Localization.h
 oops/base/Model.h
+oops/base/ModelBase.h
 oops/base/ModelSpaceCovarianceBase.h
 oops/base/MultiplicativeInflation.h
 oops/base/NormBase.h
@@ -219,7 +221,6 @@ oops/coupled/TraitCoupled.h
 oops/coupled/UtilsCoupled.cc
 oops/coupled/UtilsCoupled.h
 oops/coupled/VariableChangeCoupled.h
-oops/coupled/instantiateCoupledFactory.h
 
 oops/generic/AnalyticInitBase.h
 oops/generic/AtlasInterpolator.cc
@@ -252,9 +253,7 @@ oops/generic/instantiateLinearModelFactory.h
 oops/generic/instantiateModelFactory.h
 oops/generic/instantiateNormFactory.h
 oops/generic/instantiateObsErrorFactory.h
-oops/generic/LinearModelBase.h
 oops/generic/LocalizationBase.h
-oops/generic/ModelBase.h
 oops/generic/NormScalar.h
 oops/generic/ObsErrorDiag.h
 oops/generic/ObsErrorBase.h
@@ -276,7 +275,7 @@ oops/interface/Geometry.h
 oops/interface/GeometryIterator.h
 oops/interface/GeoVaLs.h
 oops/interface/Increment.h
-oops/interface/LinearModelBase.h
+oops/interface/LinearModel.h
 oops/interface/LinearObsOperator.h
 oops/interface/LinearVariableChange.h
 oops/interface/LocalInterpolator.h
@@ -284,7 +283,7 @@ oops/interface/LocalizationBase.h
 oops/interface/ModelAuxControl.h
 oops/interface/ModelAuxCovariance.h
 oops/interface/ModelAuxIncrement.h
-oops/interface/ModelBase.h
+oops/interface/Model.h
 oops/interface/ModelData.h
 oops/interface/NormGradient.h
 oops/interface/ObsAuxControl.h

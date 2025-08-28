@@ -12,9 +12,9 @@
 #include <vector>
 
 #include "oops/base/Geometry.h"
+#include "oops/base/ModelBase.h"
 #include "oops/base/State.h"
 #include "oops/base/StateSet.h"
-#include "oops/generic/ModelBase.h"
 #include "oops/interface/ModelAuxControl.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
