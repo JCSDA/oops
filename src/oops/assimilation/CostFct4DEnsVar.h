@@ -72,7 +72,7 @@ template<typename MODEL, typename OBS> class CostFct4DEnsVar : public CostFuncti
 
   void runNL(CtrlVar_ &, PostProcessor<State_>&) const override;
 
-  void applyContDaUpdate(const eckit::Configuration & cdaConfig) override;
+  void applyContDaUpdate(CtrlVar_ &, const eckit::Configuration & cdaConfig) override;
 
  protected:
   const Geometry_ & geometry() const override {return *resol_;}
@@ -320,14 +320,18 @@ void CostFct4DEnsVar<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostFct4DEnsVar<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cdaConfig) {
+void CostFct4DEnsVar<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
+  const eckit::Configuration & cdaConfig) {
   Log::trace() << "CostFct4dEnsVar::applyContDaUpdate start" << std::endl;
   // update for jo, must update jo before other cost terms
   this->getNonConstJo()->applyContDaUpdate(cdaConfig);
   if (cdaConfig.has("time window")) {
     throw eckit::NotImplemented("oops::CostFct4dEnsVar: continuous DA, "
-                                "window shift not implemented for FGAT. ",
+                                "window shift not implemented for 4dEnsVar",
                                 Here());
+    util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
+    timeWindow_ = newWindow;
+    ASSERT(timeWindow_.length().toSeconds() == subWinLength_.toSeconds() * (int64_t)(nsubwin_ - 1));
   }
 
   // for VarBC, update for jb needs to be called even if window is not shifted

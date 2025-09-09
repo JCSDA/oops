@@ -73,7 +73,7 @@ template<typename MODEL, typename OBS> class CostFctWeak : public CostFunction<M
   void runTLM(CtrlInc_ &, const bool idModel = false) const;
   void runADJ(CtrlInc_ &, const bool idModel = false) const;
   void runNL(CtrlVar_ &, PostProcessor<State_> &) const override;
-  void applyContDaUpdate(const eckit::Configuration & cdaConfig) override;
+  void applyContDaUpdate(CtrlVar_ &, const eckit::Configuration & cdaConfig) override;
 
  protected:
   const Geometry_ & geometry() const override {return *resol_;}
@@ -367,7 +367,8 @@ void CostFctWeak<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostFctWeak<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cdaConfig) {
+void CostFctWeak<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
+  const eckit::Configuration & cdaConfig) {
   Log::trace() << "CostFctWeak::applyContDaUpdate start" << std::endl;
   // update for jo, must update jo before other cost terms
   this->getNonConstJo()->applyContDaUpdate(cdaConfig);
@@ -375,6 +376,9 @@ void CostFctWeak<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cda
     ASSERT(cdaConfig.getSubConfiguration("time window").has("subwindow"));
     throw eckit::NotImplemented("oops::CostFctWeak: continuous DA"
                     "window shift not implemented for weak constraint. ", Here());
+    util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
+    timeWindow_ = newWindow;
+    ASSERT(timeWindow_.length().toSeconds() == subWinLength_.toSeconds()*(int64_t)nsubwin_);
   }
 
   // for VarBC, update for jb needs to be called even if window is not shifted
@@ -392,6 +396,14 @@ void CostFctWeak<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cda
       jterms[jj]->applyContDaUpdate(cdaConfig);
     }
   }
+  // advance window if shifting
+  PostProcessor<State_> post;
+  ASSERT(xx.states().is_4d());
+  util::Duration subWinShift(timeWindow_.start()-xx.state(0).validTime());
+  for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
+    model_->forecast(xx.state(jsub), xx.modVar(), subWinShift, post);
+  }
+  this->getNonConstJb()->updateBG(xx);
   Log::trace() << "CostFctWeak::applyContDaUpdate done" << std::endl;
 }
 

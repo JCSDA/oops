@@ -62,7 +62,7 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
 
   void runNL(CtrlVar_ &, PostProcessor<State_>&) const override;
 
-  void applyContDaUpdate(const eckit::Configuration & cdaConfig) override;
+  void applyContDaUpdate(CtrlVar_ &, const eckit::Configuration & cdaConfig) override;
 
  protected:
   const Geometry_ & geometry() const override {return resol_;}
@@ -278,21 +278,43 @@ void CostFctFGAT<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostFctFGAT<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cdaConfig) {
+void CostFctFGAT<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
+  const eckit::Configuration & cdaConfig) {
   Log::trace() << "CostFctFGAT::applyContDaUpdate start" << std::endl;
   // update for jo, must update jo before other cost terms
   this->getNonConstJo()->applyContDaUpdate(cdaConfig);
   if (cdaConfig.has("time window")) {
-    throw eckit::NotImplemented("oops::CostFctFGAT: continuous DA, "
-                    "window shift not implemented for FGAT. ", Here());
+  //  throw eckit::NotImplemented("oops::CostFctFGAT: continuous DA, "
+  //                  "window shift not implemented for FGAT. ", Here());
+    util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
+    timeWindow_ = newWindow;
   }
 
   // for VarBC, update for jb needs to be called even if window is not shifted
   // note if timeWindow is not changed times remains unchanged
-  std::vector<util::DateTime> startTime(1);
-  startTime[0] = timeWindow_.start();
-  this->getNonConstJb()->applyContDaUpdate(cdaConfig, startTime);
+  if (fgat_) {
+    std::vector<util::DateTime> startTime(1);
+    startTime[0] = timeWindow_.start();
+    this->getNonConstJb()->applyContDaUpdate(cdaConfig, startTime);
+  } else {
+    std::vector<util::DateTime> midPoint(1);
+    midPoint[0] = timeWindow_.midpoint();
+    this->getNonConstJb()->applyContDaUpdate(cdaConfig, midPoint);
+  }
 
+  if (timeWindow_.start() != xx.state().validTime() ||
+                                        timeWindow_.midpoint() != xx.state().validTime()) {
+    PostProcessor<State_> post;
+    ASSERT(xx.states().is_3d());
+    if (fgat_) {
+      model_.forecast(xx.state(), xx.modVar(), timeWindow_.start() - xx.state().validTime() , post);
+    } else {
+      model_.forecast(xx.state(), xx.modVar(), timeWindow_.midpoint() -
+      xx.state().validTime() , post);
+    }
+    this->getNonConstJb()->updateBG(xx);
+    fgat_ = true;
+  }
   // update for Jc terms
   // currently no Jc terms work with FGAT
   Log::trace() << "CostFctFGAT::applyContDaUpdate done" << std::endl;

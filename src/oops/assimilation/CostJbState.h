@@ -84,6 +84,9 @@ template<typename MODEL, typename OBS> class CostJbState : private boost::noncop
 /// CDA update for jb state terms
   virtual void updateTimes(const std::vector<util::DateTime> &) = 0;
 
+/// CDA update for jb backgrounds
+  virtual void updateBgState(const CtrlVar_ & xb) = 0;
+
 /// Accessors to data for constructing a new increment.
   virtual const Geometry_ & geometry() const = 0;
   virtual const Variables & variables() const = 0;

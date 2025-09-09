@@ -67,7 +67,7 @@ class State : public util::Printable,
        const int, const int);
 
   /// Accessor
-  State_ & state() {if (fset_) {fset_->clear();} return *state_;}
+  State_ & state() {if (fset_) {fset_.reset();} return *state_;}
   /// const accessor
   const State_ & state() const {return *state_;}
 

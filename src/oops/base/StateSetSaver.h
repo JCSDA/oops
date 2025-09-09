@@ -113,6 +113,9 @@ void StateSetSaver<MODEL>::doProcessing(const State_ & xx) {
   }
   initialized_ = true;
 }
+
+// -----------------------------------------------------------------------------
+
 template <typename MODEL>
 void StateSetSaver<MODEL>::doFinalize(const State_ & xx) {
   Log::trace() << "StateSetSaver::doFinalize (empty) done" << std::endl;

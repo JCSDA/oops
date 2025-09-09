@@ -74,7 +74,7 @@ template<typename MODEL, typename OBS> class CostFct4DVar : public CostFunction<
 
   void runNL(CtrlVar_ &, PostProcessor<State_>&) const override;
 
-  void applyContDaUpdate(const eckit::Configuration & cdaConfig) override;
+  void applyContDaUpdate(CtrlVar_ &, const eckit::Configuration &) override;
 
  protected:
   const Geometry_ & geometry() const override {return resol_;}
@@ -233,7 +233,8 @@ void CostFct4DVar<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostFct4DVar<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cdaConfig) {
+void CostFct4DVar<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
+  const eckit::Configuration & cdaConfig) {
   Log::trace() << "CostFct4DVar::applyContDaUpdate start" << std::endl;
   // update for jo, must update jo before other cost terms
   this->getNonConstJo()->applyContDaUpdate(cdaConfig);
@@ -255,6 +256,13 @@ void CostFct4DVar<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cd
     for (size_t jj = 1; jj < jterms.size(); ++jj) {
       jterms[jj]->applyContDaUpdate(cdaConfig);
     }
+  }
+  // advance state shifting window forwad
+  if (timeWindow_.start() != xx.state().validTime()) {
+  PostProcessor<State_> post;
+  ASSERT(xx.states().is_3d());
+  model_.forecast(xx.state(), xx.modVar(), timeWindow_.start() - xx.state().validTime() , post);
+  this->getNonConstJb()->updateBG(xx);
   }
   Log::trace() << "CostFct4DVar::applyContDaUpdate done" << std::endl;
 }

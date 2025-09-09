@@ -58,17 +58,22 @@ int IncrementalAssimilation(ControlVariable<MODEL, OBS> & xx, CostFunction<MODEL
                 << jouter << ":" << std::endl << iterconfs[jouter] << std::endl;
     util::printRunStats("IncrementalAssimilation iteration " + std::to_string(jouter));
 
-//  Append any new obs if they are in the config
-    if (iterconfs[jouter].has("continuous DA")) {
-      J.applyContDaUpdate(iterconfs[jouter].getSubConfiguration("continuous DA"));
-    }
-
 //  Setup for the trajectory run
     PostProcessor<State_> post;
     if (iterconfs[jouter].has("prints")) {
       const eckit::LocalConfiguration prtConfig(iterconfs[jouter], "prints");
       post.enrollProcessor(new StateInfo<State_>("traj", prtConfig));
     }
+
+    //  Append any new obs if they are in the config
+    if (iterconfs[jouter].has("continuous da")) {
+      eckit::LocalConfiguration CdaConf(iterconfs[jouter], "continuous da");
+      util::DateTime xxTimePrev(xx.state(0).validTime());
+      J.applyContDaUpdate(xx, CdaConf);
+      if (xx.state(0).validTime() != xxTimePrev) {
+        minim.reset(MinFactory<MODEL, OBS>::create(minConf, J));
+      }
+     }
 
 //  Evaluate cost function and setup quadratic problem
     iterconfs[jouter].set("linearize", true);

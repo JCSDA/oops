@@ -103,12 +103,17 @@ template<typename MODEL, typename OBS> class CostJbTotal {
 /// Jb terms for ControlIncrement constructor.
   const Geometry_ & resolution() const;
   const JbState_ & jbState() const {return *jb_;}
+  JbState_ & getNonConstJbState() {return *jb_;}
   const JbModelAux_ & jbModBias() const {return jbModBias_;}
   const JbObsAux_ & jbObsBias() const {return *jbObsBias_;}
   const util::DateTime windowBegin() const {return timeWindow_.start();}
   const util::DateTime windowEnd()   const {return timeWindow_.end();}
+
 /// continuous DA update
   void applyContDaUpdate(const eckit::Configuration &, std::vector<util::DateTime> &);
+
+/// update background for continuous DA
+  void updateBG(const CtrlVar_ &);
 
  private:
   double evaluate(const CtrlInc_ &) const;
@@ -405,6 +410,14 @@ void CostJbTotal<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cda
   }
   jbObsBias_.reset(new JbObsAux_(odb_, conf_.getSubConfiguration("observations.observers")));
   Log::trace() << "CostJbTotal::applyContDaUpdate done" << std::endl;
+}
+
+template<typename MODEL, typename OBS>
+void CostJbTotal<MODEL, OBS>::updateBG(const CtrlVar_ & xx) {
+  Log::trace() << "CostJbTotal::updateBG start" << std::endl;
+  xb_.state() = xx.state();
+  jb_->updateBgState(xb_);
+  Log::trace() << "CostJbTotal::updateBG done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

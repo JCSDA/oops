@@ -87,6 +87,9 @@ template<typename MODEL, typename OBS> class CostJb4D : public CostJbState<MODEL
 /// Update time_ for continuous DA changing window
   void updateTimes(const std::vector<util::DateTime> &)  override;
 
+/// Update background for continuous DA changing window
+  void updateBgState(const CtrlVar_ & xb) override;
+
 /// Accessors to data for constructing a new increment.
   const Geometry_ & geometry() const override {return *resol_;}
   const Variables & variables() const override {return ctlvars_;}
@@ -169,6 +172,13 @@ void CostJb4D<MODEL, OBS>::randomize(CtrlInc_ & dx) const {
 template<typename MODEL, typename OBS>
 void CostJb4D<MODEL, OBS>::updateTimes(const std::vector<util::DateTime> & newtimes) {
   times_ = newtimes;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+void CostJb4D<MODEL, OBS>::updateBgState(const CtrlVar_ & xb) {
+  bg_.reset(new State_(xb.states().geometry(), xb.states()));
 }
 
 // -----------------------------------------------------------------------------

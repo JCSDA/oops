@@ -83,7 +83,7 @@ template<typename MODEL, typename OBS> class CostFunction : private boost::nonco
 /// Compute cost function gradient at first guess (without Jb).
   void computeGradientFG(CtrlInc_ &) const;
 
-  virtual void applyContDaUpdate(const eckit::Configuration & cdaConfig) = 0;
+  void virtual applyContDaUpdate(CtrlVar_ &, const eckit::Configuration & cdaConfig) = 0;
 
 /// Access \f$ J_b\f$
   const JbTotal_ & jb() const {return *jb_;}
@@ -133,6 +133,7 @@ class CostFactory {
 
  protected:
   explicit CostFactory(const std::string &);
+
 
  private:
   virtual CostFunction<MODEL, OBS> * make(const eckit::Configuration &,
@@ -271,7 +272,6 @@ double CostFunction<MODEL, OBS>::evaluate(CtrlVar_ & fguess,
 //  First-guess gradient of Jb needs to be reset to zero before minimisation
 //  when the Pert members of Control-Pert EDA are run
   if (innerConf.has("control pert")) this->getNonConstJb()->zeroGradientFG();
-
   Log::trace() << "CostFunction::evaluate done" << std::endl;
   return zzz;
 }
@@ -330,7 +330,6 @@ void CostFunction<MODEL, OBS>::resetLinearization() {
 }
 
 // ----------------------------------------------------------------------------
-
 }  // namespace oops
 
 #endif  // OOPS_ASSIMILATION_COSTFUNCTION_H_

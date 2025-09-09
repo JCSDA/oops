@@ -67,7 +67,7 @@ template<typename MODEL, typename OBS> class CostFct3DVar : public CostFunction<
 
   void runNL(CtrlVar_ &, PostProcessor<State_>&) const override;
 
-  void applyContDaUpdate(const eckit::Configuration & cdaConfig) override;
+  void applyContDaUpdate(CtrlVar_ & , const eckit::Configuration & cdaConfig) override;
 
  protected:
   const Geometry_ & geometry() const override {return resol_;}
@@ -259,13 +259,16 @@ void CostFct3DVar<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostFct3DVar<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cdaConfig) {
+void CostFct3DVar<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
+  const eckit::Configuration & cdaConfig) {
   Log::trace() << "CostFct3DVar::applyContDaUpdate start" << std::endl;
   // update for jo, must update jo before other cost terms
   this->getNonConstJo()->applyContDaUpdate(cdaConfig);
   if (cdaConfig.has("time window")) {
     throw eckit::NotImplemented("oops::CostFct3D: continuous DA"
                     "window shift not implemented for 3dVar. ", Here());
+    util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
+    timeWindow_ = newWindow;
   }
 
   // For VarBC, update for jb needs to be called even if window is not shifted,
@@ -273,7 +276,6 @@ void CostFct3DVar<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cd
   std::vector<util::DateTime> midPoint(1);
   midPoint[0] = timeWindow_.midpoint();
   this->getNonConstJb()->applyContDaUpdate(cdaConfig, midPoint);
-
   // update for constraint terms
   // currently no constraint terms work with 3dvar.
   Log::trace() << "CostFct3DVar::applyContDaUpdate done" << std::endl;
