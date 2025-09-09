@@ -1,0 +1,68 @@
+time window:
+  begin: 2010-01-01T21:00:00Z
+  length: PT6H
+
+geometry:
+  resol: 40
+
+# use 3D for middle of the window
+background:
+  members from template:
+    template:
+      date: &date 2010-01-02T00:00:00Z
+      filename: Data/forecast.ens.%mem%.2010-01-01T00:00:00Z.P1D.l95
+    pattern: %mem%
+    nmembers: 10
+
+driver:
+  update obs config with geometry info: false
+  save prior mean: true
+
+observations:
+  obs perturbations: true
+  observers:
+  - obs error:
+      covariance model: diagonal
+      obs perturbations amplitude: 1.0
+    obs localizations:
+    - localization method: Gaspari-Cohn
+      lengthscale: .1
+    obs space:
+      obsdatain:
+        obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
+      obsdataout:
+        obsfile: Data/getkf_perturbed_lo.2010-01-02T00:00:00Z.obt
+      # Note: the same seed must be used for all members for the zero-mean perturbations option to work
+      obs perturbations seed: 1
+    obs operator: {}
+
+local ensemble DA:
+  solver: Stochastic GETKF
+  use linear observer: true
+  vertical localization:
+    fraction of retained variance: .99
+    lengthscale: 10
+    lengthscale units: bogus
+  inflation:
+    rtps: 0.5
+    rtpp: 0.5
+    mult: 1.0
+  cross validation:
+    number of subensembles: 5
+
+output:
+  datadir: Data
+  date: *date
+  exp: getkf_perturbed.%{member}%
+  type: an
+
+output mean prior:
+  datadir: Data
+  date: *date
+  exp: getkf_perturbed.xbmean
+  type: an
+
+test:
+  reference filename: testoutput/getkf_perturbed_linearobserver_crossvalid.test
+  test output filename: testoutput/getkf_perturbed_linearobserver_crossvalid.out
+  float relative tolerance: 1.0e-3

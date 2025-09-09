@@ -10,9 +10,11 @@
 #define OOPS_ASSIMILATION_LETKFSOLVER_H_
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <cfloat>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
 #include "oops/assimilation/ETKFLinearAlgebra.h"
@@ -79,8 +81,42 @@ class DeterministicLETKF : public LocalEnsembleSolver<MODEL, OBS> {
   /// \param[in] invVarR  Inverse of observation error variances (nlocalobs)
 
   void computeWeights(const Eigen::VectorXd & omb,
+                      const Eigen::MatrixXf & Yb,
+                      const Eigen::VectorXd & invVarR);
+
+  /// Computes weights for ensemble update with local observations
+  /// for a given set of projection matrices
+  /// \param[in] omb                 Observation departures (nlocalobs)
+  /// \param[in] Yb                  Ensemble perturbations (nens, nlocalobs)
+  /// \param[in] YbRinvYbpI          Matrix equal to Y^T R^-1 Y + (nens-1)/infl I (nens, nens)
+  /// \param[in] YbRinv              Observation perturbations minus original ensemble hofx
+  ///                                perturbations multiplying inverse R (nens, nlocalobs)
+  /// \param[in] invVarR             Inverse of observation error variances (nlocalobs)
+  /// \param[in] excludedProjection  Projection matrix for the excluded
+  ///                                subensemble members for cross validation (nens, nhat)
+  /// \param[in] includedProjection  Projection matrix for the included
+  ///                                subensemble members for cross validation (nens, nens)
+  /// \param[in] computeMeanWeights  Boolean to compute mean weights matrix wa_
+  virtual void computeWeights(const Eigen::VectorXd & omb,
                               const Eigen::MatrixXf & Yb,
-                              const Eigen::VectorXd & invVarR);
+                              const Eigen::MatrixXd & YbRinvYbpI,
+                              const Eigen::MatrixXd & YbRinv,
+                              const Eigen::VectorXd & invVarR,
+                              const Eigen::SparseMatrix<double> & excludedProjection,
+                              const Eigen::SparseMatrix<double> & includedProjection,
+                              const bool computeMeanWeights);
+
+  /// Computes localised YbRinv and YbRinvYbpI
+  /// \param[in]  local_Yb_mat_f     Localised ensemble perturbations (nens, nlocalobs)
+  /// \param[in]  local_invVarR_vec  Localised inverse variance of the R matrix
+  ///                                (nlocalobs, nlocalobs)
+  /// \param[out] YbRinv             Observation perturbations minus original ensemble hofx
+  ///                                perturbations multiplying inverse R (nens, nlocalobs)
+  /// \param[out] YbRinvYbpI         Matrix equal to Y^T R^-1 Y + (nens-1)/infl I
+  ///                                (nens, nens)
+  const std::tuple<Eigen::MatrixXd, Eigen::MatrixXd>
+        computeYbRinvMatrices(const Eigen::MatrixXf & local_Yb_mat_f,
+                              const Eigen::VectorXd & local_invVarR_vec);
 
   /// Applies weights and adds posterior inflation
   virtual void applyWeights(const IncrementSet_ &,
@@ -114,6 +150,22 @@ DeterministicLETKF<MODEL, OBS>::DeterministicLETKF(ObsSpaces_ & obspaces,
   Wa_.resize(nens_, nens_);
   wa_.resize(nens_);
 
+  const eckit::LocalConfiguration localEnsConfig = config.getSubConfiguration("local ensemble DA");
+  this->doCrossValidation = localEnsConfig.has("cross validation");
+
+  if (this->doCrossValidation) {
+    Log::trace() << "DeterministicLETKF<MODEL, OBS>::constructSubensembleSplitter starting"
+                 << std::endl;
+    const eckit::LocalConfiguration crossValidationConfig = localEnsConfig.getSubConfiguration(
+                                                            "cross validation");
+    this->SubensembleSplitter_ = std::make_unique<oops::SubensembleSplitter>(this->nens_,
+                                                                            crossValidationConfig);
+    this->SubensembleSplitter_->split();
+    this->nsubens_ = crossValidationConfig.getUnsigned("number of subensembles");
+    Log::trace() << "DeterministicLETKF<MODEL, OBS>::constructSubensembleSplitter done"
+                 << std::endl;
+  }
+
   Log::trace() << "DeterministicLETKF<MODEL, OBS>::create done" << std::endl;
 }
 
@@ -127,7 +179,27 @@ void DeterministicLETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & l
                                                        const GeometryIterator_ & i,
                                                        IncrementSet_ & ana_pert) {
   const Eigen::MatrixXf local_Yb_mat_f = (this->Yb_)->packEigen(locvector);
-  this->computeWeights(local_omb_vec, local_Yb_mat_f, local_invVarR_vec);
+  if (this->doCrossValidation) {
+    this->Wa_.setZero();
+    const std::tuple<Eigen::MatrixXd, Eigen::MatrixXd>
+    ETKFCoreMatrices = this->computeYbRinvMatrices(local_Yb_mat_f, local_invVarR_vec);
+    const Eigen::MatrixXd & YbRinv = std::get<0>(ETKFCoreMatrices);
+    const Eigen::MatrixXd & YbRinvYbpI = std::get<1>(ETKFCoreMatrices);
+    const bool modulated = false;
+
+    for (size_t isubens = 0; isubens < (this->nsubens_); ++isubens) {
+      const std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>, std::vector<size_t>>
+      projectionMatrices = this->SubensembleSplitter_->getProjectionMatrices(isubens, modulated);
+      const Eigen::SparseMatrix<double> & excludedProjection = std::get<0>(projectionMatrices)
+                                                   .template cast<double>();
+      const Eigen::SparseMatrix<double> & includedProjection = std::get<1>(projectionMatrices)
+                                                   .template cast<double>();
+      this->computeWeights(local_omb_vec, local_Yb_mat_f, YbRinvYbpI, YbRinv, local_invVarR_vec,
+                           excludedProjection, includedProjection, (isubens == 0));
+    }
+  } else {
+    this->computeWeights(local_omb_vec, local_Yb_mat_f, local_invVarR_vec);
+  }
   this->applyWeights(bkg_pert, ana_pert, i);
 }
 
@@ -168,6 +240,48 @@ void DeterministicLETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   } else {
     oops::detLETKF_computeWeights(dy, Yb, invVarR, (nens_ - 1) / infl, wa_, Wa_);
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void DeterministicLETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
+                                                    const Eigen::MatrixXf & Yb,
+                                                    const Eigen::MatrixXd & YbRinvYbpI,
+                                                    const Eigen::MatrixXd & YbRinv,
+                                                    const Eigen::VectorXd & invVarR,
+                                                    const Eigen::SparseMatrix<double> &
+                                                    excludedProjection,
+                                                    const Eigen::SparseMatrix<double> &
+                                                    includedProjection,
+                                                    const bool computeMeanWeights ) {
+  // compute transformation matrix, save in Wa_, wa_
+  // uses C++ eigen interface
+  // implements LETKF from Hunt et al. 2007
+  util::Timer timer(classname(), "computeWeights");
+
+  const double infl = this->inflopt_.getDouble("mult", 1.0);
+
+  oops::detGETKF_computeWeights(dy, Yb, YbRinvYbpI, YbRinv, Yb, invVarR, infl,
+                                excludedProjection, includedProjection,
+                                computeMeanWeights, wa_, Wa_);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+const std::tuple<Eigen::MatrixXd, Eigen::MatrixXd>
+DeterministicLETKF<MODEL, OBS>::computeYbRinvMatrices(const Eigen::MatrixXf & local_Yb_mat_f,
+                                                      const Eigen::VectorXd & local_invVarR_vec) {
+  // Pre-calculate YbRinv and YbRinvYbpI
+  const double infl = this->inflopt_.getDouble("mult", 1.0);
+  const size_t nhat = this->nens_ - (this->nens_/this->nsubens_);
+  const double scale = (nhat - 1) / infl;
+
+  const Eigen::MatrixXd YbRinv = oops::ETKF_YbRinv(local_Yb_mat_f, local_invVarR_vec);
+  const Eigen::MatrixXd YbRinvYbpI = oops::ETKF_YbRinvYbpI(local_Yb_mat_f, YbRinv, scale);
+
+  return std::make_tuple(YbRinv, YbRinvYbpI);
 }
 
 // -----------------------------------------------------------------------------

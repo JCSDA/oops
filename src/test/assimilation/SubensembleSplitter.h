@@ -9,6 +9,7 @@
 #define TEST_ASSIMILATION_SUBENSEMBLESPLITTER_H_
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <algorithm>
 #include <string>
 #include <tuple>
@@ -57,11 +58,11 @@ void testKGO() {
 
     // Get the exclusion components
     const size_t excludedSubensemble = testConf.getUnsigned("excluded subensemble", 0);
-    std::tuple<Eigen::MatrixXf, std::vector<size_t>> exclusionComponents;
     const bool modulated = (neig != 1);
-    exclusionComponents = splitter.getExclusionTensors(excludedSubensemble, modulated);
-    const Eigen::MatrixXf & exclusionMat = std::get<0>(exclusionComponents);
-    const std::vector<size_t> & excludedMembers = std::get<1>(exclusionComponents);
+    std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>, std::vector<size_t>>
+    projectionMatrices = splitter.getProjectionMatrices(excludedSubensemble, modulated);
+    const Eigen::SparseMatrix<float> & excludedProjection = std::get<0>(projectionMatrices);
+    const std::vector<size_t> & excludedMembers = std::get<2>(projectionMatrices);
     for (size_t member : excludedMembers) {
       oops::Log::info() << "Member = " << member << " excluded" << "\n";
     }
@@ -73,14 +74,14 @@ void testKGO() {
     const std::vector<size_t> KGOMems = testConf.getUnsignedVector("excluded members");
     float sumOfElem = 0.0f;
     const float tol = 1e-10f;
-    const size_t nrows = exclusionMat.rows();
-    const size_t ncols = exclusionMat.cols();
+    const size_t nrows = excludedProjection.rows();
+    const size_t ncols = excludedProjection.cols();
     for (size_t col = 0; col < ncols; ++col) {
       const size_t locRow = KGOLocs[col];
-      EXPECT(oops::is_close(exclusionMat(locRow, col), 1.0f, tol));
+      EXPECT(oops::is_close(excludedProjection.coeff(locRow, col), 1.0f, tol));
 
       for (size_t row = 0; row < nrows; ++row) {
-        sumOfElem += exclusionMat(row, col);
+        sumOfElem += excludedProjection.coeff(row, col);
       }
     }
     EXPECT(oops::is_close(sumOfElem, static_cast<float>(nhat), tol));
@@ -121,7 +122,7 @@ void testErrorHandling() {
       oops::SubensembleSplitter splitter(nens, splitterConf);
       splitter.split();
       size_t excludedSubensemble = testConf.getUnsigned("excluded subensemble");
-      EXPECT_THROWS_MSG(splitter.getExclusionTensors(excludedSubensemble, false), msg.c_str());
+      EXPECT_THROWS_MSG(splitter.getProjectionMatrices(excludedSubensemble, false), msg.c_str());
     } else {
       const size_t neig = testConf.getUnsigned("number of eigenvalues", 1);
       EXPECT_THROWS_MSG(oops::SubensembleSplitter splitter(nens, neig, splitterConf),
@@ -136,7 +137,9 @@ void testApplyProjection() {
   std::vector<eckit::LocalConfiguration> testCases;
   conf.get("test cases", testCases);
   const std::vector<std::string> validCases = {"Unmodulated projection demo",
-                                               "Modulated projection demo"};
+                                               "Modulated projection demo",
+                                               "Unmodulated projection demo random",
+                                               "Modulated projection demo random"};
 
   const size_t nens = 3;
   for (const eckit::LocalConfiguration & testCase : testCases) {
@@ -154,46 +157,84 @@ void testApplyProjection() {
     const size_t nsubens = splitterConf.getUnsigned("number of subensembles");
     const size_t nanal = nens*neig;
     const size_t nhat = nanal - (nens/nsubens)*neig;
-    const Eigen::MatrixXf mat = Eigen::MatrixXf::Random(nanal, nanal);
+    const Eigen::MatrixXf mat1 = Eigen::MatrixXf::Random(nanal, nanal);
+    const Eigen::MatrixXf mat2 = Eigen::MatrixXf::Random(nens, nens);
 
     // Setup splitter and split
     oops::SubensembleSplitter splitter(nens, neig, splitterConf);
     splitter.split();
 
     // Get the exclusion components
-    const size_t excludedSubensemble = testConf.getUnsigned("excluded subensemble", 0);
-    std::tuple<Eigen::MatrixXf, std::vector<size_t>> exclusionComponents;
+    std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>, std::vector<size_t>>
+    projectionMatrices;
     const bool modulated = (neig != 1);
-    exclusionComponents = splitter.getExclusionTensors(excludedSubensemble, modulated);
-    const Eigen::MatrixXf & exclusionMat = std::get<0>(exclusionComponents);
-    const std::vector<size_t> & excludedMembers = std::get<1>(exclusionComponents);
+    Eigen::MatrixXf sumOfComplements = Eigen::MatrixXf::Zero(nens, nens);
+    const float tol = 1e-10;
+    for (size_t isubens = 0; isubens < nsubens; ++isubens) {
+      projectionMatrices = splitter.getProjectionMatrices(isubens, modulated);
+      const Eigen::SparseMatrix<float> & excludedProjection = std::get<0>(projectionMatrices);
+      const Eigen::SparseMatrix<float> & includedProjection = std::get<1>(projectionMatrices);
+      const std::vector<size_t> & excludedMembers = std::get<2>(projectionMatrices);
 
-    // Apply projection
-    const Eigen::MatrixXf res = mat*exclusionMat;
+      // Apply projection
+      // Project out the current subensemble members
+      const Eigen::MatrixXf res1 = mat1*excludedProjection;
+      // Apply update to current ensemble members
+      const Eigen::MatrixXf res2 = mat2*includedProjection;
 
-    // Test result
-    const size_t nrows = res.rows();
-    const size_t ncols = res.cols();
-    EXPECT(nrows == nanal);
-    EXPECT(ncols == nhat);
-    /* Our matrix result should consist of the columns
-       not excluded in original matrix */
-    size_t resCol = 0;
-    const float tol = 1e-10f;
-    for (size_t iens = 0; iens < nens; ++iens) {
-      const bool isExcluded = (std::find(excludedMembers.begin(),
-                                         excludedMembers.end(),
-                                         iens) != excludedMembers.end());
-      if (!isExcluded) {
-        for (size_t ieig = 0; ieig < neig; ++ieig) {
-          const size_t origCol = iens*neig + ieig;
-          for (size_t row = 0; row < nanal; ++row) {
-            EXPECT(oops::is_close(mat(row, origCol),
-                                  res(row, resCol),
-                                  tol));
+      // Test results
+      /* Our matrix result for res1 should consist of the columns
+         not excluded in original matrix */
+      const size_t nrows1 = res1.rows();
+      const size_t ncols1 = res1.cols();
+      EXPECT(nrows1 == nanal);
+      EXPECT(ncols1 == nhat);
+      size_t resCol = 0;
+      for (size_t iens = 0; iens < nens; ++iens) {
+        const bool isExcluded = (std::find(excludedMembers.begin(),
+                                           excludedMembers.end(),
+                                           iens) != excludedMembers.end());
+        if (!isExcluded) {
+          for (size_t ieig = 0; ieig < neig; ++ieig) {
+            const size_t origCol = iens*neig + ieig;
+            for (size_t row = 0; row < nanal; ++row) {
+              EXPECT(oops::is_close(mat1(row, origCol),
+                                    res1(row, resCol),
+                                    tol));
+            }
+            ++resCol;
           }
-          ++resCol;
         }
+      }
+
+      /* Our matrix result for res2 should consist of the columns
+         excluded in original matrix, and zeroes elsewhere */
+      const size_t nrows2 = res2.rows();
+      const size_t ncols2 = res2.cols();
+      EXPECT(nrows2 == nens);
+      EXPECT(ncols2 == nens);
+      for (size_t col = 0; col < nens; ++col) {
+        const bool isExcluded = (std::find(excludedMembers.begin(),
+                                           excludedMembers.end(),
+                                           col) != excludedMembers.end());
+        for (size_t row = 0; row < nens; ++row) {
+          const float kgo = (isExcluded) ? mat2(row, col) : 0.0;
+          EXPECT(oops::is_close(kgo,
+                                res2(row, col),
+                                tol));
+        }
+      }
+      sumOfComplements += includedProjection;
+    }
+
+    /* Our matrix result for the sum of complements should be identity,
+       in other words no subensemble contains a member present in the others */
+    const Eigen::MatrixXf sumKGO = Eigen::MatrixXf::Identity(nens, nens);
+    for (size_t row = 0; row < nens; ++row) {
+      for (size_t col = 0; col < nens; ++col) {
+        EXPECT(oops::is_close(sumKGO(row, col),
+                              sumOfComplements(row, col),
+                              tol));
       }
     }
   }

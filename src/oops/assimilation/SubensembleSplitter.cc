@@ -7,7 +7,6 @@
 
 #include "oops/assimilation/SubensembleSplitter.h"
 
-#include <Eigen/Dense>
 #include <algorithm>
 #include <random>
 
@@ -43,11 +42,11 @@ void SubensembleSplitter::ctorHelper(const eckit::LocalConfiguration & config) {
     seed_ = config.getUnsigned("random seed", 0);
 
     // Validation
-    if ((nsubens_ < 1) || (nsubens_ > nens_)) {
+    if ((nsubens_ < 2) || (nsubens_ > nens_)) {
       oops::Log::error() << "nsubens = " << nsubens_
-                         << " out of bounds, must be in the closed interval [1, "
+                         << " out of bounds, must be in the closed interval [2, "
                          << nens_ << "]\n";
-      throw eckit::BadParameter("nsubens out of bounds, must be in the closed interval [1, nens]");
+      throw eckit::BadParameter("nsubens out of bounds, must be in the closed interval [2, nens]");
     }
     if (nens_ % nsubens_ != 0) {
       oops::Log::error() << "nens = " << nens_
@@ -99,8 +98,8 @@ void SubensembleSplitter::contiguousPartition(const std::vector<size_t> & indice
 
 // -----------------------------------------------------------------------------
 
-const std::tuple<Eigen::MatrixXf, std::vector<size_t>>
-      SubensembleSplitter::getExclusionTensors(const size_t xclsub, const bool modulated) {
+const std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>, std::vector<size_t>>
+      SubensembleSplitter::getProjectionMatrices(const size_t xclsub, const bool modulated) {
   // Validating excluded subensemble
   if ((xclsub < 0) || (xclsub >= nsubens_)) {
     oops::Log::error() << "Excluded subensemble " << xclsub
@@ -119,25 +118,31 @@ const std::tuple<Eigen::MatrixXf, std::vector<size_t>>
   }
   const size_t nmat = nens_*neig;
   const size_t nhat = nmat - subsize_*neig;
-  Eigen::MatrixXf proj = Eigen::MatrixXf::Zero(nmat, nhat);
-  std::vector<size_t> excluded;
+  Eigen::SparseMatrix<float> excludedProjection(nmat, nhat);
+  Eigen::SparseMatrix<float> includedProjection(nens_, nens_);
+  std::vector<size_t> excludedMembers;
 
   // Building projection matrix
+  std::vector<Eigen::Triplet<float>> coeffsExP;
+  std::vector<Eigen::Triplet<float>> coeffsInP;
   size_t col = 0;
   for (size_t iens = 0; iens < nens_; ++iens) {
     const bool isExcluded = (subens_[iens] == xclsub);
     if (!isExcluded) {
       for (size_t ieig = 0; ieig < neig; ++ieig) {
           const size_t row = iens*neig + ieig;
-          proj(row, col) = 1.0f;
+          coeffsExP.emplace_back(Eigen::Triplet<float>(row, col, 1.0f));
           ++col;
       }
     } else {
-        excluded.emplace_back(iens);
+      coeffsInP.emplace_back(Eigen::Triplet<float>(iens, iens, 1.0f));
+      excludedMembers.emplace_back(iens);
     }
   }
-  excluded.shrink_to_fit();
-  return std::make_tuple(proj, excluded);
+  excludedProjection.setFromTriplets(coeffsExP.begin(), coeffsExP.end());
+  includedProjection.setFromTriplets(coeffsInP.begin(), coeffsInP.end());
+  excludedMembers.shrink_to_fit();
+  return std::make_tuple(excludedProjection, includedProjection, excludedMembers);
 }
 
 // -----------------------------------------------------------------------------

@@ -92,6 +92,61 @@ namespace oops {
     return -scaledCCT * YbRinvYbOrig;
   }
 
+  Eigen::MatrixXd GETKF_pertWeights(const Eigen::MatrixXd & YbRinvYbpI,
+                                    const Eigen::MatrixXf & Yb,
+                                    const Eigen::MatrixXf & YbOrig,
+                                    const Eigen::VectorXd & invVarR,
+                                    const Eigen::SparseMatrix<double> & excludedProjection,
+                                    const Eigen::SparseMatrix<double> & includedProjection,
+                                    const float infl,
+                                    std::vector<std::chrono::time_point
+                                    <std::chrono::system_clock>> & timings) {
+    const auto tE0 = std::chrono::system_clock::now();
+
+    // Projecting the excluded members out of the A matrix
+    const Eigen::MatrixXd YbRinvYbpIproj = excludedProjection.transpose()
+                                           * YbRinvYbpI * excludedProjection;
+
+    const auto tE1 = std::chrono::system_clock::now();
+
+    // Eigenvalues and eigenvectors of the projected A matrix
+    const auto[eival, eivec] = oops::Eigendecomposition(YbRinvYbpIproj);
+
+    const auto tE2 = std::chrono::system_clock::now();
+
+    // Normalisation
+    const int nhat = excludedProjection.cols();
+    const float norm = 1.0 / (nhat - 1.0);
+
+    // Identity
+    const Eigen::VectorXd I = Eigen::VectorXd::Constant(nhat, 1.0);
+
+    // Account for division by zero than occurs when an eigenvalue
+    // is exactly equal to 1 / (infl * norm).
+    const Eigen::VectorXd eivalmI = (eival - I / (infl * norm)).cwiseAbs();
+    const Eigen::VectorXd epsilon = Eigen::VectorXd::Constant(nhat, 1.0e-6);
+    const Eigen::VectorXd eivalmIsafe =
+      (eivalmI.array() < epsilon.array()).select(epsilon, eivalmI);
+
+    // (I - Gamma^{-1/2} / (nens - 1)) * (Gamma - (nens - 1) I / rho)
+    const Eigen::VectorXd diag = (I - (norm * eival).cwiseInverse().cwiseAbs().cwiseSqrt()).
+      cwiseProduct(eivalmIsafe.cwiseInverse());
+
+    // C ((I - Gamma^{-1/2} / (nens - 1)) * (Gamma - (nens - 1) I / rho)) C^T
+    const Eigen::MatrixXd scaledCCT = eivec * diag.asDiagonal() * eivec.transpose();
+
+    // Yb R^-1
+    const Eigen::MatrixXd YbRinv = oops::ETKF_YbRinv(Yb, invVarR);
+
+    // Yb R^-1 YbOrig^T
+    const Eigen::MatrixXd YbRinvYbOrig = YbRinv * YbOrig.cast<double>().transpose();
+
+    timings = {tE0, tE1, tE2};
+
+    return -excludedProjection * scaledCCT * excludedProjection.transpose()
+            * YbRinvYbOrig * includedProjection;
+  }
+
   std::vector<std::chrono::time_point<std::chrono::system_clock>>
   detLETKF_computeWeights(const Eigen::VectorXd & dy,
                           const Eigen::MatrixXf & Yb,
@@ -180,6 +235,52 @@ namespace oops {
     return {tE0, tE1, tE2, tE3, tE4, tE5, tE6};
   }
 
+  std::vector<std::chrono::time_point<std::chrono::system_clock>>
+  detGETKF_computeWeights(const Eigen::VectorXd & dy,
+                          const Eigen::MatrixXf & Yb,
+                          const Eigen::MatrixXd & YbRinvYbpI,
+                          const Eigen::MatrixXd & YbRinv,
+                          const Eigen::MatrixXf & YbOrig,
+                          const Eigen::VectorXd & invVarR,
+                          const double infl,
+                          const Eigen::SparseMatrix<double> & excludedProjection,
+                          const Eigen::SparseMatrix<double> & includedProjection,
+                          const bool computeMeanWeights,
+                          Eigen::VectorXd & wa,
+                          Eigen::MatrixXd & Wa) {
+    const auto tE0 = std::chrono::system_clock::now();
+
+    if (computeMeanWeights) {
+      // Eigenvalues and eigenvectors of the A matrix
+      const auto[eival, eivec] = oops::Eigendecomposition(YbRinvYbpI);
+
+      // Pa = [Yb R^-1 Yb^T + (nhat - 1)/infl I]^-1
+      const Eigen::MatrixXd Pa = oops::ETKF_Pa(eival, eivec);
+
+      // wa = Pa Yb R^-1 dy
+      wa = oops::ETKF_stateWeights<Eigen::VectorXd>(Pa, YbRinv, dy);
+    }
+
+    // Wa = eivec ((I - eival^{-1/2} / (nens - 1)) * (eival - (nens - 1) I / rho)) eivec^T
+    //      * Yb R^-1 YbOrig^T
+    std::vector<std::chrono::time_point<std::chrono::system_clock>> timings;
+    Wa += oops::GETKF_pertWeights(YbRinvYbpI,
+                                  Yb, YbOrig,
+                                  invVarR,
+                                  excludedProjection, includedProjection,
+                                  infl,
+                                  timings);
+
+    const auto tE4 = std::chrono::system_clock::now();
+
+    // Unpacking timings
+    const auto tE1 = timings[0];
+    const auto tE2 = timings[1];
+    const auto tE3 = timings[2];
+
+    return {tE0, tE1, tE2, tE3, tE4};
+  }
+
   void stoETKF_computeWeights(const Eigen::VectorXd & dy,
                               const Eigen::MatrixXf & Yb,
                               const Eigen::MatrixXf & YbOrig,
@@ -206,6 +307,32 @@ namespace oops {
     Wa = oops::ETKF_stateWeights<Eigen::MatrixXd>(Pa,
                                                   YbRinv,
                                                   YbOrig.cast<double>().transpose().colwise() + dy);
+  }
+
+  void stoETKF_computeWeights(const Eigen::VectorXd & dy,
+                              const Eigen::MatrixXd & YbRinvYbpI,
+                              const Eigen::MatrixXd & YbRinv,
+                              const Eigen::MatrixXf & YbOrig,
+                              const Eigen::SparseMatrix<double> & excludedProjection,
+                              const Eigen::SparseMatrix<double> & includedProjection,
+                              Eigen::MatrixXd & Wa) {
+    // Projecting the excluded members out of matrix YbRinvYbpI
+    const Eigen::MatrixXd YbRinvYbpIproj = excludedProjection.transpose()
+                                           * YbRinvYbpI * excludedProjection;
+
+    // Eigenvalues and eigenvectors of the above matrix.
+    const auto[eival, eivec] = oops::Eigendecomposition(YbRinvYbpIproj);
+
+    // Pa  = [ Yb^T R^-1 Yb + (nens-1)/infl I ] ^-1
+    const Eigen::MatrixXd Pa = oops::ETKF_Pa(eival, eivec);
+
+    // Wa = Pa Yb^T R^-1 (dyPert)
+    // dyPert = (y_mean + y_pert) - (yb_mean + yb_pert)
+    Wa += oops::ETKF_stateWeights<Eigen::MatrixXd>(excludedProjection*Pa
+                                                   *excludedProjection.transpose(),
+                                                   YbRinv,
+                                                   (YbOrig.cast<double>().transpose().colwise()
+                                                   + dy)*includedProjection);
   }
 
   std::tuple<Eigen::MatrixXd, Eigen::VectorXd> ETKF_ensembleIncrement(const Eigen::MatrixXd & Xb,

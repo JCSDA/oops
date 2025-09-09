@@ -10,9 +10,11 @@
 #define OOPS_ASSIMILATION_LETKFSOLVERPERT_H_
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <cfloat>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <vector>
 
 namespace oops {
@@ -62,6 +64,38 @@ class StochasticLETKF : public DeterministicLETKF<MODEL, OBS> {
                       const Eigen::MatrixXf & OmbPert,
                       const Eigen::MatrixXf & Yb,
                       const Eigen::VectorXd & invVarR);
+
+
+  /// Computes weights for ensemble update with local observations for a given projection matrix
+  /// \param[in] omb                 Observation minus ensemble hofx mean (nlocalobs)
+  /// \param[in] OmbPert             Observation perturbations minus ensemble hofx perturbations
+  ///                                (nens, nlocalobs)
+  /// \param[in] YbRinvYbpI          Matrix equal to Y^T R^-1 Y + (nens-1)/infl I (nens, nens)
+  /// \param[in] YbRinv              Observation perturbations minus original ensemble hofx
+  ///                                perturbations multiplying inverse R (nens, nlocalobs)
+  /// \param[in] excludedProjection  Projection matrix for the excluded
+  ///                                subensemble members for cross validation (nens, nhat)
+  /// \param[in] includedProjection  Projection matrix for the included
+  ///                                subensemble members for cross validation (nens, nens)
+  virtual void computeWeights(const Eigen::VectorXd & omb,
+                              const Eigen::MatrixXf & OmbPert,
+                              const Eigen::MatrixXd & YbRinvYbpI,
+                              const Eigen::MatrixXd & YbRinv,
+                              const Eigen::SparseMatrix<double> & excludedProjection,
+                              const Eigen::SparseMatrix<double> & includedProjection);
+
+  /// Computes localised YbRinv and YbRinvYbpI
+  /// \param[in]  locvector          Departures vector used for localisation
+  /// \param[in]  local_invVarR_vec  Localised inverse variance of the R matrix
+  ///                                (nlocalobs, nlocalobs)
+  /// \param[out] YbRinv             Observation perturbations minus original ensemble hofx
+  ///                                perturbations multiplying inverse R (nens, nlocalobs)
+  /// \param[out] YbRinvYbpI         Matrix equal to Y^T R^-1 Y + (nens-1)/infl I
+  ///                                (nens, nens)
+  const std::tuple<Eigen::MatrixXd, Eigen::MatrixXd> computeYbRinvMatrices(const Departures_ &
+                                                                           locvector,
+                                                                           const Eigen::VectorXd &
+                                                                           local_invVarR_vec);
 
   /// Applies weights and adds posterior inflation
   void applyWeights(const IncrementSet_ &, IncrementSet_ &,
@@ -142,8 +176,28 @@ void StochasticLETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & loca
                                                     const GeometryIterator_ & i,
                                                     IncrementSet_ & ana_pert) {
   const Eigen::MatrixXf local_OmbPert_mat_f = OmbPertDepEns_.packEigen(locvector);
-  const Eigen::MatrixXf local_Yb_mat_f = (this->Yb_)->packEigen(locvector);
-  this->computeWeights(local_omb_vec, local_OmbPert_mat_f, local_Yb_mat_f, local_invVarR_vec);
+  if (this->doCrossValidation) {
+    this->Wa_.setZero();
+    const std::tuple<Eigen::MatrixXd, Eigen::MatrixXd>
+    ETKFCoreMatrices = this->computeYbRinvMatrices(locvector, local_invVarR_vec);
+    const Eigen::MatrixXd & YbRinv = std::get<0>(ETKFCoreMatrices);
+    const Eigen::MatrixXd & YbRinvYbpI = std::get<1>(ETKFCoreMatrices);
+    const bool modulated = false;
+
+    for (size_t isubens = 0; isubens < (this->nsubens_); ++isubens) {
+      const std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>, std::vector<size_t>>
+      projectionMatrices = this->SubensembleSplitter_->getProjectionMatrices(isubens, modulated);
+      const Eigen::SparseMatrix<double> & excludedProjection = std::get<0>(projectionMatrices)
+                                                               .template cast<double>();
+      const Eigen::SparseMatrix<double> & includedProjection = std::get<1>(projectionMatrices)
+                                                               .template cast<double>();
+      this->computeWeights(local_omb_vec, local_OmbPert_mat_f, YbRinvYbpI, YbRinv,
+                           excludedProjection, includedProjection);
+    }
+  } else {
+    const Eigen::MatrixXf local_Yb_mat_f = (this->Yb_)->packEigen(locvector);
+    this->computeWeights(local_omb_vec, local_OmbPert_mat_f, local_Yb_mat_f, local_invVarR_vec);
+  }
   this->applyWeights(bkg_pert, ana_pert, i);
 }
 
@@ -160,6 +214,42 @@ void StochasticLETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   const double infl = this->inflopt_.getDouble("mult", 1.0);
 
   oops::stoETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, this->Wa_);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void StochasticLETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
+                                                 const Eigen::MatrixXf & YbOrig,
+                                                 const Eigen::MatrixXd & YbRinvYbpI,
+                                                 const Eigen::MatrixXd & YbRinv,
+                                                 const Eigen::SparseMatrix<double> &
+                                                 excludedProjection,
+                                                 const Eigen::SparseMatrix<double> &
+                                                 includedProjection) {
+  // compute transformation matrix, save in Wa_
+  // implements perturbed observation version of LETKF from Hunt et al. 2007
+  util::Timer timer(classname(), "computeWeights");
+
+  oops::stoETKF_computeWeights(dy, YbRinvYbpI, YbRinv, YbOrig,
+                               excludedProjection, includedProjection, this->Wa_);
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+const std::tuple<Eigen::MatrixXd, Eigen::MatrixXd>
+StochasticLETKF<MODEL, OBS>::computeYbRinvMatrices(const Departures_ & locvector,
+                                                   const Eigen::VectorXd & local_invVarR_vec) {
+  // Pre-calculate YbRinv and YbRinvYbpI
+  const Eigen::MatrixXf local_Yb_mat_f = (this->Yb_)->packEigen(locvector);
+  const double infl = this->inflopt_.getDouble("mult", 1.0);
+  const double scale = (this->nens_ - 1) / infl;
+
+  const Eigen::MatrixXd YbRinv = oops::ETKF_YbRinv(local_Yb_mat_f, local_invVarR_vec);
+  const Eigen::MatrixXd YbRinvYbpI = oops::ETKF_YbRinvYbpI(local_Yb_mat_f, YbRinv, scale);
+
+  return std::make_tuple(YbRinv, YbRinvYbpI);
 }
 
 // -----------------------------------------------------------------------------

@@ -8,7 +8,7 @@
 #ifndef OOPS_ASSIMILATION_SUBENSEMBLESPLITTER_H_
 #define OOPS_ASSIMILATION_SUBENSEMBLESPLITTER_H_
 
-#include <Eigen/Dense>
+#include <Eigen/Sparse>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -45,12 +45,16 @@ class SubensembleSplitter {
   /// \brief Splitting method based on configuration option
   void split();
 
-  /// \brief Gets projection matrix and excluded ensembles for a given excluded subensemble
-  /// \param[in]  xclsub     Subensemble to exclude
-  /// \param[in]  modulated  Boolean to trigger whether or not
-  ///                        to get projection matrix for modulated ensemble
-  const std::tuple<Eigen::MatrixXf, std::vector<size_t>> getExclusionTensors(const size_t,
-                                                                             const bool);
+  /// \brief Gets projection matrices and excluded members for a given excluded subensemble
+  /// \param[in]   xclsub              Subensemble to exclude
+  /// \param[in]   modulated           Boolean to trigger whether or not to get the
+  ///                                  excluded projection matrix for modulated ensemble
+  /// \param[out]  excludedProjection  Projection matrix that projects out the excluded members
+  /// \param[out]  includedProjection  Projection matrix that projects out the included members
+  /// \param[out]  excludedMembers     Vector of excluded members, used for testing
+  const std::tuple<Eigen::SparseMatrix<float>,
+                   Eigen::SparseMatrix<float>,
+                   std::vector<size_t>> getProjectionMatrices(const size_t, const bool);
 
  private:
   // Methods

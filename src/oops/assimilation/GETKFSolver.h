@@ -147,9 +147,27 @@ DeterministicGETKF<MODEL, OBS>::DeterministicGETKF(ObsSpaces_ & obspaces,
     incvars), neig_(vertloc_.neig()), nanal_(neig_*nens_),
     fortranETKF_(config.getBool("local ensemble DA.fortran ETKF", true))
 {
+  Log::trace() << "DeterministicGETKF<MODEL, OBS>::create starting" << std::endl;
   // pre-allocate transformation matrices
   Wa_.resize(nanal_, nens);
   wa_.resize(nanal_);
+
+  const eckit::LocalConfiguration localEnsConfig = config.getSubConfiguration("local ensemble DA");
+  this->doCrossValidation = localEnsConfig.has("cross validation");
+
+  if (this->doCrossValidation) {
+    Log::trace() << "DeterministicGETKF<MODEL, OBS>::constructSubensembleSplitter starting"
+                 << std::endl;
+    const eckit::LocalConfiguration crossValidationConfig = localEnsConfig.getSubConfiguration(
+                                                                           "cross validation");
+    this->SubensembleSplitter_ = std::make_unique<oops::SubensembleSplitter>(this->nens_,
+                                 this->neig_, crossValidationConfig);
+    this->SubensembleSplitter_->split();
+    this->nsubens_ = crossValidationConfig.getUnsigned("number of subensembles");
+    Log::trace() << "DeterministicGETKF<MODEL, OBS>::constructSubensembleSplitter done"
+                 << std::endl;
+  }
+  Log::trace() << "DeterministicGETKF<MODEL, OBS>::create done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

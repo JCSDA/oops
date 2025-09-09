@@ -65,14 +65,14 @@ test cases:
 - test case:
     name: Too few subensembles
     subensemble splitter:
-      number of subensembles: 0
-    expectExceptionWithMessage: nsubens out of bounds, must be in the closed interval [1, nens]
+      number of subensembles: 1
+    expectExceptionWithMessage: nsubens out of bounds, must be in the closed interval [2, nens]
 
 - test case:
     name: Too many subensembles
     subensemble splitter:
       number of subensembles: 7
-    expectExceptionWithMessage: nsubens out of bounds, must be in the closed interval [1, nens]
+    expectExceptionWithMessage: nsubens out of bounds, must be in the closed interval [2, nens]
 
 - test case:
     name: Does not divide
@@ -105,3 +105,16 @@ test cases:
     number of eigenvalues: 2
     subensemble splitter:
       number of subensembles: 3
+
+- test case:
+    name: Unmodulated projection demo random
+    subensemble splitter:
+      number of subensembles: 3
+      splitting method: "Random"
+
+- test case:
+    name: Modulated projection demo random
+    number of eigenvalues: 2
+    subensemble splitter:
+      number of subensembles: 3
+      splitting method: "Random"

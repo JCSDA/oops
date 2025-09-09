@@ -10,6 +10,7 @@
 #define OOPS_ASSIMILATION_ETKFLINEARALGEBRA_H_
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
 
 #include <tuple>
 #include <vector>
@@ -104,6 +105,32 @@ namespace oops {
                                     const Eigen::VectorXd &,
                                     const float);
 
+  /// \brief Compute GETKF weights applied to a model perturbation field
+  ///        for a given set of projection matrices.
+  /// \details
+  /// Input:
+  ///   YbRinvYbpI: Matrix equal to Yb * R^{-1} * Yb^T + (nens - 1) * I / infl.
+  ///   Yb: Modulated ensemble perturbations in observation space.
+  ///   YbOrig: Original ensemble perturbations in observation space.
+  ///   invVarR: Inverse observation error covariance matrix.
+  ///   excludedProjection: Projection matrix for the excluded
+  ///                       subensemble members for cross validation.
+  ///   includedProjection: Projection matrix for the included
+  ///                       subensemble members for cross validation.
+  ///   infl: a user-defined inflation parameter.
+  /// Output:
+  ///   GETKF weights (see code for formula).
+  ///   timings: Vector of timings of internal routines.
+  Eigen::MatrixXd GETKF_pertWeights(const Eigen::MatrixXd &,
+                                    const Eigen::MatrixXf &,
+                                    const Eigen::MatrixXf &,
+                                    const Eigen::VectorXd &,
+                                    const Eigen::SparseMatrix<double> &,
+                                    const Eigen::SparseMatrix<double> &,
+                                    const float,
+                                    std::vector<std::chrono::time_point
+                                    <std::chrono::system_clock>> &);
+
   /// \brief Compute state and perturbation weights for determinstic LETKF.
   /// \details
   /// Input:
@@ -145,6 +172,40 @@ namespace oops {
                           Eigen::VectorXd &,
                           Eigen::MatrixXd &);
 
+  /// \brief Computes state and perturbation weights for determinstic ETKF
+  ///        for a given set of projection matrices.
+  /// \details
+  /// Input:
+  ///   dy:                        Observation departures.
+  ///   Yb:                        Modulated ensemble perturbations in observation space.
+  ///   YbRinvYbpI:                Matrix equal to Y^T R^-1 Y + (nens-1)/infl I
+  ///   YbRinv:                    Matrix equal to Y^T R^-1
+  ///   YbOrig:                    Original ensemble perturbations in observation space.
+  ///   invVarR:                   Inverse observation error covariance matrix.
+  ///   infl:                      User-defined inflation parameter.
+  ///   excludedProjection:        Projection matrix for the excluded
+  ///                              subensemble members for cross validation.
+  ///   includedProjection:        Projection matrix for the included
+  ///                              subensemble members for cross validation.
+  ///   computeMeanWeights:        Boolean to compute the mean weights matrix wa.
+  /// Output:
+  ///    wa [passed by reference]: State weights calculated using ETKF_stateWeights.
+  ///    Wa [passed by reference]: Perturbation weights calculated using GETKF_pertWeights.
+  ///    A vector of times that can be used to profile the performance of this routine.
+  std::vector<std::chrono::time_point<std::chrono::system_clock>>
+  detGETKF_computeWeights(const Eigen::VectorXd &,
+                          const Eigen::MatrixXf &,
+                          const Eigen::MatrixXd &,
+                          const Eigen::MatrixXd &,
+                          const Eigen::MatrixXf &,
+                          const Eigen::VectorXd &,
+                          const double,
+                          const Eigen::SparseMatrix<double> &,
+                          const Eigen::SparseMatrix<double> &,
+                          const bool,
+                          Eigen::VectorXd &,
+                          Eigen::MatrixXd &);
+
   /// \brief Compute state and perturbation weights for stochastic ETKF.
   /// \details
   /// Input:
@@ -160,6 +221,28 @@ namespace oops {
                               const Eigen::MatrixXf &,
                               const Eigen::VectorXd &,
                               const double,
+                              Eigen::MatrixXd &);
+
+  /// \brief Computes state and perturbation weights for stochastic ETKF
+  ///        for a given set of projection matrices.
+  /// \details
+  /// Input:
+  ///   dy:                        Observation departures.
+  ///   YbRinvYbpI:                Matrix equal to Y^T R^-1 Y + (nens-1)/infl I
+  ///   YbRinv:                    Matrix equal to Y^T R^-1
+  ///   YbOrig:                    Original ensemble perturbations in observation space.
+  ///   excludedProjection:        Projection matrix for the excluded
+  ///                              subensemble members for cross validation.
+  ///   includedProjection:        Projection matrix for the included
+  ///                              subensemble members for cross validation.
+  /// Output:
+  ///    Wa [passed by reference]: Perturbation weights calculated using ETKF_stateWeights.
+  void stoETKF_computeWeights(const Eigen::VectorXd &,
+                              const Eigen::MatrixXd &,
+                              const Eigen::MatrixXd &,
+                              const Eigen::MatrixXf &,
+                              const Eigen::SparseMatrix<double> &,
+                              const Eigen::SparseMatrix<double> &,
                               Eigen::MatrixXd &);
 
   /// \brief Compute ensemble increment.

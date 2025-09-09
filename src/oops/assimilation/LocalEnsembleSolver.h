@@ -18,6 +18,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "oops/assimilation/SubensembleSplitter.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/Geometry.h"
@@ -140,6 +141,10 @@ class LocalEnsembleSolver {
   const eckit::LocalConfiguration observersconf_;  ///< configuration for observations.observers
   std::unique_ptr<ObsLocalizations_> obsloc_;          ///< observation space localization
 
+  bool doCrossValidation;  ///< cross validation trigger
+  size_t nsubens_;  ///< no. of subensembles
+  std::unique_ptr<oops::SubensembleSplitter> SubensembleSplitter_;  ///< pointer to splitter
+
   /// Create a mask that excludes observations which will not be assimilated (e.g. failed QC) using
   /// a single ensemble member.
   void initializeAssimilatedMask() {
@@ -201,7 +206,8 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
     xbmean_(xbmean),
     incvars_(incvars),
     obsconf_(config, "observations"),
-    observersconf_(obsconf_, "observers") {
+    observersconf_(obsconf_, "observers"),
+    nsubens_(1) {
   // initialize and print options
 
   useLinearObserver_ = config.getBool("local ensemble DA.use linear observer", false);

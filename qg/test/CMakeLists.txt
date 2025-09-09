@@ -97,6 +97,7 @@ list( APPEND qg_testinput
   testinput/hybrid_linear_model_gen_ens.yaml
   testinput/increment.yaml
   testinput/letkf.yaml
+  testinput/letkf_crossvalid.yaml
   testinput/linear_model.yaml
   testinput/linear_obsoperator.yaml
   testinput/linear_variable_change.yaml
@@ -202,6 +203,7 @@ list( APPEND qg_testoutput
   testoutput/hybridgain_analysis.test
   testoutput/hybridgain_increment.test
   testoutput/letkf.test
+  testoutput/letkf_crossvalid.test
   testoutput/linearization_error.test
   testoutput/make_obs_3d.test
   testoutput/make_obs_4d_12h.test
@@ -988,6 +990,12 @@ ecbuild_add_test( TARGET test_qg_letkf
 
 ecbuild_add_test( TARGET test_qg_getkf
                   ARGS testinput/getkf.yaml
+                  COMMAND  qg_etkf.x
+                  OMP 2
+                  TEST_DEPENDS test_qg_make_obs_4d test_qg_gen_ens_pert_B )
+
+ecbuild_add_test( TARGET test_qg_letkf_crossvalid
+                  ARGS testinput/letkf_crossvalid.yaml
                   COMMAND  qg_etkf.x
                   OMP 2
                   TEST_DEPENDS test_qg_make_obs_4d test_qg_gen_ens_pert_B )
