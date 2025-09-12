@@ -99,6 +99,7 @@ list( APPEND l95_test_input
   testinput/increment.yaml
   testinput/letkf_gsi.yaml
   testinput/letkf.yaml
+  testinput/letkf_svd.yaml
   testinput/letkf_linearobserver.yaml
   testinput/letkf_linearobserver_crossvalid.yaml
   testinput/letkf_perturbed_linearobserver.yaml
@@ -836,12 +837,18 @@ ecbuild_add_test( TARGET test_l95_addincrement_scaled
 
 
 #####################################################################
-# LETKF tests
+# ETKF tests
 #####################################################################
 
 ecbuild_add_test( TARGET test_l95_letkf
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf.yaml
+                  OMP 2
+                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+ecbuild_add_test( TARGET test_l95_letkf_svd
+                  COMMAND l95_letkf.x
+                  ARGS testinput/letkf_svd.yaml
                   OMP 2
                   TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
 

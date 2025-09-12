@@ -45,6 +45,7 @@ namespace test {
 
   void LETKF(const int nobs, const int nens) {
     srand(1);
+    const bool singularValueDecomposition = false;
 
     const Eigen::VectorXd dy = Eigen::VectorXd::Random(nobs);
     const Eigen::MatrixXf Yb = Eigen::MatrixXf::Random(nens, nobs);
@@ -54,7 +55,8 @@ namespace test {
 
     // Eigen implementation
 
-    const auto times = oops::detLETKF_computeWeights(dy, Yb, invVarR, (nens - 1) / 1.0, wa, Wa);
+    const auto times = oops::detLETKF_computeWeights(dy, Yb, invVarR, (nens - 1) / 1.0,
+                                                     singularValueDecomposition, wa, Wa);
 
     // LAPACK implementation
 
@@ -114,6 +116,7 @@ namespace test {
 
   void GETKF(const int nobs, const int nens, const int neig) {
     srand(1);
+    const bool svd = false;
 
     const int nana = nens * neig;
     constexpr float infl = 1.0;
@@ -125,7 +128,7 @@ namespace test {
     Eigen::VectorXd wa(nana);
     Eigen::MatrixXd Wa(nana, nens);
 
-    const auto times = oops::detGETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, wa, Wa);
+    const auto times = oops::detGETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, svd, wa, Wa);
 
     // LAPACK implementation
 
@@ -187,6 +190,153 @@ namespace test {
     compareWeights(wa, wa_d, Wa, Wa_d);
   }
 
+  void eigendecompositionWithSVD(const int nobs, const int nens, const int neig) {
+    srand(1);
+
+    // Use fake data for eigendecomposition (evd) and singular value decomposition (svd)
+
+    // GETKF - deterministic
+    const int nana = nens * neig;
+    constexpr float infl = 1.0;
+    const Eigen::VectorXd dy_Gevd = Eigen::VectorXd::Random(nobs);
+    const Eigen::MatrixXf YbOrig_Gevd = Eigen::MatrixXf::Random(nens, nobs);
+    const Eigen::MatrixXf Yb_Gevd = Eigen::MatrixXf::Random(nana, nobs);
+    const Eigen::VectorXd invVarR_Gevd = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
+    Eigen::VectorXd wa_Gevd(nana);
+    Eigen::MatrixXd Wa_Gevd(nana, nens);
+    const auto dy_Gsvd = dy_Gevd;
+    const auto YbOrig_Gsvd = YbOrig_Gevd;
+    const auto Yb_Gsvd = Yb_Gevd;
+    const auto invVarR_Gsvd = invVarR_Gevd;
+    Eigen::VectorXd wa_Gsvd(nana);
+    Eigen::MatrixXd Wa_Gsvd(nana, nens);
+
+    bool svd = false;
+    const auto GETKF_times_EigenValue = oops::detGETKF_computeWeights(
+        dy_Gevd, Yb_Gevd, YbOrig_Gevd, invVarR_Gevd, infl, svd, wa_Gevd, Wa_Gevd);
+    svd = true;
+    const auto GETKF_times_SingularValue = oops::detGETKF_computeWeights(
+        dy_Gsvd, Yb_Gsvd, YbOrig_Gsvd, invVarR_Gsvd, infl, svd, wa_Gsvd, Wa_Gsvd);
+
+    // LETKF - deterministic
+    const Eigen::VectorXd dy_Levd = Eigen::VectorXd::Random(nobs);
+    const Eigen::MatrixXf Yb_Levd = Eigen::MatrixXf::Random(nens, nobs);
+    const Eigen::VectorXd invVarR_Levd = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
+    Eigen::VectorXd wa_Levd(nens);
+    Eigen::MatrixXd Wa_Levd(nens, nens);
+    const auto dy_Lsvd = dy_Levd;
+    const auto Yb_Lsvd = Yb_Levd;
+    const auto invVarR_Lsvd = invVarR_Levd;
+    Eigen::VectorXd wa_Lsvd(nens);
+    Eigen::MatrixXd Wa_Lsvd(nens, nens);
+    svd = false;
+    const auto LETKF_times_EigenValue = oops::detLETKF_computeWeights(
+        dy_Levd, Yb_Levd, invVarR_Levd, (nens - 1) / 1.0, svd, wa_Levd, Wa_Levd);
+
+    svd = true;
+    const auto LETKF_times_SingularValue = oops::detLETKF_computeWeights(
+        dy_Lsvd, Yb_Lsvd, invVarR_Lsvd, (nens - 1) / 1.0, svd, wa_Lsvd, Wa_Lsvd);
+
+    // Timing information
+
+    oops::Log::info() << std::endl;
+    oops::Log::info() << "GETKF timing (ms)" << std::endl;
+    oops::Log::info() << std::endl;
+
+    oops::Log::info() << "Eigen value decomposition:" << std::endl;
+    oops::Log::info() << " compute Y^T R^-1: "
+                      << timeDifference(GETKF_times_EigenValue[0], GETKF_times_EigenValue[1])
+                      << std::endl;
+    oops::Log::info() << " compute Y^T R^-1 Y + I: "
+                      << timeDifference(GETKF_times_EigenValue[1], GETKF_times_EigenValue[2])
+                      << std::endl;
+    oops::Log::info() << " eigendecomposition: "
+                      << timeDifference(GETKF_times_EigenValue[2], GETKF_times_EigenValue[3])
+                      << std::endl;
+    oops::Log::info() << " compute Pa: "
+                      << timeDifference(GETKF_times_EigenValue[3], GETKF_times_EigenValue[4])
+                      << std::endl;
+    oops::Log::info() << " compute wa: "
+                      << timeDifference(GETKF_times_EigenValue[4], GETKF_times_EigenValue[5])
+                      << std::endl;
+    oops::Log::info() << " compute Wa: "
+                      << timeDifference(GETKF_times_EigenValue[5], GETKF_times_EigenValue[6])
+                      << std::endl;
+    oops::Log::info() << "total: "
+                      << timeDifference(GETKF_times_EigenValue[0], GETKF_times_EigenValue[6])
+                      << std::endl;
+    oops::Log::info() << std::endl;
+
+    oops::Log::info() << "Singular value decomposition:" << std::endl;
+    oops::Log::info() << " compute Y^T R^-1: "
+                      << timeDifference(GETKF_times_SingularValue[0], GETKF_times_SingularValue[1])
+                      << std::endl;
+    oops::Log::info() << " compute Y^T R^-1 Y + I: "
+                      << timeDifference(GETKF_times_SingularValue[1], GETKF_times_SingularValue[2])
+                      << std::endl;
+    oops::Log::info() << " SVD: "
+                      << timeDifference(GETKF_times_SingularValue[2], GETKF_times_SingularValue[3])
+                      << std::endl;
+    oops::Log::info() << " compute Pa: "
+                      << timeDifference(GETKF_times_SingularValue[3], GETKF_times_SingularValue[4])
+                      << std::endl;
+    oops::Log::info() << " compute wa: "
+                      << timeDifference(GETKF_times_SingularValue[4], GETKF_times_SingularValue[5])
+                      << std::endl;
+    oops::Log::info() << " compute Wa: "
+                      << timeDifference(GETKF_times_SingularValue[5], GETKF_times_SingularValue[6])
+                      << std::endl;
+    oops::Log::info() << "total: "
+                      << timeDifference(GETKF_times_SingularValue[0], GETKF_times_SingularValue[6])
+                      << std::endl;
+    oops::Log::info() << std::endl;
+
+    oops::Log::info() << std::endl;
+    oops::Log::info() << "LETKF timing (ms)" << std::endl;
+    oops::Log::info() << std::endl;
+
+    oops::Log::info() << std::endl;
+    oops::Log::info() << "Eigen value decomposition:" << std::endl;
+    oops::Log::info() << " compute Y^T R^-1 Y: "
+                      << timeDifference(LETKF_times_EigenValue[0], LETKF_times_EigenValue[1])
+                      << std::endl;
+    oops::Log::info() << " eigendecomposition: "
+                      << timeDifference(LETKF_times_EigenValue[1], LETKF_times_EigenValue[2])
+                      << std::endl;
+    oops::Log::info() << " compute Pa: "
+                      << timeDifference(LETKF_times_EigenValue[2], LETKF_times_EigenValue[3])
+                      << std::endl;
+    oops::Log::info() << " compute weights: "
+                      << timeDifference(LETKF_times_EigenValue[3], LETKF_times_EigenValue[4])
+                      << std::endl;
+    oops::Log::info() << "total: "
+                      << timeDifference(LETKF_times_EigenValue[0], LETKF_times_EigenValue[4])
+                      << std::endl;
+    oops::Log::info() << std::endl;
+
+    oops::Log::info() << "Singular value decomposition:" << std::endl;
+    oops::Log::info() << " compute Y^T R^-1 Y: "
+                      << timeDifference(LETKF_times_SingularValue[0], LETKF_times_SingularValue[1])
+                      << std::endl;
+    oops::Log::info() << " SVD: "
+                      << timeDifference(LETKF_times_SingularValue[1], LETKF_times_SingularValue[2])
+                      << std::endl;
+    oops::Log::info() << " compute Pa: "
+                      << timeDifference(LETKF_times_SingularValue[2], LETKF_times_SingularValue[3])
+                      << std::endl;
+    oops::Log::info() << " compute weights: "
+                      << timeDifference(LETKF_times_SingularValue[3], LETKF_times_SingularValue[4])
+                      << std::endl;
+    oops::Log::info() << "total: "
+                      << timeDifference(LETKF_times_SingularValue[0], LETKF_times_SingularValue[4])
+                      << std::endl;
+    oops::Log::info() << std::endl;
+
+    // Compare the weights produced by the two implementations
+    compareWeights(wa_Lsvd, wa_Levd, Wa_Lsvd, Wa_Levd);
+    compareWeights(wa_Gsvd, wa_Gevd, Wa_Gsvd, Wa_Gevd);
+  }
+
   void test_ETKF(const eckit::LocalConfiguration & conf) {
     // Test array sizes
 
@@ -201,6 +351,9 @@ namespace test {
     // GETKF test
 
     GETKF(nobs, nens, neig);
+
+    // svd vs eigendecomposition test
+    eigendecompositionWithSVD(nobs, nens, neig);
   }
 
   class ETKF : public oops::Test {

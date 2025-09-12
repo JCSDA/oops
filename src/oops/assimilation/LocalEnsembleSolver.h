@@ -9,6 +9,7 @@
 #define OOPS_ASSIMILATION_LOCALENSEMBLESOLVER_H_
 
 #include <Eigen/Dense>
+#include <algorithm>
 #include <cfloat>
 #include <map>
 #include <memory>
@@ -185,6 +186,20 @@ class LocalEnsembleSolver {
   /// of size \p nens at \p iteration.
   void readHofX(ObsEnsemble_ & obsens, const size_t nens, const size_t iteration,
                 Observations_ & y_mean_xb);
+  /// Return true if the config requests SVD for the inverse analysis error covariance
+  /// decomposition, false if eigendecomposition is requested. The string can be either
+  /// "singular value decomposition" or "svd" (case insensitive) for SVD, and "eigendecomposition"
+  /// for eigendecomposition (also case insensitive and default).
+  const bool svdRequested(const eckit::Configuration & config) {
+    std::string method =
+        config.getString("local ensemble DA.inverse analysis error covariance decomposition method",
+                         "eigendecomposition");
+    std::transform(method.begin(), method.end(), method.begin(), ::tolower);
+    // Assert all alphabetic characters in string are lowercase
+    assert(std::all_of(method.begin(), method.end(),
+                       [](unsigned char c) { return !std::isalpha(c) || std::islower(c); }));
+    return (method == "singular value decomposition" || method == "svd");
+  }
 
  private:
   bool useLinearObserver_;

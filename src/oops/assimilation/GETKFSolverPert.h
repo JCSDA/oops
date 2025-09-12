@@ -107,6 +107,7 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   // parameters
   Eigen::VectorXf eival_;
   Eigen::MatrixXf eivec_;
+  const bool useSVD_;
 };
 
 // -----------------------------------------------------------------------------
@@ -116,8 +117,9 @@ StochasticGETKF<MODEL, OBS>::StochasticGETKF(ObsSpaces_ & obspaces, const Geomet
                                              const eckit::Configuration & config, size_t nens,
                                              const StateSet_ & xbmean, const Variables & incvars)
   : DeterministicGETKF<MODEL, OBS>(obspaces, geometry, config, nens, xbmean, incvars),
-    eival_(this->nanal_), eivec_(this->nanal_, this->nanal_)
-{
+    eival_(this->nanal_),
+    eivec_(this->nanal_, this->nanal_),
+    useSVD_(this->svdRequested(config)) {
   Log::trace() << "StochasticGETKF<MODEL, OBS>::create starting" << std::endl;
   Log::trace() << "StochasticGETKF<MODEL, OBS>::create done" << std::endl;
 }
@@ -178,7 +180,7 @@ void StochasticGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   util::Timer timer(classname(), "computeWeights");
   const double infl = this->inflopt_.getDouble("mult", 1.0);
 
-  oops::stoETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, this->Wa_);
+  oops::stoETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, useSVD_, this->Wa_);
 }
 
 // -----------------------------------------------------------------------------

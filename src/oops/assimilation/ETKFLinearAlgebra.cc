@@ -42,6 +42,14 @@ namespace oops {
     return {eival, eivec};
   }
 
+  std::tuple<Eigen::VectorXd, Eigen::MatrixXd> SingularValueDecomposition(
+      const Eigen::MatrixXd & A) {
+    const auto svd = Eigen::BDCSVD<Eigen::MatrixXd>(A, Eigen::ComputeFullU);
+    const Eigen::VectorXd svals = svd.singularValues().real();
+    const Eigen::MatrixXd U = svd.matrixU().real();
+    return {svals, U};
+  }
+
   Eigen::MatrixXd ETKF_Pa(const Eigen::VectorXd & eival,
                           const Eigen::MatrixXd & eivec) {
     return eivec * eival.cwiseInverse().asDiagonal() * eivec.transpose();
@@ -152,6 +160,7 @@ namespace oops {
                           const Eigen::MatrixXf & Yb,
                           const Eigen::VectorXd & invVarR,
                           const double scale,
+                          const bool svd,
                           Eigen::VectorXd & wa,
                           Eigen::MatrixXd & Wa) {
     const auto tE0 = std::chrono::system_clock::now();
@@ -164,8 +173,10 @@ namespace oops {
 
     const auto tE1 = std::chrono::system_clock::now();
 
-    // Eigenvalues and eigenvectors of the above matrix.
-    const auto[eival, eivec] = oops::Eigendecomposition(YbRinvYbpI);
+    // Eigenvalues and eigenvectors of the above matrix, optionally computed with
+    // SVD (matrix should be real symmetric positive definite so these are equivalent).
+    const auto[eival, eivec] =
+        svd ? oops::SingularValueDecomposition(YbRinvYbpI) : oops::Eigendecomposition(YbRinvYbpI);
 
     const auto tE2 = std::chrono::system_clock::now();
 
@@ -191,6 +202,7 @@ namespace oops {
                           const Eigen::MatrixXf & YbOrig,
                           const Eigen::VectorXd & invVarR,
                           const double infl,
+                          const bool svd,
                           Eigen::VectorXd & wa,
                           Eigen::MatrixXd & Wa) {
     const int nens = YbOrig.rows();
@@ -209,8 +221,10 @@ namespace oops {
 
     const auto tE2 = std::chrono::system_clock::now();
 
-    // Eigenvalues and eigenvectors of the above matrix.
-    const auto[eival, eivec] = oops::Eigendecomposition(YbRinvYbpI);
+    // Eigenvalues and eigenvectors of the above matrix, optionally computed with
+    // SVD (matrix should be real symmetric positive definite so these are equivalent).
+    const auto[eival, eivec] =
+        svd ? oops::SingularValueDecomposition(YbRinvYbpI) : oops::Eigendecomposition(YbRinvYbpI);
 
     const auto tE3 = std::chrono::system_clock::now();
 
@@ -286,6 +300,7 @@ namespace oops {
                               const Eigen::MatrixXf & YbOrig,
                               const Eigen::VectorXd & invVarR,
                               const double infl,
+                              const bool svd,
                               Eigen::MatrixXd & Wa) {
     const int nens = YbOrig.rows();
     const double scale = (nens - 1) / infl;
@@ -296,8 +311,10 @@ namespace oops {
     // YbRinvYbp = Y^T R^-1 Y + (nens-1)/infl I
     const Eigen::MatrixXd YbRinvYbpI = oops::ETKF_YbRinvYbpI(Yb, YbRinv, scale);
 
-    // Eigenvalues and eigenvectors of the above matrix.
-    const auto[eival, eivec] = oops::Eigendecomposition(YbRinvYbpI);
+    // Eigenvalues and eigenvectors of the above matrix, optionally computed with
+    // SVD (matrix should be real symmetric positive definite so these are equivalent).
+    const auto[eival, eivec] =
+        svd ? oops::SingularValueDecomposition(YbRinvYbpI) : oops::Eigendecomposition(YbRinvYbpI);
 
     // Pa  = [ Yb^T R^-1 Yb + (nens-1)/infl I ] ^-1
     const Eigen::MatrixXd Pa = oops::ETKF_Pa(eival, eivec);

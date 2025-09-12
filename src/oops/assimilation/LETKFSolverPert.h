@@ -105,17 +105,18 @@ class StochasticLETKF : public DeterministicLETKF<MODEL, OBS> {
   // departure ensemble object of observation perturbations
   // minus ensemble hofx perturbations
   DeparturesEnsemble_ OmbPertDepEns_;
+  const bool useSVD_;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 StochasticLETKF<MODEL, OBS>::StochasticLETKF(ObsSpaces_ & obspaces, const Geometry_ & geometry,
-                                     const eckit::Configuration & config, size_t nens,
-                                     const StateSet_ & xbmean, const Variables & incvars)
+                                             const eckit::Configuration & config, size_t nens,
+                                             const StateSet_ & xbmean, const Variables & incvars)
   : DeterministicLETKF<MODEL, OBS>(obspaces, geometry, config, nens, xbmean, incvars),
-    OmbPertDepEns_(obspaces, this->nens_)
-{
+    OmbPertDepEns_(obspaces, this->nens_),
+    useSVD_(this->svdRequested(config)) {
   Log::trace() << "StochasticLETKF<MODEL, OBS>::create starting" << std::endl;
   Log::trace() << "StochasticLETKF<MODEL, OBS>::create done" << std::endl;
 }
@@ -213,7 +214,7 @@ void StochasticLETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   util::Timer timer(classname(), "computeWeights");
   const double infl = this->inflopt_.getDouble("mult", 1.0);
 
-  oops::stoETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, this->Wa_);
+  oops::stoETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, useSVD_, this->Wa_);
 }
 
 // -----------------------------------------------------------------------------

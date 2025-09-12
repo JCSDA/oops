@@ -32,6 +32,7 @@ observations:
 
 local ensemble DA:
   solver: Deterministic GETKF
+  inverse analysis error covariance decomposition method: eigendecomposition # default value - shouldn't do anything
   vertical localization:
     fraction of retained variance: .99
     lengthscale: 10

@@ -128,6 +128,7 @@ class DeterministicLETKF : public LocalEnsembleSolver<MODEL, OBS> {
 
   const size_t nens_;   // ensemble size
   bool fortranETKF_;
+  const bool useSVD_;
 };
 
 // -----------------------------------------------------------------------------
@@ -135,14 +136,13 @@ class DeterministicLETKF : public LocalEnsembleSolver<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 DeterministicLETKF<MODEL, OBS>::DeterministicLETKF(ObsSpaces_ & obspaces,
                                                    const Geometry_ & geometry,
-                                                   const eckit::Configuration & config,
-                                                   size_t nens,
+                                                   const eckit::Configuration & config, size_t nens,
                                                    const StateSet_ & xbmean,
                                                    const Variables & incvars)
   : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean, incvars),
     nens_(nens),
-    fortranETKF_(config.getBool("local ensemble DA.fortran ETKF", false))
-{
+    fortranETKF_(config.getBool("local ensemble DA.fortran ETKF", false)),
+    useSVD_(this->svdRequested(config)) {
   Log::trace() << "DeterministicLETKF<MODEL, OBS>::create starting" << std::endl;
   Log::info() << "Using EIGEN implementation of LETKF" << std::endl;
 
@@ -238,7 +238,7 @@ void DeterministicLETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
     this->Wa_ = Wa_f.cast<double>();
     this->wa_ = wa_f.cast<double>();
   } else {
-    oops::detLETKF_computeWeights(dy, Yb, invVarR, (nens_ - 1) / infl, wa_, Wa_);
+    oops::detLETKF_computeWeights(dy, Yb, invVarR, (nens_ - 1) / infl, useSVD_, wa_, Wa_);
   }
 }
 

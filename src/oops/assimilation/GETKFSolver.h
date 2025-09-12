@@ -111,6 +111,7 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
   size_t neig_;
   size_t nanal_;
   bool fortranETKF_;
+  const bool useSVD_;
 
   std::unique_ptr<DeparturesEnsemble_> HZb_;
 
@@ -137,16 +138,18 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 DeterministicGETKF<MODEL, OBS>::DeterministicGETKF(ObsSpaces_ & obspaces,
                                                    const Geometry_ & geometry,
-                                                   const eckit::Configuration & config,
-                                                   size_t nens,
+                                                   const eckit::Configuration & config, size_t nens,
                                                    const StateSet_ & xbmean,
                                                    const Variables & incvars)
   : LocalEnsembleSolver<MODEL, OBS>(obspaces, geometry, config, nens, xbmean, incvars),
-    nens_(nens), geometry_(geometry),
+    nens_(nens),
+    geometry_(geometry),
     vertloc_(config.getSubConfiguration("local ensemble DA.vertical localization"), xbmean[0],
-    incvars), neig_(vertloc_.neig()), nanal_(neig_*nens_),
-    fortranETKF_(config.getBool("local ensemble DA.fortran ETKF", true))
-{
+             incvars),
+    neig_(vertloc_.neig()),
+    nanal_(neig_ * nens_),
+    fortranETKF_(config.getBool("local ensemble DA.fortran ETKF", true)),
+    useSVD_(this->svdRequested(config)) {
   Log::trace() << "DeterministicGETKF<MODEL, OBS>::create starting" << std::endl;
   // pre-allocate transformation matrices
   Wa_.resize(nanal_, nens);
@@ -387,7 +390,7 @@ void DeterministicGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
     this->Wa_ = Wa_f.cast<double>();
     this->wa_ = wa_f.cast<double>();
   } else {
-    oops::detGETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, wa_, Wa_);
+    oops::detGETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, useSVD_, wa_, Wa_);
   }
 }
 

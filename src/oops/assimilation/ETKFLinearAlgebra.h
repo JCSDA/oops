@@ -44,13 +44,22 @@ namespace oops {
                                   const Eigen::MatrixXd &,
                                   const double);
 
-  /// \brief Perform Eigendecomposition.
+  /// \brief Perform eigendecomposition on a self-adjoint matrix.
+  /// \details
+  /// Input:
+  ///   A: self-adjoint matrix to be decomposed.
+  /// Output:
+  ///   {eival, eivec}: tuple of real Eigenvalues and Eigenvectors.
+  std::tuple<Eigen::VectorXd, Eigen::MatrixXd> Eigendecomposition(const Eigen::MatrixXd &);
+
+  /// \brief Perform full singular value decomposition using Bidiagonal
+  /// Divide and Conquer.
   /// \details
   /// Input:
   ///   A: matrix to be decomposed.
   /// Output:
-  ///   {eival, eivec}: tuple of Eigenvalues and Eigenvectors.
-  std::tuple<Eigen::VectorXd, Eigen::MatrixXd> Eigendecomposition(const Eigen::MatrixXd &);
+  ///   {svals, U}: tuple of singular values and left-singular vectors.
+  std::tuple<Eigen::VectorXd, Eigen::MatrixXd> SingularValueDecomposition(const Eigen::MatrixXd &);
 
   /// \brief Compute Pa.
   /// \details
@@ -148,6 +157,7 @@ namespace oops {
                           const Eigen::MatrixXf &,
                           const Eigen::VectorXd &,
                           const double,
+                          const bool,
                           Eigen::VectorXd &,
                           Eigen::MatrixXd &);
 
@@ -169,6 +179,7 @@ namespace oops {
                           const Eigen::MatrixXf &,
                           const Eigen::VectorXd &,
                           const double,
+                          const bool,
                           Eigen::VectorXd &,
                           Eigen::MatrixXd &);
 
@@ -214,6 +225,9 @@ namespace oops {
   ///   YbOrig: Original ensemble perturbations in observation space.
   ///   invVarR: Inverse observation error covariance matrix.
   ///   infl: a user-defined inflation parameter.
+  ///   svd: if true, perform eigendecomposition of inverse analysis error
+  ///   covariance with singular value decomposition algorithm, otherwise use
+  ///   eigendecomposition.
   /// Output:
   ///    Wa [passed by reference]: perturbation weights calculated using ETKF_stateWeights.
   void stoETKF_computeWeights(const Eigen::VectorXd &,
@@ -221,6 +235,7 @@ namespace oops {
                               const Eigen::MatrixXf &,
                               const Eigen::VectorXd &,
                               const double,
+                              const bool,
                               Eigen::MatrixXd &);
 
   /// \brief Computes state and perturbation weights for stochastic ETKF
