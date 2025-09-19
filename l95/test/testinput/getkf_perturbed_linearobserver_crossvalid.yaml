@@ -31,7 +31,7 @@ observations:
       obsdatain:
         obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
       obsdataout:
-        obsfile: Data/getkf_perturbed_lo.2010-01-02T00:00:00Z.obt
+        obsfile: Data/getkf_perturbed_lo_crossvalid.2010-01-02T00:00:00Z.obt
       # Note: the same seed must be used for all members for the zero-mean perturbations option to work
       obs perturbations seed: 1
     obs operator: {}

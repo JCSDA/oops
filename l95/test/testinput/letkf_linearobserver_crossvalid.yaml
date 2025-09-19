@@ -25,7 +25,7 @@ observations:
       obsdatain:
         obsfile: Data/truth3d.2010-01-02T00:00:00Z.obt
       obsdataout:
-        obsfile: Data/letkf.2010-01-02T00:00:00Z.obt
+        obsfile: Data/letkf_lo_crossvalid.2010-01-02T00:00:00Z.obt
     obs operator: {}
 
 driver:
