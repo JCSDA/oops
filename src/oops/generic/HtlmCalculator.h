@@ -101,17 +101,17 @@ void HtlmCalculator<MODEL>::setOfCoeffs(const IncrementSet_ & linearEnsemble,
   // and top, where they are the bottom-most/top-most (influenceSize_) levels. The loop over k is
   // therefore split at the ends to avoid repeating the same SVD multiple times.
   for (auto i : owned_) {
-    atlas::array::Range range(0, influenceSize_ - 1);
+    atlas::array::Range range(0, influenceSize_);
     singularValueDecomposition(i, range, linearEnsemble);
     for (auto k = 0; k < halfInfluenceSize_; k++) {
       compute(i, k, range, linearErrors, coeffsFSet);
     }
     for (auto k = halfInfluenceSize_; k < nLevels_ - halfInfluenceSize_; k++) {
-      range = atlas::array::Range(k - halfInfluenceSize_, k + halfInfluenceSize_);
+      range = atlas::array::Range(k - halfInfluenceSize_, k + halfInfluenceSize_ + 1);
       singularValueDecomposition(i, range, linearEnsemble);
       compute(i, k, range, linearErrors, coeffsFSet);
     }
-    range = atlas::array::Range(nLevels_ - influenceSize_, nLevels_ - 1);
+    range = atlas::array::Range(nLevels_ - influenceSize_, nLevels_);
     singularValueDecomposition(i, range, linearEnsemble);
     for (auto k = nLevels_ - halfInfluenceSize_; k < nLevels_; k++) {
       compute(i, k, range, linearErrors, coeffsFSet);
