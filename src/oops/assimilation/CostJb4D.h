@@ -127,8 +127,22 @@ CostJb4D<MODEL, OBS>::CostJb4D(const std::vector<util::DateTime> & times,
 template<typename MODEL, typename OBS>
 void CostJb4D<MODEL, OBS>::linearize(const CtrlVar_ & xb, const CtrlVar_ & fg,
                                      const Geometry_ & lowres) {
+  Log::trace() << "CostJb4D:linearize start" << std::endl;
+
+  // Create B if needed
+  const bool noOuterLoopUpdate = conf_.getBool("no outer loop update", false);
+  if (!noOuterLoopUpdate || !B_) {
+    // Create new B
+     B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, conf_, xb.states(), fg.states()));
+  } else if (noOuterLoopUpdate) {
+    // Check consistency with the existing B
+    ASSERT(lowres.generic().functionSpace().size() == resol_->generic().functionSpace().size());
+  }
+
+  // Copy attribute
   resol_ = &lowres;
-  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, conf_, xb.states(), fg.states()));
+
+  Log::trace() << "CostJb4D:linearize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

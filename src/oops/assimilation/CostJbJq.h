@@ -142,15 +142,29 @@ template<typename MODEL, typename OBS>
 void CostJbJq<MODEL, OBS>::linearize(const CtrlVar_ & xb, const CtrlVar_ & fg,
                                      const Geometry_ & lowres) {
   Log::trace() << "CostJbJq::linearize start" << std::endl;
-  resol_ = &lowres;
-  const eckit::LocalConfiguration covConf(conf_, "background error");
 
+  // Load covariances configurations
+  const eckit::LocalConfiguration covConf(conf_, "background error");
   std::vector<eckit::LocalConfiguration> confs;
   covConf.get("covariances", confs);
   ASSERT(confs.size() == times_.size());
+
+  // Select covariance at appropriate time
   eckit::LocalConfiguration myconf = confs[commTime_.rank()];
 
-  B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, myconf, xb.states(), fg.states()));
+  // Create B if needed
+  const bool noOuterLoopUpdate = conf_.getBool("no outer loop update", false);
+  if (!noOuterLoopUpdate || !B_) {
+    // Create new B
+    B_.reset(CovarianceFactory<MODEL>::create(lowres, ctlvars_, myconf, xb.states(), fg.states()));
+  } else if (noOuterLoopUpdate) {
+    // Check consistency with the existing B
+    ASSERT(lowres.generic().functionSpace().size() == resol_->generic().functionSpace().size());
+  }
+
+  // Copy attribute
+  resol_ = &lowres;
+
   Log::trace() << "CostJbJq::linearize done" << std::endl;
 }
 
