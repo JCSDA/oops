@@ -1579,7 +1579,7 @@ void writeFieldSet(const eckit::mpi::Comm & comm,
           std::vector<double> zvar(fset.field(vars[jvar]).shape(1) * ny * nx);
           for (atlas::idx_t k = 0; k < fset.field(vars[jvar]).shape(1); ++k) {
             for (atlas::idx_t j = 0; j < ny; ++j) {
-            const atlas::idx_t jj = latSouthToNorth ? ny-1-j : j;
+              const atlas::idx_t jj = latSouthToNorth ? ny-1-j : j;
               for (atlas::idx_t i = 0; i < grid.nx(jj); ++i) {
                 atlas::gidx_t gidx = grid.index(i, jj);
                 zvar[k*ny*nx + j*nx + i] = varView(gidx, k);
