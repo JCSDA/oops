@@ -221,6 +221,33 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
       this->R_->save("ObsError");
       this->initializeAssimilatedMask();
 
+//      // ygyu: restore to print what is Yb_,  when it is created?
+//      //
+//      // mask H(x) ensemble perturbations - i.e. make sure that obs that have
+//      // failed QC on one ensemble member fail for all (this is for the case where
+//      // different QC procedures are done on different ensemble members)
+//      Departures_ tmpDeps(this->obspaces_);
+//      for (size_t iens = 0; iens < ens_xx.size(); ++iens) {
+//        tmpDeps.zero();
+//        tmpDeps = this->Yb_.getData(iens);
+//          Log::info()  << "Yb_.getData(iens)" ;
+//          Log::info() << this->Yb_.getData(iens)   << std::endl;
+//          std::cout << "ygyu dep.size " << this->Yb_.getData(iens).size()  << std::endl;
+//          std::cout << "ygyu .data0() " << this->Yb_.getData(iens)[0] << std::endl;
+//          std::cout << "ygyu .new data " << this->Yb_.getData(iens)[0].obsvector().data().size() << std::endl;
+//          int j=this->Yb_.getData(iens)[0].obsvector().data().size();
+//          for (int i; i< j; ++i){
+//            double x = this->Yb_.getData(iens)[0].obsvector().data()[i];
+//            std::cout << " "<< x <<", ";
+//          }
+//          //          std::cout << "ygyu" << y2[jj].obsvector().data() << std::endl;
+//        this->updateAssimilatedMask(tmpDeps);
+//        this->applyAssimilatedMask(tmpDeps);
+//        this->Yb_.setData(iens, tmpDeps);
+//      }
+//      abort();
+
+      
       // calculate obs departures
       Observations_ yobs(this->obspaces_, "ObsValue");
       this->omb_ = yobs - yb_mean;

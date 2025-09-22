@@ -344,6 +344,8 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
                                                    bool readFromDisk) {
   util::Timer timer(classname(), "computeHofX");
 
+  std::cout << "nail 1:   in  LocalEnsembleSolver.h: computeHofX " << std::endl;
+
   ASSERT(ens_xx.size() == Yb_.size());
 
   const size_t nens = ens_xx.size();
