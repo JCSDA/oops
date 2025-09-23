@@ -44,6 +44,8 @@
 #include "oops/interface/ObsDataVector.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
+
 
 namespace oops {
   class Variables;
@@ -118,6 +120,8 @@ class LocalEnsembleSolver {
   /// accessor to obs localizations
   const ObsLocalizations_ & obsloc() const {return obsloc_;}
   bool useLinearObserver() const { return useLinearObserver_; }
+  int missing_value_count (const std::vector<double> & x) const;
+
 
  protected:
   const Geometry_  & geometry_;   ///< Geometry associated with the updated states
@@ -237,13 +241,50 @@ void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
   for (GeometryIterator_ i = geometry_.begin(); i != geometry_.end(); ++i) {
     // create the local subset of observations
     Departures_ locvector(this->obspaces_);
+
+    std::cout << "locvector.mc()"  << locvector.mc();
+
+    int n1 =  locvector[0].obsvector().data().size();
+    int k1 = missing_value_count( locvector[0].obsvector().data() );
+    std::cout << "size of locvector = " << locvector.size()  << std::endl;
+    //    std::cout << "init locvector = " << locvector[0].obsvector().data() << std::endl ;
+    // std::cout << "init locvector dim = " << locvector[0].obsvector().data().size() << std::endl ;
+
     locvector.ones();
     this->obsloc().computeLocalization(i, locvector);
+    int k2 = missing_value_count( locvector[0].obsvector().data() );
+    int n2 =  locvector[0].obsvector().data().size();
+
     this->applyAssimilatedMask(locvector);
+    int k3 = missing_value_count( locvector[0].obsvector().data() );
+    int n3 =  locvector[0].obsvector().data().size();
+
+    std::cout << "init locvector missing_value_count " << k1 << " " << k2 << " " << k3 << std::endl;
+    std::cout << "init locvector missing_value_count (af localization) " << k2 - k1
+              << " diff2(k3-k2: mask) " << k3 - k2 << std::endl ;
+    std::cout << "init locvector size n1/n2/n3 " << n1 << " " <<n2 << " " <<n3 << " " << std::endl;
+
+
+//    Departures_ Deps(this->obspaces_);
+//    // ygyu check missing values of omb, HZb_
+//    for ( int i=0; i< nanal_; ++i) {
+//      Deps.zero();
+//      Deps = this->HZb_->getData(i);
+//      int k4 = missing_value_count( Deps[0].obsvector().data() );
+//      std::cout << "ck HZb_->getData(i)  missing_value_count = " << k4 << " " << std::endl;
+//    }
+//    int k5 = missing_value_count( this->omb_[0].obsvector().data() );
+//    std::cout << "ck this->omb_. missing_value_count = " << k5 << " " << std::endl;
+
+
+
     const Eigen::VectorXd local_omb_vec = this->omb_.packEigen(locvector);
     const Eigen::VectorXd localization = locvector.packEigen(locvector);
     const Eigen::VectorXd local_invVarR_vec =
       this->invVarR_->packEigen(locvector).array() * localization.array();
+
+
+    // debug skip
     if (local_omb_vec.size() == 0) {
       // no obs. so no need to update Wa_ and wa_
       // ana_pert[i] = bkg_pert[i]
@@ -589,6 +630,23 @@ LocalEnsembleSolverFactory<MODEL, OBS>::create(ObsSpaces_ & obspaces, const Geom
   Log::trace() << "LocalEnsembleSolver<MODEL, OBS>::create done" << std::endl;
   return ptr;
 }
+
+
+
+template<typename MODEL, typename OBS>
+int LocalEnsembleSolver<MODEL, OBS>::missing_value_count(const std::vector<double>& x) const {
+    // ... body ...
+    int j= x.size();
+    int k=0;
+    double missing_ = util::missingValue<double>();
+    for (int i=0;  i < j ; ++i){
+      if (x[i] != missing_) {
+        ++k;
+      }
+    }
+    return k;
+  }
+
 
 // -----------------------------------------------------------------------------
 

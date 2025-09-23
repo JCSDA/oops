@@ -247,7 +247,7 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
 //      }
 //      abort();
 
-      
+
       // calculate obs departures
       Observations_ yobs(this->obspaces_, "ObsValue");
       this->omb_ = yobs - yb_mean;
@@ -341,8 +341,25 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
   for (size_t iens = 0; iens < nanal_; ++iens) {
     tmpDeps.zero();
     tmpDeps = this->HZb_.getData(iens);
+    std::cout << "ck: iens = " << iens << std::endl;
+
+    int j=tmpDeps[0].obsvector().data().size();
+    std::cout << "\n ck: bf mask tmpDeps: dim= " << j ;
+    for (int i=0; i< j; ++i){
+      double x = tmpDeps[0].obsvector().data()[i];
+      //      std::cout << " "<< x <<", ";
+    }
+
     this->applyAssimilatedMask(tmpDeps);
     this->HZb_.setData(iens, tmpDeps);
+
+    int j2=tmpDeps[0].obsvector().data().size();
+    std::cout << " ck: af mask tmpDeps: dim= " << j2 << " diff=" << j-j2 << std::endl;
+    for (int i=0; i< j; ++i){
+      double x = tmpDeps[0].obsvector().data()[i];
+      //      std::cout << " "<< x <<", ";
+    }
+
   }
 
   return yb_mean;
@@ -415,6 +432,20 @@ void DeterministicGETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & l
                                                        const IncrementSet_ & bkg_pert,
                                                        const GeometryIterator_ & i,
                                                        IncrementSet_ & ana_pert) {
+
+    Departures_ Deps(this->obspaces_);
+    // ygyu check missing values of omb, HZb_
+    int k5 = this->missing_value_count( this->omb_[0].obsvector().data() );
+    for ( int i=0; i< nanal_; ++i) {
+      Deps.zero();
+      Deps = HZb_.getData(i);
+      int k4 = this->missing_value_count( Deps[0].obsvector().data() );
+      std::cout << "ck HZb_->getData(i)  missing_value_count = " << k4
+                <<  "this->omb_. missing_value_count = " << k5
+                <<  "diff= " << k4-k5
+                << std::endl;
+    }
+
   const Eigen::MatrixXf local_Yb_mat_f = this->Yb_.packEigen(locvector);
   const Eigen::MatrixXf local_HZ_mat_f = this->HZb_.packEigen(locvector);
   this->computeWeights(local_omb_vec, local_HZ_mat_f, local_Yb_mat_f, local_invVarR_vec);

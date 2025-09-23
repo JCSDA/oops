@@ -27,6 +27,7 @@
 #include "oops/interface/ObsDataVector.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 namespace oops {
 
@@ -54,6 +55,8 @@ class Departures : public GeneralizedDepartures {
   size_t size() const {return dep_.size();}
   ObsVector_ & operator[](const size_t ii) {return dep_.at(ii);}
   const ObsVector_ & operator[](const size_t ii) const {return dep_.at(ii);}
+  //  const size_t mc(std::vector<double> & missing_value_count) const;
+  std::vector<size_t> mc() const;
 
 // Linear algebra operators
   Departures & operator+=(const Departures &);
@@ -209,6 +212,29 @@ size_t Departures<OBS>::nobs() const {
   }
   return nobs;
 }
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+std::vector<size_t> Departures<OBS>::mc() const {
+  std::cout << " dbg: 0";
+  std::vector<size_t> missing_value_count;
+  missing_value_count.reserve(dep_.size());
+  double missing_ = util::missingValue<double>();
+  std::cout << " dbg: 1";
+
+  for (size_t jj = 0; jj < dep_.size(); ++jj) {
+    std::vector<double> x = dep_[jj].obsvector().data();
+    size_t k=0;
+    std::cout << " dbg: 2";
+
+    for (size_t i=0;  i < x.size(); ++i){
+      if (x[i] != missing_) ++k;
+    }
+    missing_value_count.push_back(k);
+  }
+  return missing_value_count;
+}
+
 // -----------------------------------------------------------------------------
 template<typename OBS>
 size_t Departures<OBS>::serialSize() const {
