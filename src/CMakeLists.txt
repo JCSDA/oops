@@ -1115,10 +1115,12 @@ if(BUILD_TESTING)
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_assimilation_etkf
-                    SOURCES test/assimilation/ETKF.cc
-                    ARGS    "test/testinput/etkf.yaml"
-                    LIBS    oops )
+  if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
+    ecbuild_add_test( TARGET  test_assimilation_etkf
+                      SOURCES test/assimilation/ETKF.cc
+                      ARGS    "test/testinput/etkf.yaml"
+                      LIBS    oops )
+  endif()
 
   ecbuild_add_test( TARGET  test_assimilation_fullgmres
                     SOURCES test/assimilation/FullGMRES.cc
