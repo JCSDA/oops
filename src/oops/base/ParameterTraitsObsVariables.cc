@@ -7,6 +7,7 @@
 
 #include "oops/base/ParameterTraitsObsVariables.h"
 
+#include <algorithm>
 #include <map>
 #include <set>
 #include <string>
