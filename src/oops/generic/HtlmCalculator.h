@@ -9,6 +9,7 @@
 #ifndef OOPS_GENERIC_HTLMCALCULATOR_H_
 #define OOPS_GENERIC_HTLMCALCULATOR_H_
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -156,16 +157,17 @@ void HtlmCalculator<MODEL>::compute(const atlas::idx_t i, const atlas::idx_t k,
         = atlas::array::make_view<double, 2>(linearErrors[m].fieldSet()[var])(i, k);
     }
 
+    // Add regularization value to singular values
+    // TODO(Tom): change regularization to use variables
+    const Eigen::ArrayXd singVals = SVD_.singularValues().array()
+                                    + regularization_->getRegularizationValue(var, i, k);
+
     // Compute vector of coeffs for var at i, k, assigning directly into FieldSet
+    const double tol = (singVals.matrix().norm() * std::numeric_limits<double>::epsilon());
     Eigen::Map<Eigen::VectorXd> coeffsMap(
       &atlas::array::make_view<double, 3>(coeffsFSet[var])(i, k, 0), vectorSize_);
-    // TODO(Tom): change regularization to use variables
-    const Eigen::MatrixXd sigma
-      = (SVD_.singularValues()
-      + Eigen::VectorXd::Constant(vectorSize_,
-                                  regularization_->getRegularizationValue(var, i, k))).asDiagonal();
     coeffsMap.noalias() = SVD_.matrixU()
-      * sigma.completeOrthogonalDecomposition().pseudoInverse()
+      * ((singVals > tol).select(singVals.inverse(), 0.0)).matrix().asDiagonal()
       * SVD_.matrixU().transpose() * M_ * linearErrorVector_;
     // (equation 26 in https://doi.org/10.1175/MWR-D-20-0088.1)
 
