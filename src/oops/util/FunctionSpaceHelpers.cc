@@ -233,10 +233,10 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
       double lonlatPoint[] = {0, 0};
       const atlas::functionspace::StructuredColumns fs(functionSpace);
       const atlas::StructuredGrid & grid = fs.grid();
-      const auto view_i = atlas::array::make_view<int, 1>(fs.index_i());
-      const auto view_j = atlas::array::make_view<int, 1>(fs.index_j());
+      const auto view_i = atlas::array::make_indexview<int, 1>(fs.index_i());
+      const auto view_j = atlas::array::make_indexview<int, 1>(fs.index_j());
       for (int jj = 0; jj < fs.size(); ++jj) {
-        grid.lonlat(view_i(jj)-1, view_j(jj)-1, lonlatPoint);
+        grid.lonlat(view_i(jj), view_j(jj), lonlatPoint);
         lonlat(jj, 0) = lonlatPoint[0];
         lonlat(jj, 1) = lonlatPoint[1];
       }
@@ -277,12 +277,12 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
     if (grid.name().compare(0, 1, std::string{"L"}) == 0) {
       const atlas::functionspace::StructuredColumns fs(functionSpace);
       const atlas::StructuredGrid sgrid = fs.grid();
-      const auto view_i = atlas::array::make_view<int, 1>(fs.index_i());
-      const auto view_j = atlas::array::make_view<int, 1>(fs.index_j());
+      const auto view_i = atlas::array::make_indexview<int, 1>(fs.index_i());
+      const auto view_j = atlas::array::make_indexview<int, 1>(fs.index_j());
       for (atlas::idx_t j = fs.j_begin_halo(); j < fs.j_end_halo(); ++j) {
         for (atlas::idx_t i = fs.i_begin_halo(j); i < fs.i_end_halo(j); ++i) {
           atlas::idx_t jnode = fs.index(i, j);
-          if (((view_j(jnode) == 1) || (view_j(jnode) == sgrid.ny())) && (view_i(jnode) != 1)) {
+          if (((view_j(jnode) == 0) || (view_j(jnode) == sgrid.ny()-1)) && (view_i(jnode) != 0)) {
             ownedView(jnode, 0) = 0;
           }
         }
