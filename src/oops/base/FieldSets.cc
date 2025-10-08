@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2023- UCAR
+ * (C) Crown Copyright 2025 Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -43,6 +44,40 @@ FieldSets::FieldSets(const atlas::FunctionSpace & fspace,
                                        times[mytime + jt],
                                        commGeom));
       this->dataset().back()->read(fspace, vars, locals.at(indx));
+      ++indx;
+    }
+  }
+
+  this->sync_times();
+  this->check_consistency();
+
+  Log::trace() << "FieldSets::FieldSets read done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+FieldSets::FieldSets(const atlas::FunctionSpace & fspace,
+                     const Variables & vars,
+                     const util::ParallelFieldSetIO & io,
+                     const std::vector<util::DateTime> & times,
+                     const eckit::Configuration & config,
+                     const eckit::mpi::Comm & commGeom,
+                     const eckit::mpi::Comm & commTime,
+                     const eckit::mpi::Comm & commEns):
+  Base_(commTime, commEns) {
+  Log::trace() << "FieldSets::FieldSets read start " << config << std::endl;
+
+  std::vector<eckit::LocalConfiguration> locals = this->configure(config);
+
+  size_t mytime = this->local_time_size() * commTime.rank();
+  size_t indx = 0;
+
+  for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
+    for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
+      this->dataset().emplace_back(std::make_unique<FieldSet3D>(
+                                       times[mytime + jt],
+                                       commGeom));
+      this->dataset().back()->read(fspace, vars, io, locals.at(indx));
       ++indx;
     }
   }

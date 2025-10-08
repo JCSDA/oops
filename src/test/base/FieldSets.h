@@ -28,6 +28,7 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/FunctionSpaceHelpers.h"
 #include "oops/util/Logger.h"
+#include "oops/util/ParallelFieldSetIO.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -75,16 +76,36 @@ void testFieldSets() {
   oops::Log::info() << "before rand" << std::endl;
   fset2.randomInit(functionspace, vars);
 
+  oops::FieldSet3D piofset1(date, commGeom);
+  piofset1.deepCopy(fset1);
+  oops::FieldSet3D piofset2(date, commGeom);
+  piofset2.deepCopy(fset2);
+
+
   // Write to file
   const auto ioConfig = config.getSubConfiguration("input output members 1");
   const auto members = ioConfig.getSubConfigurations("members");
   ASSERT(members.size() == 2);
-  oops::Log::info() << "before write" << std::endl;
   fset1.write(members[0]);
   fset2.write(members[1]);
 
-  // Read back in using FieldSets() read ctor and list of members
-  oops::FieldSets fsets(functionspace, vars, dates, ioConfig, commTime);
+  // Write to file using parallel IO
+  const auto pioConfig = config.getSubConfiguration("parallel io input output members 1");
+  const auto piomembers = pioConfig.getSubConfigurations("members");
+  // TODO(tom-j-h): once Atlas #264 available, use functionSpace rather than
+  // casting to the underlying functionspace
+  // See oops issue #2963
+  auto fs = atlas::functionspace::StructuredColumns(functionspace);
+  const auto io = util::ParallelFieldSetIO(fs, fs.grid().name());
+  oops::Log::info() << "before pio write" << std::endl;
+  piofset1.write(piomembers[0], io);
+  piofset2.write(piomembers[1], io);
+
+  oops::Log::info() << "before FieldSet() read ctor and member list" << std::endl;
+  oops::FieldSets fsets(functionspace, vars, dates, ioConfig, commGeom);
+
+  oops::Log::info() << "before FieldSet() pio read ctor and member list" << std::endl;
+  oops::FieldSets piofsets(functionspace, vars, io, dates, pioConfig, commGeom);
 
   // Compare fieldsets
   ASSERT(dates.size() == 1);
@@ -94,14 +115,29 @@ void testFieldSets() {
   fsets(it, 1) -= fset2;
   EXPECT_EQUAL(fsets(it, 1).norm(vars), 0.0);
 
+  piofsets(it, 0) -= piofset1;
+  EXPECT_EQUAL(piofsets(it, 0).norm(vars), 0.0);
+  piofsets(it, 1) -= piofset2;
+  EXPECT_EQUAL(piofsets(it, 1).norm(vars), 0.0);
+
   // Read back in using FieldSets() read ctor and member template
   const auto ioConfig2 = config.getSubConfiguration("input output members 2");
-  oops::FieldSets fsets2(functionspace, vars, dates, ioConfig2, commTime);
+  oops::Log::info() << "before FieldSet() read ctor and member template" << std::endl;
+  oops::FieldSets fsets2(functionspace, vars, dates, ioConfig2, commGeom);
+
+  const auto pioConfig2 = config.getSubConfiguration("parallel io input output members 2");
+  oops::Log::info() << "before FieldSet() pio read ctor and member template" << std::endl;
+  oops::FieldSets piofsets2(functionspace, vars, io, dates, pioConfig2, commGeom);
 
   // Compare fieldsets
   fsets2(it, 0) -= fset1;
   EXPECT_EQUAL(fsets2(it, 0).norm(vars), 0.0);
   fsets2(it, 1) -= fset2;
+  EXPECT_EQUAL(fsets2(it, 1).norm(vars), 0.0);
+
+  piofsets2(it, 0) -= fset1;
+  EXPECT_EQUAL(fsets2(it, 0).norm(vars), 0.0);
+  piofsets2(it, 1) -= fset2;
   EXPECT_EQUAL(fsets2(it, 1).norm(vars), 0.0);
 }
 // -----------------------------------------------------------------------------

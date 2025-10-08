@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2023- UCAR
+ * (C) Crown Copyright 2025 Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -19,6 +20,7 @@
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/FieldSetHelpers.h"
+#include "oops/util/ParallelFieldSetIO.h"
 #include "oops/util/Printable.h"
 #include "oops/util/Serializable.h"
 
@@ -102,7 +104,16 @@ class FieldSet3D : public util::Serializable,
   void read(const atlas::FunctionSpace &,
             const oops::Variables &,
             const eckit::LocalConfiguration &);
+
+  void read(const atlas::FunctionSpace &,
+            const oops::Variables &,
+            const util::ParallelFieldSetIO &,
+            const eckit::LocalConfiguration &);
+
   void write(const eckit::LocalConfiguration &) const;
+
+  void write(const eckit::LocalConfiguration &,
+             const util::ParallelFieldSetIO &) const;
 
   /// Serialize / deserializee
   size_t serialSize() const override;

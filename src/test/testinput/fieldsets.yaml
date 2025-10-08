@@ -26,6 +26,15 @@ input output members 1:
     filepath: fieldsets_mb2_F10
     variables: *vars
 
+parallel io input output members 1:
+  members:
+  - date: *date
+    filename: pio_fieldsets_mb1_F10.nc
+    variables: *vars
+  - date: *date
+    filename: pio_fieldsets_mb2_F10.nc
+    variables: *vars
+
 input output members 2:
   date: *date
   members from template:
@@ -35,3 +44,14 @@ input output members 2:
       date: *date
       filepath: fieldsets_mb%MEM%_F10
       variables: *vars
+
+parallel io input output members 2:
+  date: *date
+  members from template:
+    pattern: '%MEM%'
+    nmembers: 2
+    template:
+      date: *date
+      filename: pio_fieldsets_mb%MEM%_F10.nc
+      variables: *vars
+

@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2023- UCAR
+ * (C) Crown Copyright 2025 Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -22,6 +23,7 @@
 #include "oops/util/FieldSetHelpers.h"
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
+#include "oops/util/ParallelFieldSetIO.h"
 
 namespace oops {
 
@@ -260,8 +262,27 @@ void FieldSet3D::read(const atlas::FunctionSpace & fspace,
 
 // -----------------------------------------------------------------------------
 
+void FieldSet3D::read(const atlas::FunctionSpace & fspace,
+                      const Variables & vars,
+                      const util::ParallelFieldSetIO & io,
+                      const eckit::LocalConfiguration & conf) {
+  FieldSet3D::init(fspace, vars);
+  std::string filename = conf.getString("filename");
+  io.read(fset_, filename);
+}
+
+// -----------------------------------------------------------------------------
+
 void FieldSet3D::write(const eckit::LocalConfiguration & conf) const {
   util::writeFieldSet(comm_, conf, fset_);
+}
+
+// -----------------------------------------------------------------------------
+
+void FieldSet3D::write(const eckit::LocalConfiguration & conf,
+                       const util::ParallelFieldSetIO & io) const {
+  std::string filename = conf.getString("filename");
+  io.write(fset_, filename);
 }
 
 // -----------------------------------------------------------------------------
