@@ -37,7 +37,7 @@ class ObsTestsFixture : private boost::noncopyable {
   static eckit::LocalConfiguration & config(size_t jj) {return getInstance().configs_.at(jj);}
   /// accessor to a all obs spaces
   static ObsSpaces_ & obspace()        {return *getInstance().ospaces_;}
-  static const eckit::mpi::Comm & comm()   {return getInstance().comm_;}
+  static const eckit::mpi::Comm & comm()   {return *getCommPointerInstance();}
 
   static void reset() {
     obspace().save();
@@ -45,13 +45,21 @@ class ObsTestsFixture : private boost::noncopyable {
     getInstance().timeWindow_.reset();
   }
 
+  /// \brief Set the communicator to be used by all obs spaces.
+  ///
+  /// To have an effect, this function must be called before the first call to any other member
+  /// function except comm().
+  static void setComm(const eckit::mpi::Comm &comm) {
+    getCommPointerInstance() = &comm;
+  }
+
  private:
-  ObsTestsFixture(): comm_(oops::mpi::world()), timeWindow_(), ospaces_() {
+  ObsTestsFixture(): timeWindow_(), ospaces_() {
     const eckit::LocalConfiguration conf(TestEnvironment::config());
     timeWindow_.reset(new util::TimeWindow(eckit::LocalConfiguration(conf, "time window")));
     configs_ = conf.getSubConfigurations("observations");
     eckit::LocalConfiguration obsconfig(conf, "observations");
-    ospaces_.reset(new ObsSpaces_(obsconfig, comm_, *timeWindow_));
+    ospaces_.reset(new ObsSpaces_(obsconfig, *getCommPointerInstance(), *timeWindow_));
   }
 
   ~ObsTestsFixture() {}
@@ -61,7 +69,11 @@ class ObsTestsFixture : private boost::noncopyable {
     return theObsTestsFixture;
   }
 
-  const eckit::mpi::Comm & comm_;
+  static const eckit::mpi::Comm *& getCommPointerInstance() {
+    static const eckit::mpi::Comm * theCommPointer = &oops::mpi::world();
+    return theCommPointer;
+  }
+
   std::unique_ptr<const util::TimeWindow> timeWindow_;
   std::vector<eckit::LocalConfiguration> configs_;
   std::unique_ptr<ObsSpaces_> ospaces_;
