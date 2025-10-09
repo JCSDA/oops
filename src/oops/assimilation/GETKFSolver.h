@@ -420,6 +420,11 @@ void DeterministicGETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & l
                                                        const IncrementSet_ & bkg_pert,
                                                        const GeometryIterator_ & i,
                                                        IncrementSet_ & ana_pert) {
+  if (this->doCrossValidation) {
+    throw eckit::NotImplemented(
+          "Cross validation for deterministic GETKF not yet implemented",
+          Here());
+  }
   const Eigen::MatrixXf local_Yb_mat_f = (this->Yb_)->packEigen(locvector);
   const Eigen::MatrixXf local_HZ_mat_f = (this->HZb_)->packEigen(locvector);
   this->computeWeights(local_omb_vec, local_HZ_mat_f, local_Yb_mat_f, local_invVarR_vec);
