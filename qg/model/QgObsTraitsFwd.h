@@ -8,31 +8,11 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef QG_MODEL_QGTRAITSFWD_H_
-#define QG_MODEL_QGTRAITSFWD_H_
+#pragma once
 
 #include <string>
 
 namespace qg {
-
-class GeometryQG;
-class GeometryQGIterator;
-
-class StateQG;
-class IncrementQG;
-class ErrorCovarianceQG;
-class InterpolatorQG;
-
-class ModelQG;
-class TlmQG;
-
-class ChangeVarQG;
-class ChangeVarTLADQG;
-
-class ModelBias;
-class ModelBiasIncrement;
-class ModelBiasCovariance;
-class ModelData;
 
 class ObsSpaceQG;
 class ObsVecQG;
@@ -50,32 +30,6 @@ class ObsFilter;
 
 class GomQG;
 class LocationsQG;
-
-struct QgTraits {
-  static std::string name() {return "QG";}
-  static std::string nameCovar() {return "QgError";}
-  static std::string nameCovar4D() {return "QgError";}
-
-  typedef qg::GeometryQG            Geometry;
-
-  typedef qg::GeometryQGIterator    GeometryIterator;
-
-  typedef qg::ModelQG               Model;
-  typedef qg::TlmQG                 LinearModel;
-
-  typedef qg::ChangeVarQG           VariableChange;
-  typedef qg::ChangeVarTLADQG       LinearVariableChange;
-
-  typedef qg::StateQG               State;
-  typedef qg::IncrementQG           Increment;
-  typedef qg::ErrorCovarianceQG     Covariance;
-  typedef qg::InterpolatorQG        LocalInterpolator;
-
-  typedef qg::ModelBias             ModelAuxControl;
-  typedef qg::ModelBiasIncrement    ModelAuxIncrement;
-  typedef qg::ModelBiasCovariance   ModelAuxCovariance;
-  typedef qg::ModelData             ModelData;
-};
 
 struct QgObsTraits {
   static std::string name() {return "QG obs";}
@@ -101,4 +55,3 @@ struct QgObsTraits {
 
 }  // namespace qg
 
-#endif  // QG_MODEL_QGTRAITSFWD_H_

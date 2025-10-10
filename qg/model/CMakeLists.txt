@@ -71,6 +71,8 @@ ObsWindQG.h
 ObsWindTLAD.cc
 ObsWindTLAD.h
 QgFortran.h
+QgObsTraits.h
+QgObsTraitsFwd.h
 QgTraits.h
 StateQG.cc
 StateQG.h

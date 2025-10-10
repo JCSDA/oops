@@ -24,7 +24,6 @@
 #include "eckit/config/LocalConfiguration.h"
 
 #include "model/GeometryQG.h"
-#include "model/GomQG.h"
 #include "model/QgFortran.h"
 
 #include "oops/base/Variables.h"

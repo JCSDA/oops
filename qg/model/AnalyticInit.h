@@ -12,7 +12,7 @@
 
 #include "oops/interface/AnalyticInitBase.h"
 
-#include "oops/qg/QgTraits.h"
+#include "oops/qg/QgObsTraits.h"
 
 namespace qg {
   class LocationsQG;

@@ -6,6 +6,7 @@
  */
 
 #include "model/instantiateQgLocalizationFactory.h"
+#include "model/QgObsTraits.h"
 #include "model/QgTraits.h"
 #include "oops/runs/EnsembleApplication.h"
 #include "oops/runs/Run.h"

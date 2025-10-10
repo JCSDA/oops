@@ -12,6 +12,7 @@
 
 #include "oops/base/ObsLocalizationBase.h"
 
+#include "oops/qg/QgObsTraits.h"
 #include "oops/qg/QgTraits.h"
 
 namespace eckit {

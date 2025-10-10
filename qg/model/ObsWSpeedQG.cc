@@ -19,7 +19,7 @@
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
 #include "model/QgFortran.h"
-#include "model/QgTraitsFwd.h"
+#include "model/QgObsTraitsFwd.h"
 #include "oops/base/Locations.h"
 #include "oops/base/Variables.h"
 #include "oops/util/Logger.h"

@@ -42,8 +42,6 @@ namespace oops {
 }
 
 namespace qg {
-  class LocationsQG;
-  class GomQG;
 
 // -----------------------------------------------------------------------------
 /// Class to represent a Fields for the QG model

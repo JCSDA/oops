@@ -25,9 +25,7 @@
 
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
-#include "model/GomQG.h"
 #include "model/IncrementQG.h"
-#include "model/LocationsQG.h"
 #include "model/ModelBias.h"
 #include "model/ModelQG.h"
 

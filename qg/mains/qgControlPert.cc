@@ -5,8 +5,9 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
  */
 
-#include "oops/qg/instantiateQgLocalizationFactory.h"
-#include "oops/qg/QgTraits.h"
+#include "model/instantiateQgLocalizationFactory.h"
+#include "model/QgObsTraits.h"
+#include "model/QgTraits.h"
 #include "oops/runs/ControlPert.h"
 #include "oops/runs/Run.h"
 

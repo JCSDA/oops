@@ -8,6 +8,7 @@
  * does it submit to any jurisdiction.
  */
 
+#include "model/QgObsTraits.h"
 #include "model/QgTraits.h"
 #include "oops/runs/EnsembleApplication.h"
 #include "oops/runs/HofX4D.h"

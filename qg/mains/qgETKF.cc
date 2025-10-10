@@ -5,6 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include "model/QgObsTraits.h"
 #include "model/QgTraits.h"
 #include "oops/runs/LocalEnsembleDA.h"
 #include "oops/runs/Run.h"

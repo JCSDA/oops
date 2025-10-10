@@ -5,6 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include "oops/qg/QgObsTraits.h"
 #include "oops/qg/QgTraits.h"
 
 #include "oops/coupled/GetValuesCoupled.h"

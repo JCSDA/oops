@@ -32,8 +32,6 @@ namespace oops {
 }
 
 namespace qg {
-  class GomQG;
-  class LocationsQG;
   class GeometryQG;
   class IncrementQG;
 

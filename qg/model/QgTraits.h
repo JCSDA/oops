@@ -8,42 +8,52 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef QG_MODEL_QGTRAITS_H_
-#define QG_MODEL_QGTRAITS_H_
+#pragma once
 
-// The QgTraits and QgObsTraits classes are defined in QgTraitsFwd.h, which, however,
-// contains only forward declarations of the QG implementations of oops interfaces.
-// This file includes headers in which all these implementations are defined.
+#include <string>
 
 #include "model/ModelQG.h"
 #include "model/TlmQG.h"
 
-#include "oops/qg/ChangeVarQG.h"
-#include "oops/qg/ChangeVarTLADQG.h"
-#include "oops/qg/ErrorCovarianceQG.h"
-#include "oops/qg/GeometryQG.h"
-#include "oops/qg/GeometryQGIterator.h"
-#include "oops/qg/GomQG.h"
-#include "oops/qg/IncrementQG.h"
-#include "oops/qg/InterpolatorQG.h"
-#include "oops/qg/LocationsQG.h"
-#include "oops/qg/ModelBias.h"
-#include "oops/qg/ModelBiasCovariance.h"
-#include "oops/qg/ModelBiasIncrement.h"
-#include "oops/qg/ModelData.h"
-#include "oops/qg/ObsBias.h"
-#include "oops/qg/ObsBiasCovariance.h"
-#include "oops/qg/ObsBiasIncrement.h"
-#include "oops/qg/ObsBiasPreconditioner.h"
-#include "oops/qg/ObsDataQG.h"
-#include "oops/qg/ObsDiagsQG.h"
-#include "oops/qg/ObsFilter.h"
-#include "oops/qg/ObsIteratorQG.h"
-#include "oops/qg/ObsOperatorQG.h"
-#include "oops/qg/ObsOperatorTLAD.h"
-#include "oops/qg/ObsSpaceQG.h"
-#include "oops/qg/ObsVecQG.h"
-#include "oops/qg/QgTraitsFwd.h"
-#include "oops/qg/StateQG.h"
+#include "model/ChangeVarQG.h"
+#include "model/ChangeVarTLADQG.h"
+#include "model/ErrorCovarianceQG.h"
+#include "model/GeometryQG.h"
+#include "model/GeometryQGIterator.h"
+#include "model/IncrementQG.h"
+#include "model/InterpolatorQG.h"
+#include "model/ModelBias.h"
+#include "model/ModelBiasCovariance.h"
+#include "model/ModelBiasIncrement.h"
+#include "model/ModelData.h"
+#include "model/StateQG.h"
 
-#endif  // QG_MODEL_QGTRAITS_H_
+namespace qg {
+
+struct QgTraits {
+  static std::string name() {return "QG";}
+  static std::string nameCovar() {return "QgError";}
+  static std::string nameCovar4D() {return "QgError";}
+
+  typedef qg::GeometryQG            Geometry;
+
+  typedef qg::GeometryQGIterator    GeometryIterator;
+
+  typedef qg::ModelQG               Model;
+  typedef qg::TlmQG                 LinearModel;
+
+  typedef qg::ChangeVarQG           VariableChange;
+  typedef qg::ChangeVarTLADQG       LinearVariableChange;
+
+  typedef qg::StateQG               State;
+  typedef qg::IncrementQG           Increment;
+  typedef qg::ErrorCovarianceQG     Covariance;
+  typedef qg::InterpolatorQG        LocalInterpolator;
+
+  typedef qg::ModelBias             ModelAuxControl;
+  typedef qg::ModelBiasIncrement    ModelAuxIncrement;
+  typedef qg::ModelBiasCovariance   ModelAuxCovariance;
+  typedef qg::ModelData             ModelData;
+};
+
+}  // namespace qg

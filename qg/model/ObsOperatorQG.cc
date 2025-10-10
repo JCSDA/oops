@@ -18,7 +18,7 @@
 #include "model/ObsOpBaseQG.h"
 #include "model/ObsSpaceQG.h"
 #include "model/ObsVecQG.h"
-#include "model/QgTraitsFwd.h"
+#include "model/QgObsTraitsFwd.h"
 #include "oops/base/Locations.h"
 #include "oops/base/Variables.h"
 

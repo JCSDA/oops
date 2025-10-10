@@ -8,7 +8,7 @@
  * does it submit to any jurisdiction.
  */
 
-#include "model/QgTraits.h"
+#include "model/QgObsTraits.h"
 #include "oops/runs/Run.h"
 #include "test/interface/ObsAuxControl.h"
 

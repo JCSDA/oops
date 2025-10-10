@@ -21,7 +21,6 @@
 #include "oops/qg/ObsDataQG.h"
 #include "oops/qg/ObsOpBaseQG.h"
 #include "oops/qg/ObsSpaceQG.h"
-#include "oops/qg/QgTraits.h"
 
 // Forward declarations
 namespace eckit {

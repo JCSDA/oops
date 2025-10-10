@@ -29,7 +29,6 @@
 #include "model/ErrorCovarianceQG.h"
 #include "model/FieldsQG.h"
 #include "model/GeometryQG.h"
-#include "model/GomQG.h"
 #include "model/ModelBiasIncrement.h"
 #include "model/StateQG.h"
 
