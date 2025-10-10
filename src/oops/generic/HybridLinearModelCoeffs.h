@@ -21,6 +21,7 @@
 #include "oops/base/Variables.h"
 #include "oops/generic/HtlmCalculator.h"
 #include "oops/util/FieldSetHelpers.h"
+#include "oops/util/for_each.h"
 #include "oops/util/ParallelFieldSetIO.h"
 #include "oops/util/Timer.h"
 
@@ -273,9 +274,15 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
   Log::trace() << "HybridLinearModelCoeffs<MODEL>::updateIncTL() starting" << std::endl;
   const auto updateStencilArray = atlas::array::make_view<int, 2>(updateStencil_);
   atlas::FieldSet & dxFSet = dx.fieldSet().fieldSet();
-  std::vector<double> updateVals(nLevels_ * updateVars_.size());
-  for (auto i : owned_) {
-    std::fill(updateVals.begin(), updateVals.end(), 0.0);
+  auto updateBuffer = util::perThreadStorage<double>(updateVars_.size()*nLevels_);
+  auto bufferView = atlas::array::make_view<double, 2>(updateBuffer);
+  util::IndexSpace1D owned_range = {0, static_cast<atlas::idx_t>(owned_.size())};
+  util::for_each_index(owned_range,
+  [&](atlas::idx_t idx) {
+    const atlas::idx_t i = owned_[idx];
+    auto updateValsView = bufferView.slice(atlas_omp_get_thread_num(),
+      atlas::array::Range::all());
+    updateValsView.assign(0.0);
     // Calculate update values
     for (size_t v = 0; v < updateVars_.size(); v++) {
       auto coeffsView  = atlas::array::make_view<double, 3>(
@@ -284,7 +291,7 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
         for (size_t v2 = 0; v2 < updateVars_.size(); v2++) {
           auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v2].name()]);
           for (auto s = 0; s < influenceSize_; s++) {
-            updateVals[k + v * nLevels_]
+            updateValsView(k + v * nLevels_)
               += coeffsView(i, k, v2 * influenceSize_ + s) * dxArray(i, updateStencilArray(k, s));
           }
         }
@@ -294,10 +301,10 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
     for (size_t v = 0; v < updateVars_.size(); v++) {
       auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v].name()]);
       for (auto k = 0; k < nLevels_; k++) {
-        dxArray(i, k) += updateVals[k + v * nLevels_];
+        dxArray(i, k) += updateValsView(k + v * nLevels_);
       }
     }
-  }
+  });
   dx.synchronizeFields();
   Log::trace() << "HybridLinearModelCoeffs<MODEL>::updateIncTL() done" << std::endl;
 }
@@ -309,14 +316,20 @@ void HybridLinearModelCoeffs<MODEL>::updateIncAD(Increment_ & dx) const {
   Log::trace() << "HybridLinearModelCoeffs<MODEL>::updateIncAD() starting" << std::endl;
   const auto updateStencilArray = atlas::array::make_view<int, 2>(updateStencil_);
   atlas::FieldSet & dxFSet = dx.fieldSet().fieldSet();
-  std::vector<double> updateVals(nLevels_ * updateVars_.size());
-  for (auto i : owned_) {
-    std::fill(updateVals.begin(), updateVals.end(), 0.0);
+  auto updateBuffer = util::perThreadStorage<double>(updateVars_.size()*nLevels_);
+  auto bufferView = atlas::array::make_view<double, 2>(updateBuffer);
+  util::IndexSpace1D owned_range = {0, static_cast<atlas::idx_t>(owned_.size())};
+  util::for_each_index(owned_range,
+  [&](atlas::idx_t idx) {
+    const atlas::idx_t i = owned_[idx];
+    auto updateValsView = bufferView.slice(atlas_omp_get_thread_num(),
+      atlas::array::Range::all());
+    updateValsView.assign(0.0);
     // Adjoint of "Update column"
     for (size_t v = 0; v < updateVars_.size(); v++) {
       auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v].name()]);
       for (auto k = 0; k < nLevels_; k++) {
-        updateVals[k + v * nLevels_] += dxArray(i, k);
+        updateValsView[k + v * nLevels_] += dxArray(i, k);
       }
     }
     // Adjoint of "Calculate update values"
@@ -328,12 +341,12 @@ void HybridLinearModelCoeffs<MODEL>::updateIncAD(Increment_ & dx) const {
           auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v2].name()]);
           for (auto s = 0; s < influenceSize_; s++) {
             dxArray(i, updateStencilArray(k, s))
-              += coeffsView(i, k, v2 * influenceSize_ + s) * updateVals[k + v * nLevels_];
+              += coeffsView(i, k, v2 * influenceSize_ + s) * updateValsView(k + v * nLevels_);
           }
         }
       }
     }
-  }
+  });
   dx.synchronizeFields();
   Log::trace() << "HybridLinearModelCoeffs<MODEL>::updateIncAD() done" << std::endl;
 }

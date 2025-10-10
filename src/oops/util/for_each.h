@@ -676,4 +676,42 @@ void for_each_column(IndexRange range, Functor&& f, Fields&&... fields) {
   for_each_column(pattern, range, std::forward<Functor>(f), std::forward<Fields>(fields)...);
 }
 
+// perThreadStorage: a convience routine for allocating a buffer for use as per thread
+// storage within a parallel region e.g. for_each_value, for_each_column, for_each_index.
+// Let `t` be the number of threads, and `(s1, s2,..., sn)` be the user provided per
+// thread array shape, then the returned array has shape `(t, s1, s2,..., sn)`. Within the
+// parallel region, the buffer view can be sliced to provides a specific threads storage
+// using `atlas_omp_get_thread_num()`. For example:
+// ```
+// auto buffer = perThreadStorage<double>(k);
+// auto bufferView = array::make_view<double, 2>(buffer);
+// for_each_index(
+//   index_space_1d,
+//   [=](idx_t i) mutable {
+//     ...
+//     auto threadChunkView = bufferView.slice(
+//       atlas_omp_get_thread_num(), atlas::array::Range::all());
+//     ...
+//   });
+// ```
+template<typename T, typename... S>
+atlas::array::ArrayT<T> perThreadStorage(
+      util::ExecutionPattern pattern, S... per_thread_shape)
+{
+  if (pattern == util::ExecutionPattern::parallel) {
+      return atlas::array::ArrayT<T>(
+          static_cast<atlas::idx_t>(atlas_omp_get_max_threads()), per_thread_shape...);
+  } else {
+      return atlas::array::ArrayT<T>(1,  per_thread_shape...);
+  }
+};
+
+// Overload for default execution pattern
+template<typename T, typename... S>
+atlas::array::ArrayT<T> perThreadStorage(S... per_thread_shape)
+{
+  return perThreadStorage<T>(util::details::getDefaultForEachExecutionPattern(),
+    per_thread_shape...);
+};
+
 }  // namespace util
