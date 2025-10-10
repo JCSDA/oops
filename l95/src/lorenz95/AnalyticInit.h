@@ -12,7 +12,7 @@
 
 #include "oops/interface/AnalyticInitBase.h"
 
-#include "lorenz95/L95Traits.h"
+#include "lorenz95/L95ObsTraits.h"
 
 namespace lorenz95 {
   class LocsL95;

@@ -8,7 +8,7 @@
  * does it submit to any jurisdiction.
  */
 
-#include "lorenz95/L95Traits.h"
+#include "lorenz95/L95ObsTraits.h"
 #include "oops/runs/Run.h"
 #include "test/interface/ObsSpace.h"
 

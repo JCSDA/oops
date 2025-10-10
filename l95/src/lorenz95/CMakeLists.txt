@@ -19,8 +19,9 @@ set( _l95_srcs
         instantiateLocalizationFactory.h
         Iterator.cc
         Iterator.h
+        L95ObsTraits.h
+        L95ObsTraitsFwd.h
         L95Traits.h
-        L95TraitsFwd.h
         LocsL95.cc
         LocsL95.h
         ModelBias.cc

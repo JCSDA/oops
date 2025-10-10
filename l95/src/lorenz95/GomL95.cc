@@ -18,7 +18,7 @@
 
 #include "eckit/config/Configuration.h"
 
-#include "lorenz95/L95Traits.h"
+#include "lorenz95/L95ObsTraits.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsTable.h"
 #include "oops/base/Locations.h"

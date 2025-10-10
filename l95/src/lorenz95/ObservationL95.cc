@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "lorenz95/GomL95.h"
-#include "lorenz95/L95TraitsFwd.h"
+#include "lorenz95/L95ObsTraitsFwd.h"
 #include "lorenz95/LocsL95.h"
 #include "lorenz95/ObsBias.h"
 #include "lorenz95/ObsDiags1D.h"

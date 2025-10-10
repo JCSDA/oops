@@ -8,8 +8,7 @@
  * does it submit to any jurisdiction.
  */
 
-#ifndef LORENZ95_L95TRAITSFWD_H_
-#define LORENZ95_L95TRAITSFWD_H_
+#pragma once
 
 #include <string>
 
@@ -55,4 +54,3 @@ struct L95ObsTraits {
 
 }  // namespace lorenz95
 
-#endif  // LORENZ95_L95TRAITSFWD_H_

@@ -14,6 +14,7 @@
 
 #include "oops/base/ObsLocalizationBase.h"
 
+#include "lorenz95/L95ObsTraits.h"
 #include "lorenz95/L95Traits.h"
 
 namespace lorenz95 {

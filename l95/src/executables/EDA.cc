@@ -6,6 +6,7 @@
  */
 
 #include "lorenz95/instantiateLocalizationFactory.h"
+#include "lorenz95/L95ObsTraits.h"
 #include "lorenz95/L95Traits.h"
 #include "oops/runs/EnsembleApplication.h"
 #include "oops/runs/Run.h"

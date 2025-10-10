@@ -8,6 +8,7 @@
  * does it submit to any jurisdiction.
  */
 
+#include "lorenz95/L95ObsTraits.h"
 #include "lorenz95/L95Traits.h"
 #include "oops/runs/HofX4D.h"
 #include "oops/runs/Run.h"
