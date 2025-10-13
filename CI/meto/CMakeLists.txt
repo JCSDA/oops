@@ -1,40 +1,58 @@
-#
-# (C) Copyright 2024 MetOffice Crown Copyright
+# (C) Crown Copyright 2025 Met Office
 #
 # This software is licensed under the terms of the Apache Licence Version 2.0
 # which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
-#
-#
-# MetOffice-JEDI Integration Test against OOPS
-#
 
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
-project(oops-ci VERSION 1.0.0 LANGUAGES C CXX Fortran)
+project(
+  metoffice-jedi-ci
+  VERSION 1.0.0
+  LANGUAGES C CXX Fortran
+  DESCRIPTION "Met Office JEDI Integration Test"
+)
 
-set( CMAKE_CXX_STANDARD 17 )
-set( CMAKE_CXX_STANDARD_REQUIRED ON )
-set( CMAKE_CXX_EXTENSIONS OFF )
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(ENABLE_MPI ON CACHE BOOL "Compile with MPI")
 set(ENABLE_OMP ON CACHE BOOL "Compile with OpenMP")
-option(ENABLE_IODA_DATA "Obtain ioda test data from ioda-data repository (vs tarball)" ON)
-option(ENABLE_UFO_DATA "Obtain ufo test data from ufo-data repository (vs tarball)" ON)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/jedicmake")
 if(NOT DEFINED jedicmake_DIR)
   set(jedicmake_DIR "${CMAKE_BINARY_DIR}/jedicmake")
 endif()
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/oops")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/vader" EXCLUDE_FROM_ALL)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/saber" EXCLUDE_FROM_ALL)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ioda" EXCLUDE_FROM_ALL)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ufo" EXCLUDE_FROM_ALL)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/opsinputs" EXCLUDE_FROM_ALL)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/monio" EXCLUDE_FROM_ALL)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/nemo-feedback" EXCLUDE_FROM_ALL)
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/orca-jedi")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ops-um-jedi")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/jjtests")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/lfric-jedi")
+
+set(
+  include_names
+  "$ENV{REPO}" "orca-jedi" "ops-um-jedi" "jjtests" "lfric-jedi")
+if(DEFINED ENV{REPO_TEST_DATA})
+  list(APPEND include_names "$ENV{REPO_TEST_DATA}")
+endif()
+foreach(
+  name
+  "oops"
+  "jedi-model-data"
+  "vader"
+  "saber"
+  "ioda-data"
+  "ioda"
+  "ufo-data"
+  "ufo"
+  "opsinputs"
+  "monio"
+  "nemo-feedback"
+  "orca-jedi"
+  "ops-um-jedi"
+  "jjtests"
+  "lfric-jedi"
+)
+  list(FIND include_names ${name} IS_INCLUDE_NAME)
+  if(${IS_INCLUDE_NAME} GREATER -1)
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/${name}")
+  else()
+    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/${name}" EXCLUDE_FROM_ALL)
+  endif()
+endforeach()
 
 enable_testing()

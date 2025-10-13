@@ -42,25 +42,26 @@ jobs:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
 
-      - name: Checkout ioda
+      - name: Checkout jedi-model-data
         uses: actions/checkout@v4
         with:
-          path: ./${{ env.PR }}/ioda
-          repository: JCSDA-internal/ioda
+          path: ./${{ env.PR }}/jedi-model-data
+          repository: JCSDA-internal/jedi-model-data
           token: ${{ secrets.GH_PAT }}
-      - name: Check build-group for ioda
+          lfs: true
+      - name: Check build-group for jedi-model-data
         if: github.event_name == 'pull_request'
-        run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/ioda
+        run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/jedi-model-data
 
-      - name: Checkout ufo
+      - name: Checkout vader
         uses: actions/checkout@v4
         with:
-          path: ./${{ env.PR }}/ufo
-          repository: JCSDA-internal/ufo
+          path: ./${{ env.PR }}/vader
+          repository: JCSDA-internal/vader
           token: ${{ secrets.GH_PAT }}
-      - name: Check build-group for ufo
+      - name: Check build-group for vader
         if: github.event_name == 'pull_request'
-        run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/ufo
+        run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/vader
 
       - name: Checkout saber
         uses: actions/checkout@v4
@@ -72,15 +73,47 @@ jobs:
         if: github.event_name == 'pull_request'
         run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/saber
 
-      - name: Checkout vader
+      - name: Checkout ioda-data
         uses: actions/checkout@v4
         with:
-          path: ./${{ env.PR }}/vader
-          repository: JCSDA-internal/vader
+          path: ./${{ env.PR }}/ioda-data
+          repository: JCSDA-internal/ioda-data
           token: ${{ secrets.GH_PAT }}
-      - name: Check build-group for vader
+          lfs: true
+      - name: Check build-group for ioda-data
         if: github.event_name == 'pull_request'
-        run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/vader
+        run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/ioda-data
+
+      - name: Checkout ioda
+        uses: actions/checkout@v4
+        with:
+          path: ./${{ env.PR }}/ioda
+          repository: JCSDA-internal/ioda
+          token: ${{ secrets.GH_PAT }}
+      - name: Check build-group for ioda
+        if: github.event_name == 'pull_request'
+        run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/ioda
+
+      - name: Checkout ufo-data
+        uses: actions/checkout@v4
+        with:
+          path: ./${{ env.PR }}/ufo-data
+          repository: JCSDA-internal/ufo-data
+          token: ${{ secrets.GH_PAT }}
+          lfs: true
+      - name: Check build-group for ufo-data
+        if: github.event_name == 'pull_request'
+        run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/ufo-data
+
+      - name: Checkout ufo
+        uses: actions/checkout@v4
+        with:
+          path: ./${{ env.PR }}/ufo
+          repository: JCSDA-internal/ufo
+          token: ${{ secrets.GH_PAT }}
+      - name: Check build-group for ufo
+        if: github.event_name == 'pull_request'
+        run: ./${{ env.PR }}/check-build-group.sh ./${{ env.PR }}/ufo
 
       - name: Checkout monio
         uses: actions/checkout@v4
@@ -167,13 +200,14 @@ jobs:
             --name ${REPO}_${PR}_${GITHUB_SHA::7} \
             --volume ${{ github.workspace }}/${PR}:${WORKDIR} \
             --volume ${{ github.workspace }}/mobb-data:${MOBB_DATA} \
+            --env ATLAS_DATA_PATH="${MOBB_DATA}" \
+            --env LFRICJEDI_TEST_TIER=0 \
+            --env MOBB_DATA="${MOBB_DATA}" \
             --env OMPI_ALLOW_RUN_AS_ROOT=1 \
             --env OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \
-            --env MOBB_DATA=${MOBB_DATA} \
-            --env ATLAS_DATA_PATH=${MOBB_DATA} \
-            --env LFRICJEDI_TEST_TIER=0 \
-            --workdir=${WORKDIR} \
-            --entrypoint=${WORKDIR}/build-and-test.sh \
+            --env REPO="${REPO}" \
+            --workdir="${WORKDIR}" \
+            --entrypoint="${WORKDIR}/build-and-test.sh" \
             'ngmssboxjediacr.azurecr.io/jedibase:alma9'
 
       - name: Cleanup workspace

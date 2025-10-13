@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
-# (C) Crown Copyright 2023, the Met Office. All rights reserved.
+# (C) Crown Copyright 2024, the Met Office. All rights reserved.
 #
 #
 # shellcheck disable=SC2317
@@ -33,6 +33,7 @@ cd "${WORKD}"
 
 # -- Activate spack env if using JCSDA Docker container
 if [[ -f /opt/spack-environment/activate.sh ]]; then
+    # shellcheck disable=SC1091
     source /opt/spack-environment/activate.sh
 fi
 
@@ -61,8 +62,9 @@ cmake -B . -S "${HERE}" -G "${GENERATOR}" -DCMAKE_BUILD_TYPE=Release \
 cmake --build . -j "${NPROC}"
 
 # -- Test
-ctest --test-dir "${TESTDIR}" -E 'coding_norms' --output-on-failure
+ctest --output-on-failure --timeout 60 --test-dir "${TESTDIR}" -E 'coding_norms'
 echo "-- Run Met Office model-interface tests"
-ctest -R 'orca|unifiedmodel|lfric' -E 'coding_norms|xios_server_mode|_C192$' --output-on-failure
+ctest --output-on-failure --timeout 180 \
+    -R 'orca|unifiedmodel|lfric' -E 'coding_norms|xios_server_mode|_C192$'
 
 exit
