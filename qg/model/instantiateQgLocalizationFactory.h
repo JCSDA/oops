@@ -11,15 +11,15 @@
 #ifndef QG_MODEL_INSTANTIATEQGLOCALIZATIONFACTORY_H_
 #define QG_MODEL_INSTANTIATEQGLOCALIZATIONFACTORY_H_
 
-#include "oops/interface/LocalizationBase.h"
-
-#include "oops/qg/LocalizationMatrixQG.h"
-#include "oops/qg/QgTraits.h"
+#include "oops/generic/LocalizationBase.h"
+#include "oops/interface/Localization.h"
 
 namespace qg {
 
+template<typename QGMODEL>
 void instantiateQgLocalizationFactory() {
-  static oops::interface::LocalizationMaker<qg::QgTraits, LocalizationMatrixQG> makerQG_("QG");
+  static oops::LocalizationMaker<QGMODEL, oops::interface::Localization<QGMODEL>>
+      makerQGloc_("QG");
 }
 
 }  // namespace qg

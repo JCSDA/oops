@@ -17,12 +17,11 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "oops/base/Variables.h"
+#include "oops/util/DateTime.h"
+#include "oops/util/Printable.h"
 
-#include "oops/interface/LocalizationBase.h"
-
-#include "oops/qg/GeometryQG.h"
-#include "oops/qg/QgFortran.h"
-#include "oops/qg/QgTraits.h"
+#include "model/QgFortran.h"
 
 // Forward declarations
 namespace qg {
@@ -32,17 +31,15 @@ namespace qg {
 /// Localization matrix for QG model.
 
 // -----------------------------------------------------------------------------
-class LocalizationMatrixQG: public oops::interface::LocalizationBase<qg::QgTraits> {
+class LocalizationMatrixQG: public util::Printable {
  public:
   static const std::string classname() {return "qg::LocalizationMatrixQG";}
 
-  LocalizationMatrixQG(const GeometryQG &,
-                       const oops::Variables &,
-                       const eckit::Configuration &);
+  LocalizationMatrixQG(const GeometryQG &, const oops::Variables &, const eckit::Configuration &);
   ~LocalizationMatrixQG();
 
-  void randomize(IncrementQG &) const override;
-  void multiply(IncrementQG &) const override;
+  void randomize(IncrementQG &) const;
+  void multiply(IncrementQG &) const;
 
  private:
   void print(std::ostream &) const override;

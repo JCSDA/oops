@@ -8,14 +8,15 @@
 #ifndef LORENZ95_INSTANTIATELOCALIZATIONFACTORY_H_
 #define LORENZ95_INSTANTIATELOCALIZATIONFACTORY_H_
 
-#include "lorenz95/L95Traits.h"
-#include "lorenz95/LocalizationMatrixL95.h"
-#include "oops/interface/LocalizationBase.h"
+#include "oops/generic/LocalizationBase.h"
+#include "oops/interface/Localization.h"
 
 namespace lorenz95 {
 
+template<typename L95MODEL>
 void instantiateLocalizationFactory() {
-  static oops::interface::LocalizationMaker<L95Traits, LocalizationMatrixL95> makerL95_("L95");
+  static oops::LocalizationMaker<L95MODEL, oops::interface::Localization<L95MODEL>>
+      makerL95loc_("L95");
 }
 
 }  // namespace lorenz95

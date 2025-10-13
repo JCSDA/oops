@@ -289,7 +289,7 @@ list(
   oops/interface/LinearObsOperator.h
   oops/interface/LinearVariableChange.h
   oops/interface/LocalInterpolator.h
-  oops/interface/LocalizationBase.h
+  oops/interface/Localization.h
   oops/interface/ModelAuxControl.h
   oops/interface/ModelAuxCovariance.h
   oops/interface/ModelAuxIncrement.h

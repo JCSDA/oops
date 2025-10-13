@@ -13,7 +13,7 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  qg::instantiateQgLocalizationFactory();
+  qg::instantiateQgLocalizationFactory<qg::QgTraits>();
   oops::ControlPert<qg::QgTraits, qg::QgObsTraits> var;
   return run.execute(var);
 }

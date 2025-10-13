@@ -15,7 +15,7 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  lorenz95::instantiateLocalizationFactory();
+  lorenz95::instantiateLocalizationFactory<lorenz95::L95Traits>();
   test::Localization<lorenz95::L95Traits> tests;
   return run.execute(tests);
 }

@@ -18,6 +18,7 @@
 #include "lorenz95/IncrementL95.h"
 #include "lorenz95/InterpolatorL95.h"
 #include "lorenz95/Iterator.h"
+#include "lorenz95/LocalizationMatrixL95.h"
 #include "lorenz95/ModelBias.h"
 #include "lorenz95/ModelBiasCorrection.h"
 #include "lorenz95/ModelBiasCovariance.h"
@@ -41,6 +42,7 @@ struct L95Traits {
   typedef lorenz95::StateL95               State;
   typedef lorenz95::IncrementL95           Increment;
   typedef lorenz95::ErrorCovarianceL95     Covariance;
+  typedef lorenz95::LocalizationMatrixL95  Localization;
   typedef lorenz95::InterpolatorL95        LocalInterpolator;
 
   typedef lorenz95::ModelL95               Model;

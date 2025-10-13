@@ -12,9 +12,6 @@
 
 #include <string>
 
-#include "model/ModelQG.h"
-#include "model/TlmQG.h"
-
 #include "model/ChangeVarQG.h"
 #include "model/ChangeVarTLADQG.h"
 #include "model/ErrorCovarianceQG.h"
@@ -22,11 +19,14 @@
 #include "model/GeometryQGIterator.h"
 #include "model/IncrementQG.h"
 #include "model/InterpolatorQG.h"
+#include "model/LocalizationMatrixQG.h"
 #include "model/ModelBias.h"
 #include "model/ModelBiasCovariance.h"
 #include "model/ModelBiasIncrement.h"
 #include "model/ModelData.h"
+#include "model/ModelQG.h"
 #include "model/StateQG.h"
+#include "model/TlmQG.h"
 
 namespace qg {
 
@@ -49,6 +49,7 @@ struct QgTraits {
   typedef qg::IncrementQG           Increment;
   typedef qg::ErrorCovarianceQG     Covariance;
   typedef qg::InterpolatorQG        LocalInterpolator;
+  typedef qg::LocalizationMatrixQG  Localization;
 
   typedef qg::ModelBias             ModelAuxControl;
   typedef qg::ModelBiasIncrement    ModelAuxIncrement;

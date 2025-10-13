@@ -15,7 +15,7 @@
 
 int main(int argc,  char ** argv) {
   oops::Run run(argc, argv);
-  qg::instantiateQgLocalizationFactory();
+  qg::instantiateQgLocalizationFactory<qg::QgTraits>();
   test::Localization<qg::QgTraits> tests;
   return run.execute(tests);
 }
