@@ -96,7 +96,7 @@ template <typename MODEL> void testLinearVariableChangeZero() {
 
     std::unique_ptr<LinearVariableChange_>
         changevar(new LinearVariableChange_(Test_::resol(), lvcConfig));
-    oops::Log::test() << "Testing linear variable change" << std::endl;
+    oops::Log::info() << "Testing linear variable change" << std::endl;
     Increment_  dxChangeVarTL(Test_::resol(), varin,  Test_::time());
     Increment_  dxChangeVarAD(Test_::resol(), varout,  Test_::time());
 
@@ -115,7 +115,7 @@ template <typename MODEL> void testLinearVariableChangeZero() {
     const bool testinverse = Test_::confs()[jj].getBool("test inverse", true);
     if (testinverse)
       {
-        oops::Log::test() << "Doing zero test for inverse" << std::endl;
+        oops::Log::info() << "Doing zero test for inverse" << std::endl;
         Increment_  dxChangeVarInverseTL(Test_::resol(), varout,  Test_::time());
         Increment_  dxChangeVarInverseAD(Test_::resol(), varin,  Test_::time());
         dxChangeVarInverseAD.zero();
@@ -126,7 +126,7 @@ template <typename MODEL> void testLinearVariableChangeZero() {
         changevar->changeVarInverseTL(dxChangeVarInverseTL, varin);
         EXPECT(dxChangeVarInverseTL.norm() == 0.0);
       } else {
-      oops::Log::test() << "Not doing zero test for inverse" << std::endl;
+      oops::Log::info() << "Not doing zero test for inverse" << std::endl;
     }
   }
 }
@@ -161,16 +161,16 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
     double zz1 = dot_product(dxChangeVarTL, dxChangeVarADIn);
     double zz2 = dot_product(dxChangeVarTLIn, dxChangeVarAD);
 
-    oops::Log::test() << "<dxout,KTdxin>-<Kdxout,dxin>/<dxout,KTdxin>="
+    oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<dxout,KTdxin>="
                       << (zz1-zz2)/zz1 << std::endl;
-    oops::Log::test() << "<dxout,KTdxin>-<Kdxout,dxin>/<Kdxout,dxin>="
+    oops::Log::info() << "<dxout,KTdxin>-<Kdxout,dxin>/<Kdxout,dxin>="
                       << (zz1-zz2)/zz2 << std::endl;
     const double tol = 1e-10;
     EXPECT(oops::is_close(zz1, zz2, tol));
     const bool testinverse = Test_::confs()[jj].getBool("test inverse", true);
     if (testinverse)
     {
-      oops::Log::test() << "Doing adjoint test for inverse" << std::endl;
+      oops::Log::info() << "Doing adjoint test for inverse" << std::endl;
       Increment_  dxChangeVarInverseTL(Test_::resol(), varout,  Test_::time());
       Increment_  dxChangeVarInverseAD(Test_::resol(), varin,  Test_::time());
       dxChangeVarInverseTL.random();
@@ -184,13 +184,13 @@ template <typename MODEL> void testLinearVariableChangeAdjoint() {
 
       zz1 = dot_product(dxChangeVarInverseTL, dxChangeVarInverseADIn);
       zz2 = dot_product(dxChangeVarInverseTLIn, dxChangeVarInverseAD);
-      oops::Log::test() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<dxout,KinvTdxin>="
+      oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<dxout,KinvTdxin>="
                       << (zz1-zz2)/zz1 << std::endl;
-      oops::Log::test() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<Kinvdxout,dxin>="
+      oops::Log::info() << "<dxout,KinvTdxin>-<Kinvdxout,dxin>/<Kinvdxout,dxin>="
                       << (zz1-zz2)/zz2 << std::endl;
       EXPECT(oops::is_close(zz1, zz2, tol));
     } else {
-      oops::Log::test() << "Not doing adjoint test for inverse" << std::endl;
+      oops::Log::info() << "Not doing adjoint test for inverse" << std::endl;
     }
   }
 }
@@ -212,7 +212,7 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
     const bool testinverse = Test_::confs()[jj].getBool("test inverse", false);
     if (testinverse)
     {
-      oops::Log::test() << "Testing multiplyInverse" << std::endl;
+      oops::Log::info() << "Testing multiplyInverse" << std::endl;
       std::unique_ptr<LinearVariableChange_>
         changevar(new LinearVariableChange_(Test_::resol(), lvcConfig));
       changevar->changeVarTraj(Test_::xx(), varout);
@@ -227,12 +227,12 @@ template <typename MODEL> void testLinearVariableChangeInverse() {
       const double zz1 = dx.norm();
       const double zz2 = dx0.norm();
 
-      oops::Log::test() << "<x>, <KK^{-1}x>=" << zz1 << " " << zz2 << std::endl;
-      oops::Log::test() << "<x>-<KK^{-1}x>=" << zz1-zz2 << std::endl;
+      oops::Log::info() << "<x>, <KK^{-1}x>=" << zz1 << " " << zz2 << std::endl;
+      oops::Log::info() << "<x>-<KK^{-1}x>=" << zz1-zz2 << std::endl;
 
       EXPECT((zz1-zz2) < tol);
     } else {
-      oops::Log::test() << "multiplyInverse test not executed" << std::endl;
+      oops::Log::info() << "multiplyInverse test not executed" << std::endl;
       EXPECT(true);
     }
   }

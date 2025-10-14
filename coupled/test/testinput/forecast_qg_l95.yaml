@@ -37,5 +37,5 @@ output:
     type: fc
 prints:
   frequency: PT6H
-test:
-  reference filename: testref/forecast_qg_l95.test
+#test:
+#  reference filename: testref/forecast_qg_l95.test

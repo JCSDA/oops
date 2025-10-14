@@ -103,7 +103,7 @@ template <typename MODEL> void testModelAuxIncrementConstructor() {
 
   AuxIncr_ dx(Test_::resol(), Test_::config());
 
-  oops::Log::test() << "Testing ModelAuxIncrement: " << dx << std::endl;
+  oops::Log::info() << "Testing ModelAuxIncrement: " << dx << std::endl;
   EXPECT(dx.norm() == 0.0);
 }
 

@@ -163,7 +163,6 @@ list(
   oops/base/ObserverTLAD.h
   oops/base/ObserverUtils.h
   oops/base/ObsLocalizationBase.h
-  oops/base/ObsLocalizationParametersBase.h
   oops/base/ObsLocalizations.h
   oops/base/ObsOperatorBase.h
   oops/base/ObsOperatorPert.h
@@ -719,23 +718,11 @@ if(BUILD_TESTING)
     test/testinput/variables.yaml
   )
 
-  # oops test output files
-  list(
-    APPEND oops_test_output
-    test/testoutput/fft_multiple.test
-  )
-
   file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testinput)
   CREATE_SYMLINK(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     ${oops_test_input}
-  )
-  file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/test/testoutput)
-  CREATE_SYMLINK(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${oops_test_output}
   )
 
   target_sources(${PROJECT_NAME} PRIVATE ${oops_test_src_files})

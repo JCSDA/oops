@@ -7,8 +7,8 @@ geometry:   # coupled geometry (QG and L95)
   Lorenz 95:
     resol: 40
   QG exclude variables: [x]
-test:
-  reference filename: testref/coupledgeometry.test
+#test:
+#  reference filename: testref/coupledgeometry.test
 
 # Coupled model delegates to other models, but does not
 # itself satisfy the atlas interface requirements

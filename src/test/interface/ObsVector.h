@@ -326,8 +326,8 @@ template <typename OBS> void testMask() {
     test.random();
     std::vector<double> with_mask_vec;
     test.maskAndSerialize(maskvec, with_mask_vec);
-    oops::Log::debug() << "Local number of masked observations is: " <<
-                          with_mask_vec.size() << std::endl;
+    oops::Log::info() << "Local number of masked observations is: " <<
+                         with_mask_vec.size() << std::endl;
     // check that the size is consistent with reference for this MPI task
     EXPECT_EQUAL(static_cast<size_t>(with_mask_vec.size()),
                  nobs_after_mask_local[Test_::comm().rank()]);

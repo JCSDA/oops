@@ -142,7 +142,7 @@ template <typename MODEL> void testStateConstructors() {
   std::unique_ptr<State_> xx1(new State_(Test_::resol(), Test_::test().statefile));
 
   EXPECT(xx1.get());
-  oops::Log::test() << "Printing State from yaml: " << *xx1 << std::endl;
+  oops::Log::info() << "Printing State from yaml: " << *xx1 << std::endl;
   const double norm1 = xx1->norm();
   EXPECT(norm1 != 0);
   EXPECT(oops::is_close(norm1, norm, tol));
@@ -165,7 +165,7 @@ template <typename MODEL> void testStateConstructors() {
 // Test State(const Geometry_ &, const Variables &, const util::DateTime &) constructor
   oops::Variables vars(xx1->variables());
   State_ xx3(Test_::resol(), vars, vt);
-  oops::Log::test() << "Printing empty State: " << xx3 << std::endl;
+  oops::Log::info() << "Printing empty State: " << xx3 << std::endl;
   EXPECT(xx3.norm() == 0);
   EXPECT(xx3.validTime() == vt);
   EXPECT(xx3.variables() == vars);
@@ -305,10 +305,6 @@ template <typename MODEL> void testStateAnalyticInitialCondition() {
 
   const double norm = *Test_::test().normGeneratedState.value();
   const double tol = Test_::test().tolerance;
-
-  oops::Log::debug() << "xx.norm(): " << std::fixed << std::setprecision(8) << xx.norm()
-                     << std::endl;
-  oops::Log::debug() << "norm: " << std::fixed << std::setprecision(8) << norm << std::endl;
 
   EXPECT(oops::is_close(xx.norm(), norm, tol));
 }

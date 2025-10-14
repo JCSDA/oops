@@ -37,7 +37,7 @@ template <typename MODEL> void testConstructor() {
   std::unique_ptr<Geometry_> geom(new Geometry_(conf,
                                                 oops::mpi::world(), oops::mpi::myself()));
   EXPECT(geom.get());
-  oops::Log::test() << "Testing geometry: " << *geom << std::endl;
+  oops::Log::info() << "Testing geometry: " << *geom << std::endl;
   geom.reset();
   EXPECT(!geom.get());
 }

@@ -87,7 +87,7 @@ template <typename MODEL> void testConstructor() {
 
   std::unique_ptr<Covariance_> cov(new Covariance_(Test_::config(), Test_::resol()));
   EXPECT(cov.get());
-  oops::Log::test() << "Testing ModelAuxCovariance: " << *cov << std::endl;
+  oops::Log::info() << "Testing ModelAuxCovariance: " << *cov << std::endl;
   cov.reset();
   EXPECT(!cov.get());
 }

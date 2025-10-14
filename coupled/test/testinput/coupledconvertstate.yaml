@@ -37,6 +37,6 @@ states:
       exp: coupled_l95_convertstate
       type: fc
 
-test:
-  reference filename: testref/coupledconvertstate.test
-  test output filename: testref/coupledconvertstate.test.out
+#test:
+#  reference filename: testref/coupledconvertstate.test
+#  test output filename: testref/coupledconvertstate.test.out

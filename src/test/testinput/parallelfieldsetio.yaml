@@ -1,4 +1,4 @@
-datadir: test/testoutput
+datadir: test
 test configurations:
 - grid:
     name: S5x4

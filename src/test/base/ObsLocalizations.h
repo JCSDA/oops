@@ -56,7 +56,7 @@ template <typename MODEL, typename OBS> void testObsLocalizations() {
   const eckit::LocalConfiguration obsConfig(TestEnvironment::config(), "observations");
   const ObsSpaces_ & obspaces = Test_::obspace();
   ObsLocalizations_ obslocs(obsConfig, obspaces);
-  oops::Log::test() << "Testing obs-space localizations: " << obslocs << std::endl;
+  oops::Log::info() << "Testing obs-space localizations: " << obslocs << std::endl;
 
   // get reference values
   const eckit::LocalConfiguration referenceConfig(TestEnvironment::config(),
@@ -87,8 +87,8 @@ template <typename MODEL, typename OBS> void testObsLocalizations() {
     // debug print to help decide which points to specify for reference
     // set OOPS_DEBUG environment variable to -1 to see prints from all MPI tasks
     if (referenceConfig.getBool("print iterator", false)) {
-      oops::Log::debug() << "Iterating over " << std::setprecision(9) << ii << ": "
-                       << ii << std::endl;
+      oops::Log::info() << "Iterating over " << std::setprecision(9) << ii << ": "
+                        << ii << std::endl;
     }
     // check if we need to test at this location (if there are any points in the
     // reference point list within 1e-5 of this locationn)
@@ -99,13 +99,11 @@ template <typename MODEL, typename OBS> void testObsLocalizations() {
       size_t index = it - reference_points.begin();
       locvector.ones();
       obslocs.computeLocalization(ii, locvector);
-      oops::Log::test() << "Obs localization with geometry iterator: " << ii << ": "
+      oops::Log::info() << "Obs localization with geometry iterator: " << ii << ": "
                         << *ii << std::endl;
-      oops::Log::test() << "Localization values: " << locvector << std::endl;
-      oops::Log::test() << "Local vector nobs and reference: " << locvector.nobs() << ", "
+      oops::Log::info() << "Localization values: " << locvector << std::endl;
+      oops::Log::info() << "Local vector nobs and reference: " << locvector.nobs() << ", "
                         << nobs_local_ref[index] << std::endl;
-      oops::Log::debug() << "Local vector stats lat,lon,nobs,rms: " <<  *ii << ", "
-                         << locvector.nobs() << ", " << locvector.rms() << std::endl;
 
       // save number of local obs to be tested later
       nobs_local[index] = locvector.nobs();
@@ -113,7 +111,7 @@ template <typename MODEL, typename OBS> void testObsLocalizations() {
       // apply localization to a vector of ones
       obsvector.ones();
       obsvector *= locvector;
-      oops::Log::test() << "Localization applied to local ObsVector of ones: " <<
+      oops::Log::info() << "Localization applied to local ObsVector of ones: " <<
                            obsvector << std::endl;
       // save localized vector rms to be tested later
       locvector_rms[index] = obsvector.rms();
@@ -130,8 +128,6 @@ template <typename MODEL, typename OBS> void testObsLocalizations() {
   EXPECT_EQUAL(nobs_local_ref, nobs_local);
   // check value of the rms is close to reference
   ASSERT(lons.size() == ref_locvector_rms.size());
-  oops::Log::debug() << "reference RMS" << ref_locvector_rms << std::endl;
-  oops::Log::debug() << "computed RMS" << locvector_rms << std::endl;
   for (size_t jpoint = 0; jpoint < nobs_local.size(); ++jpoint) {
     if (nobs_local[jpoint] > 0) {
       EXPECT(std::abs(locvector_rms[jpoint]-ref_locvector_rms[jpoint]) < 1.e-5);

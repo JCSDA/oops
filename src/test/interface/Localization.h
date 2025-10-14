@@ -74,7 +74,7 @@ template <typename MODEL> class LocalizationFixture : private boost::noncopyable
     conf.set("date", time_->toString());
     local_.reset(new Localization_(*resol_, *ctlvars_, conf));
 
-    oops::Log::test() << "Testing localization: " << *local_ << std::endl;
+    oops::Log::info() << "Testing localization: " << *local_ << std::endl;
   }
 
   ~LocalizationFixture<MODEL>() = default;

@@ -152,11 +152,11 @@ void test03() {
   fft_gp2spe(&ds_mfft[0], &no_el, &no_seq, &no_el_seq);
 
   // comparing the forward transforms to pre-calculated values
-  // (reference data stored in file 'fft_multiple.test')
+  const float tol = 1.0e-2;
+  std::vector<float> refs(config->getFloatVector("refs"));
   for (int i=0; i < no_el; ++i) {
-    oops::Log::test() << ds_mfft.at(i) << " ";
+    EXPECT(oops::is_close_absolute(ds_mfft.at(i), refs.at(i), tol));
   }
-  oops::Log::test() << std::flush;
 }
 
 // test #04: evaluate multiple FFTs of a set of discrete delta functions

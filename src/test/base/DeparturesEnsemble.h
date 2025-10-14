@@ -84,8 +84,6 @@ template <typename OBS> void testDeparturesEnsemble() {
   // compare rms vector and packEigen matrix in nens deps
   // and depsEns
   for (size_t i = 0; i < nens; i++) {
-    oops::Log::debug() << "Departures and DeparturesEnsembles RMS at mem " << i << ":" << std::endl;
-    oops::Log::debug() << depsRms[i] << ", " << depsEnsRms[i] << std::endl;
     EXPECT_EQUAL(depsRms[i], depsEnsRms[i]);
   }
 

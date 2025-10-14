@@ -137,8 +137,6 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
           locvector.ones();
           obsloc->computeLocalization(ii, locvector);
           oops::Log::info() << "Localization values: " << locvector << std::endl;
-          oops::Log::debug() << "Local vector stats lat,lon,nobs,rms: " <<  *ii << ", "
-                             << locvector.nobs() << ", " << locvector.rms() << std::endl;
 
           // save number of local obs to be tested later
           nobs_local[index] = locvector.nobs();
@@ -164,8 +162,6 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
       // check value of the rms is close to reference
       const std::vector<double> ref_locvector_rms = locconf.getDoubleVector("reference rms");
       ASSERT(lons.size() == ref_locvector_rms.size());
-      oops::Log::debug() << "reference RMS" << ref_locvector_rms << std::endl;
-      oops::Log::debug() << "computed RMS" << locvector_rms << std::endl;
       for (size_t jpoint = 0; jpoint < nobs_local.size(); ++jpoint) {
         if (nobs_local[jpoint] > 0) {
           EXPECT(std::abs(locvector_rms[jpoint]-ref_locvector_rms[jpoint]) < 1.e-5);

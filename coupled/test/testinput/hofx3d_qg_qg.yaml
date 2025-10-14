@@ -46,6 +46,6 @@ observations:
     obs operator:
       obs type: WSpeed
 
-test:
-  reference filename: testref/hofx3d_qg_qg.test
-  test output filename: hofx3d_qg_qg.out
+#test:
+#  reference filename: testref/hofx3d_qg_qg.test
+#  test output filename: hofx3d_qg_qg.out

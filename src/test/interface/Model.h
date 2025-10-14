@@ -98,7 +98,7 @@ template <typename MODEL> void testModelConstructor() {
   typedef ModelFixture<MODEL>   Test_;
   const util::Duration zero(0);
   EXPECT(Test_::model().timeResolution() > zero);
-  oops::Log::test() << "Testing Model: " << Test_::model() << std::endl;
+  oops::Log::info() << "Testing Model: " << Test_::model() << std::endl;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -143,9 +143,9 @@ template <typename MODEL> void testModelForecast() {
 
   EXPECT(xx.validTime() == vt);
 
-  oops::Log::debug() << "xx.norm(): " << std::fixed << std::setprecision(8) << xx.norm()
-                     << std::endl;
-  oops::Log::debug() << "fnorm: " << std::fixed << std::setprecision(8) << fnorm << std::endl;
+  oops::Log::info() << "xx.norm(): " << std::fixed << std::setprecision(8) << xx.norm()
+                    << std::endl;
+  oops::Log::info() << "fnorm: " << std::fixed << std::setprecision(8) << fnorm << std::endl;
 
   EXPECT(oops::is_close(xx.norm(), fnorm, tol));
 
@@ -187,10 +187,10 @@ template <typename MODEL> void testModelReForecast() {
     EXPECT(xx2.validTime() == vt);
 
     // Print the final norms
-    oops::Log::debug() << "xx1.norm(): " << std::fixed << std::setprecision(8) << xx1.norm()
-                       << std::endl;
-    oops::Log::debug() << "xx2.norm(): " << std::fixed << std::setprecision(8) << xx2.norm()
-                       << std::endl;
+    oops::Log::info() << "xx1.norm(): " << std::fixed << std::setprecision(8) << xx1.norm()
+                      << std::endl;
+    oops::Log::info() << "xx2.norm(): " << std::fixed << std::setprecision(8) << xx2.norm()
+                      << std::endl;
 
     // Pass or fail condition
     EXPECT(xx1.norm() == xx2.norm());

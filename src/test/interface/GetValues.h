@@ -201,7 +201,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   // and check to see if the errors are within specified tolerance
   const double tol = TestEnvironment::config().getDouble("tolerance interpolation");
   gval -= ref;
-  oops::Log::test() << "Normalized rms of the difference: " << gval.normalizedrms(ref) << std::endl;
+  oops::Log::info() << "Normalized rms of the difference: " << gval.normalizedrms(ref) << std::endl;
   EXPECT(gval.normalizedrms(ref) < tol);
 }
 
@@ -354,9 +354,9 @@ template <typename MODEL, typename OBS> void testGetValuesAdjoint() {
   const double tol = TestEnvironment::config().getDouble("tolerance AD", 1.0e-11);
   EXPECT(oops::is_close(dot1, dot2, tol));
 
-  oops::Log::test() << "Dot Product <dx, M^Tgv> = " << dot1 << std::endl;
-  oops::Log::test() << "Dot Product <gv, M  dx> = " << dot2 << std::endl;
-  oops::Log::test() << "Relative diff: " << (dot1-dot2)/dot1 << std::endl;
+  oops::Log::info() << "Dot Product <dx, M^Tgv> = " << dot1 << std::endl;
+  oops::Log::info() << "Dot Product <gv, M  dx> = " << dot2 << std::endl;
+  oops::Log::info() << "Relative diff: " << (dot1-dot2)/dot1 << std::endl;
 }
 
 // -------------------------------------------------------------------------------------------------

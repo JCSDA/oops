@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "oops/base/Increment4D.h"
-#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Model.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/generic/SimpleLinearModel.h"

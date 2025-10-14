@@ -138,8 +138,8 @@ template <typename OBS> void testRead() {
     const double xx = testconf.getDouble("norm");
     const double zz = sqrt(dot_product(gval, gval));
 
-    oops::Log::debug() << "xx: " << std::fixed << std::setprecision(8) << xx << std::endl;
-    oops::Log::debug() << "zz: " << std::fixed << std::setprecision(8) << zz << std::endl;
+    oops::Log::info() << "xx: " << std::fixed << std::setprecision(8) << xx << std::endl;
+    oops::Log::info() << "zz: " << std::fixed << std::setprecision(8) << zz << std::endl;
 
     EXPECT(oops::is_close(xx, zz, tol));
   }

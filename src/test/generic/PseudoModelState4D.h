@@ -56,7 +56,7 @@ template <typename MODEL> void testPseudoModelState4D() {
   // set up Model specified in yaml
   const eckit::LocalConfiguration modelconf(TestEnvironment::config(), "model");
   Model_ model1(geometry, modelconf);
-  oops::Log::test() << "Model: " << model1 << std::endl;
+  oops::Log::info() << "Model: " << model1 << std::endl;
 
   // set up PseudoModelState4D with State4D from yaml
   const eckit::LocalConfiguration state4dconf(TestEnvironment::config(),
@@ -64,7 +64,7 @@ template <typename MODEL> void testPseudoModelState4D() {
   State4D_ state4d(geometry, state4dconf);
   std::unique_ptr<ModelBase_> pseudomodel(new PseudoModelState4D_(state4d));
   Model_ model2(std::move(pseudomodel));
-  oops::Log::test() << "PseudoModelState4D: " << model2 << std::endl;
+  oops::Log::info() << "PseudoModelState4D: " << model2 << std::endl;
 
   // check that the two models have the same time resolutions
   const util::Duration step = model1.timeResolution();
@@ -76,9 +76,9 @@ template <typename MODEL> void testPseudoModelState4D() {
     State_ x1(xinit);
     State_ x2(xinit);
     oops::PostProcessor<State_> post;
-    oops::Log::test() << "Running Model for " << jstep << " steps" << std::endl;
+    oops::Log::info() << "Running Model for " << jstep << " steps" << std::endl;
     model1.forecast(x1, modelaux, step * jstep, post);
-    oops::Log::test() << "Running PseudoModelState4D for " << jstep << " steps" << std::endl;
+    oops::Log::info() << "Running PseudoModelState4D for " << jstep << " steps" << std::endl;
     model2.forecast(x2, modelaux, step * jstep, post);
     EXPECT(x1.norm() == x2.norm());
     EXPECT(x1.norm() == state4d[jstep].norm());

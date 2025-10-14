@@ -100,9 +100,7 @@ template <typename MODEL> void testVariableChangeInverse() {
       changevar.changeVar(xx, varout);
     } else {
       changevar.changeVar(xx, varout);
-      oops::Log::debug() << "Test output of changeVar: " << xx << std::endl;
       changevar.changeVarInverse(xx, varin);
-      oops::Log::debug() << "Test output of changeVarInverse: " << xx << std::endl;
     }
 
     // Compute norms of the result and reference

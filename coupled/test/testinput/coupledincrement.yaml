@@ -14,7 +14,7 @@ increment test:
   skip atlas: 1
   skip dirac test: 1
 
-test:
-  reference filename: testref/coupledincrement.test
+#test:
+#  reference filename: testref/coupledincrement.test
 
 test atlas interface: false

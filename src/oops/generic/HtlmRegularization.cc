@@ -10,7 +10,6 @@
 
 #include "atlas/array/ArrayView.h"
 #include "atlas/functionspace/FunctionSpace.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/util/abor1_cpp.h"
 
 namespace oops {

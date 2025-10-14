@@ -54,13 +54,11 @@ template <typename MODEL> void testVerticalLocEV() {
   State_ x(Test_::resol(), Test_::ctlvars(), Test_::time());
 
   VerticalLocEV_ vertloc(vertlocconf, x, x.variables());
-  oops::Log::test() << "Number of eigenvalues used in VerticalLoc: " << vertloc.neig() << std::endl;
+  oops::Log::info() << "Number of eigenvalues used in VerticalLoc: " << vertloc.neig() << std::endl;
 
   //--- check for expected number of eigen modes
   int nEigExpected = TestEnvironment::config().getInt("expected neig");
   int neig = vertloc.neig();
-  oops::Log::debug() << "Expected number of eigen modes: " << nEigExpected << std::endl;
-  oops::Log::debug() << "Actual number of eigen modes: " << neig << std::endl;
   EXPECT(nEigExpected == neig);
 
   //--- check that truncation and rescaling was done correctly
@@ -92,23 +90,19 @@ template <typename MODEL> void testVerticalLocEV() {
   double normRandom = dx2.dot_product_with(dx2);
   dx2.schur_product_with(dx1);
   EXPECT(std::abs(dx2.dot_product_with(dx2)-normRandom) < normRandom*DBL_EPSILON);
-  oops::Log::debug() << "Increment ones()" << dx1 << std::endl;
 
   // modulate increments
   vertloc.modulateIncrement(dx1, incEns);
 
   // check the orthogonality condition
   double n0 = incEns[0][0].dot_product_with(incEns[0][0]);
-  oops::Log::debug() << "dot product 0: " <<  n0 << std::endl;
   // check that eigen vectors are not zeros
   EXPECT(n0 > 0);
   double tol = 20*n0*DBL_EPSILON;
-  oops::Log::debug() << "tolerance :" << tol << std::endl;
 
   // check that eig[ieig>0] are orthogonal to eig[0]
   for (int i = 1; i < neig; ++i) {
     double n = incEns[0][0].dot_product_with(incEns[i][0]);
-    oops::Log::debug() << "dot product " << i << ": " <<  n << std::endl;
     EXPECT(n < tol);
   }
 
@@ -119,7 +113,6 @@ template <typename MODEL> void testVerticalLocEV() {
 
   Eigen::MatrixXd modInc = vertloc.modulateIncrement(incEns2, geometry.begin(), 0);
   Eigen::MatrixXd modIncInner = modInc.transpose()*modInc;
-  oops::Log::debug() << "modInc'*modInc" << modIncInner << std::endl;
   // modIncInner should be a diagonal matrix
   for (int i = 1; i < neig; ++i) {
     EXPECT(modIncInner(0, i) < modIncInner(0, 0)*DBL_EPSILON);

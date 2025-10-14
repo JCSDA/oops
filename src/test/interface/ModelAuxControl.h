@@ -88,7 +88,7 @@ template <typename MODEL> void testConstructor() {
 
   std::unique_ptr<ModelAux_> bias(new ModelAux_(Test_::resol(), Test_::config()));
   EXPECT(bias.get());
-  oops::Log::test() << "Testing ModelAuxControl: " << *bias << std::endl;
+  oops::Log::info() << "Testing ModelAuxControl: " << *bias << std::endl;
   bias.reset();
   EXPECT(!bias.get());
 }

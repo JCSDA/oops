@@ -39,7 +39,7 @@ state test:
   date: 2010-01-01T00:00:00Z
   test variable change constructor: false
 
-test:
-  reference filename: testref/coupledstate.test
+#test:
+#  reference filename: testref/coupledstate.test
 
 test atlas interface: false

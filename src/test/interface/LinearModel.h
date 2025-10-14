@@ -171,7 +171,7 @@ template <typename MODEL> void testLinearModelConstructor() {
 
   const util::Duration zero(0);
   EXPECT(Test_::tlm().timeResolution() > zero);
-  oops::Log::test() << "Testing LinearModel: " << Test_::tlm() << std::endl;
+  oops::Log::info() << "Testing LinearModel: " << Test_::tlm() << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -321,17 +321,17 @@ template <typename MODEL> void testLinearApproximation() {
     derr -= diff;
     const double errnorm = derr.norm();
     errors.push_back(errnorm / difnorm);
-    std::streamsize ss = oops::Log::test().precision();
-    oops::Log::test() << std::setprecision(16);
-    oops::Log::test() << "TL error = " << err
+    std::streamsize ss = oops::Log::info().precision();
+    oops::Log::info() << std::setprecision(16);
+    oops::Log::info() << "TL error = " << err
                       << ", relative error = " << errnorm / difnorm << std::endl;
-    oops::Log::test() << std::setprecision(ss);
+    oops::Log::info() << std::setprecision(ss);
     zz /= 10.0;
   }
 
 // Analyze results
   const double approx = *std::min_element(errors.begin(), errors.end());
-  oops::Log::test() << "Test TL min error = " << approx << std::endl;
+  oops::Log::info() << "Test TL min error = " << approx << std::endl;
   const double tol = Test_::test().getDouble("tolerance TL");
   EXPECT(approx < tol);
 }
