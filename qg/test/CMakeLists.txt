@@ -114,7 +114,6 @@ list( APPEND qg_testinput
   testinput/model.yaml
   testinput/modelauxcovariance.yaml
   testinput/modelauxincrement.yaml
-  testinput/norm.yaml
   testinput/obs_aux.yaml
   testinput/obs_iterator.yaml
   testinput/obs_localization.yaml
@@ -544,13 +543,6 @@ ecbuild_add_test( TARGET  test_qg_fieldset4D_par
                   MPI     3
                   SOURCES executables/TestFieldSet4D.cc
                   ARGS    "testinput/fieldset4D_par.yaml"
-                  LIBS    qg
-                  TEST_DEPENDS test_qg_truth test_qg_forecast )
-
-ecbuild_add_test( TARGET  test_qg_Norm
-                  MPI     1
-                  SOURCES executables/TestNorm.cc
-                  ARGS    "testinput/norm.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth test_qg_forecast )
 

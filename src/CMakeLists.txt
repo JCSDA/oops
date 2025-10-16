@@ -148,7 +148,6 @@ list(
   oops/base/ModelBase.h
   oops/base/ModelSpaceCovarianceBase.h
   oops/base/MultiplicativeInflation.h
-  oops/base/NormBase.h
   oops/base/ObsAuxControls.h
   oops/base/ObsAuxCovariances.h
   oops/base/ObsAuxIncrements.h
@@ -260,10 +259,8 @@ list(
   oops/generic/LocalInterpolatorBase.h
   oops/generic/instantiateLinearModelFactory.h
   oops/generic/instantiateModelFactory.h
-  oops/generic/instantiateNormFactory.h
   oops/generic/instantiateObsErrorFactory.h
   oops/generic/LocalizationBase.h
-  oops/generic/NormScalar.h
   oops/generic/ObsErrorDiag.h
   oops/generic/ObsErrorBase.h
   oops/generic/PseudoLinearModelIncrement4D.h
@@ -294,7 +291,6 @@ list(
   oops/interface/ModelAuxIncrement.h
   oops/interface/Model.h
   oops/interface/ModelData.h
-  oops/interface/NormGradient.h
   oops/interface/ObsAuxControl.h
   oops/interface/ObsAuxCovariance.h
   oops/interface/ObsAuxIncrement.h
@@ -627,7 +623,6 @@ if(BUILD_TESTING)
 
     test/base/FieldSets.h
     test/base/Fortran.h
-    test/base/NormBase.h
     test/base/ObsErrorCovariance.h
     test/base/ObsLocalizations.h
     test/base/variables.F90
