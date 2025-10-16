@@ -1,0 +1,146 @@
+cost function:
+  cost type: 3D-Var
+  time window:
+    begin: 2010-01-01T09:00:00Z
+    length: PT6H
+  analysis variables: [x, u, v]
+  geometry:  # coupled geometry (qg and qg)
+    QG:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    QG 2:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+    QG include variables: [x, z]
+    QG 2 include variables: [q, u, v]
+  background:
+    QG:
+      date: 2010-01-01T12:00:00Z
+      filename: ../../qg/test/Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+      state variables: [x]
+    QG 2:
+      date: 2010-01-01T12:00:00Z
+      filename: ../../qg/test/Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+      state variables: [q, u, v]
+  background error:
+    covariance model: Coupled Block Diagonal
+    QG:
+      covariance model: QgError
+      horizontal_length_scale: 2.2e6
+      maximum_condition_number: 1.0e6
+      standard_deviation: 1.8e7
+      vertical_length_scale: 15000.0
+    QG 2:
+      covariance model: QgErrorId
+      horizontal_length_scale: 2.2e6
+      maximum_condition_number: 1.0e6
+      standard_deviation: 1.8e7
+      vertical_length_scale: 15000.0
+  observations:
+    observers:
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: ../../qg/test/Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar.coupledqg.obs3d.nc
+        obs type: Stream
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: ../../qg/test/Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar.coupledqg..nc
+        obs type: Wind
+    - obs error:
+        covariance model: diagonal
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: ../../qg/test/Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/3dvar.coupledqg..nc
+        obs type: WSpeed
+variational:
+  minimizer:
+    algorithm: DRPCG
+  iterations:
+  - gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      QG:
+        nx: 20
+        ny: 10
+        depths: [4500.0, 5500.0]
+      QG 2:
+        nx: 20
+        ny: 10
+        depths: [4500.0, 5500.0]
+      QG include variables: [x, z]
+      QG 2 include variables: [q, u, v]
+    online diagnostics:
+      write increment: true
+      increment:
+        state component:
+          QG:
+            datadir: Data
+            date: 2010-01-01T12:00:00Z
+            exp: 3dvar.coupledqg1.iter1
+            type: in
+          QG 2:
+            datadir: Data
+            date: 2010-01-01T12:00:00Z
+            exp: 3dvar.coupledqg2.iter1
+            type: in
+
+final:
+  increment:
+    geometry:
+      QG:
+        nx: 40
+        ny: 20
+        depths: [4500.0, 5500.0]
+      QG 2:
+        nx: 40
+        ny: 20
+        depths: [4500.0, 5500.0]
+      QG include variables: [x, z]
+      QG 2 include variables: [q, u, v]
+    
+    output:
+      state component:
+        QG:
+          datadir: Data
+          date: 2010-01-01T12:00:00Z
+          exp: 3dvar.increment.coupled1
+          type: in
+        QG 2:
+          datadir: Data
+          date: 2010-01-01T12:00:00Z
+          exp: 3dvar.increment.coupled2
+          type: in
+        analysis variables: [x, u, v]
+output:
+  QG:
+    datadir: Data
+    exp: 3dvar.coupled1
+    frequency: PT6H
+    type: an
+  QG 2:
+    datadir: Data
+    exp: 3dvar.coupled2
+    frequency: PT6H
+    type: an
+
+test:
+  reference filename: testref/var_qg_qg.test
+  test output filename: var_qg_qg.out

@@ -220,9 +220,15 @@ list(
   oops/contrib/dcmipInitialConditionsTest_4_v3_Fortran.h
 
   oops/coupled/AuxCoupledModel.h
+  oops/coupled/BlockDiagonalCovarianceCoupled.h
+  oops/coupled/ErrorCovarianceCoupled.h
   oops/coupled/GeometryCoupled.h
   oops/coupled/GetValuesCoupled.h
   oops/coupled/IncrementCoupled.h
+  oops/coupled/LinearModelCoupled.h
+  oops/coupled/LinearVariableChangeCoupled.h
+  oops/coupled/ModelAuxCovarianceCoupled.h
+  oops/coupled/ModelAuxIncrementCoupled.h
   oops/coupled/ModelCoupled.h
   oops/coupled/StateCoupled.h
   oops/coupled/TraitCoupled.h

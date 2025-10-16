@@ -7,7 +7,7 @@ geometry:   # coupled geometry (QG and L95)
     resol: 40
   QG exclude variables: [x]
 
-inc variables: [x]
+inc variables: [x, q]
 
 increment test:
   date: 2010-01-01T00:00:00Z

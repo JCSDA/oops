@@ -70,7 +70,10 @@ class GeometryCoupled : public util::Printable {
   ///          It is provided for compile-time compatibility with oops interfaces, but will throw
   ///          an exception if called as a reminder that the implementation is incorrect.
   const eckit::mpi::Comm & getComm() const {
-    throw eckit::Exception("Called GeometryCoupled.getComm(), but this is just a stub");
+    if (parallel_) {
+      throw eckit::Exception("GeometryCoupled.getComm() not implemented for parallel");
+    }
+    return geom1_->getComm();
   }
 
   /// Accessors to components of coupled geometry

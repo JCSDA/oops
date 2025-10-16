@@ -11,6 +11,7 @@ state test:
     QG:
       date: 2010-01-01T00:00:00Z
       filename: ../../qg/test/Data/truth.fc.2009-12-15T00:00:00Z.P17D.nc
+      state variables: [q]
     Lorenz 95:
       date: 2010-01-01T00:00:00Z
       filename: ../../l95/test/Data/forecast.an.2010-01-01T00:00:00Z.l95
@@ -30,11 +31,12 @@ state test:
       QG:
         date: 2010-01-01T00:00:00Z
         filename: Data/coupled_state_test_qg.fc.2010-01-01T00:00:00Z.PT0S.nc
+        state variables: [q]
       Lorenz 95:
         date: 2010-01-01T00:00:00Z
         filename: Data/coupled_state_test_l95.fc.2010-01-01T00:00:00Z.PT0S.l95
 
-  norm file: 182665691.455
+  norm file: 9824684.82492
   tolerance: 1.e-3
   date: 2010-01-01T00:00:00Z
   test variable change constructor: false

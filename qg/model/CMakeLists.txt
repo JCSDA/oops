@@ -5,6 +5,8 @@ ChangeVarQG.cc
 ChangeVarQG.h
 ChangeVarTLADQG.cc
 ChangeVarTLADQG.h
+ErrorCovarianceIdQG.cc
+ErrorCovarianceIdQG.h
 ErrorCovarianceQG.cc
 ErrorCovarianceQG.h
 FieldsQG.cc

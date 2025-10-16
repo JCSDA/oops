@@ -248,6 +248,9 @@ size_t FieldsQG::serialSize() const {
   qg_fields_sizes_f90(keyFlds_, nx, ny, nz);
   qg_fields_lbc_f90(keyFlds_, lbc);
   size_t nn = nx * ny * nz;
+  size_t nvars = vars_.size();
+  if (vars_.has("z")) nvars--;
+  nn *= nvars;
   if (lbc == 1) {
     nn += 2 * (nx + 1) * nz;
   }

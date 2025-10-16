@@ -25,6 +25,7 @@
 
 #include "oops/coupled/GeometryCoupled.h"
 #include "oops/coupled/StateCoupled.h"
+#include "oops/coupled/UtilsCoupled.h"
 
 namespace oops {
 
@@ -117,18 +118,19 @@ IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const GeometryCoupled_ & reso
                                                    const util::DateTime & time)
   : geom_(new GeometryCoupled_(resol)), dx1_(), dx2_(), parallel_(resol.isParallel()) {
   Log::trace() << "IncrementCoupled::IncrementCoupled starting" << std::endl;
+  std::vector<Variables> splitvars = splitVariables(vars, resol.variables());
   if (parallel_) {
     if (resol.modelNumber() == 1) {
-      dx1_ = std::make_unique<Increment<MODEL1>>(resol.geometry1(), vars, time);
+      dx1_ = std::make_unique<Increment<MODEL1>>(resol.geometry1(), splitvars[0], time);
       vars_ = dx1_->variables();
     }
     if (resol.modelNumber() == 2) {
-      dx2_ = std::make_unique<Increment<MODEL2>>(resol.geometry2(), vars, time);
+      dx2_ = std::make_unique<Increment<MODEL2>>(resol.geometry2(), splitvars[1], time);
       vars_ = dx2_->variables();
     }
   } else {
-    dx1_ = std::make_unique<Increment<MODEL1>>(resol.geometry1(), vars, time);
-    dx2_ = std::make_unique<Increment<MODEL2>>(resol.geometry2(), vars, time);
+    dx1_ = std::make_unique<Increment<MODEL1>>(resol.geometry1(), splitvars[0], time);
+    dx2_ = std::make_unique<Increment<MODEL2>>(resol.geometry2(), splitvars[1], time);
     vars_ = dx1_->variables();
     vars_ += dx2_->variables();
   }

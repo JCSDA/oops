@@ -10,6 +10,7 @@ list( APPEND coupled_testinput
   testinput/coupledincrement.yaml
   testinput/forecast_qg_l95.yaml
   testinput/hofx3d_qg_qg.yaml
+  testinput/var_qg_qg.yaml
 )
 
 list( APPEND coupled_testref
@@ -20,6 +21,7 @@ list( APPEND coupled_testref
   testref/coupledincrement.test
   testref/forecast_qg_l95.test
   testref/hofx3d_qg_qg.test
+  testref/var_qg_qg.test
 )
 
 # Create directory for test yamls and symlink all files
@@ -120,5 +122,12 @@ ecbuild_add_test( TARGET  test_coupled_forecast_qg_l95
 ecbuild_add_test( TARGET  test_coupled_hofx3d_qg_qg
                   SOURCES executables/hofx3d_qg_qg.cc
                   ARGS    "testinput/hofx3d_qg_qg.yaml"
+                  LIBS    qg
+                  TEST_DEPENDS test_qg_truth test_qg_make_obs_4d_12h )
+
+# Test Variational application with coupled trait
+ecbuild_add_test( TARGET  test_coupled_var_qg_qg
+                  SOURCES executables/var_qg_qg.cc
+                  ARGS    "testinput/var_qg_qg.yaml"
                   LIBS    qg
                   TEST_DEPENDS test_qg_truth test_qg_make_obs_4d_12h )

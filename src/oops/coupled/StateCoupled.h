@@ -23,6 +23,7 @@
 #include "oops/util/Printable.h"
 
 #include "oops/coupled/GeometryCoupled.h"
+#include "oops/coupled/UtilsCoupled.h"
 
 namespace oops {
 
@@ -90,18 +91,19 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
                                            const util::DateTime & time)
   : geom_(new GeometryCoupled_(resol)), xx1_(), xx2_(), parallel_(resol.isParallel()) {
   Log::trace() << "StateCoupled::StateCoupled starting" << std::endl;
+  std::vector<Variables> splitvars = splitVariables(vars, resol.variables());
   if (parallel_) {
     if (resol.modelNumber() == 1) {
-      xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), vars, time);
+      xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), splitvars[0], time);
       vars_ = xx1_->variables();
     }
     if (resol.modelNumber() == 2) {
-      xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), vars, time);
+      xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), splitvars[1], time);
       vars_ = xx2_->variables();
     }
   } else {
-    xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), vars, time);
-    xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), vars, time);
+    xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), splitvars[0], time);
+    xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), splitvars[1], time);
     vars_ = xx1_->variables();
     vars_ += xx2_->variables();
   }

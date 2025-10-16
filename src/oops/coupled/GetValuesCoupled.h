@@ -89,13 +89,17 @@ class GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>:
 /// Variables that will be required from the State and Increment
   const Variables & linearVariables() const {return linvars_;}
   const Variables & requiredVariables() const {return geovars_;}
-  bool useMethodsTL() const {return false;}
+  bool useMethodsTL() const {return geovalsTL_;}
+
+  /// Continuous DA update
+  void updateGetVals(const eckit::Configuration &);
 
  private:
   const Variables geovars_;   /// Variables needed from both models
   const Variables linvars_;   /// Variables for TL/AD needed from both models
   std::unique_ptr<GetValues<MODEL1, OBS>> getvals1_;
   std::unique_ptr<GetValues<MODEL2, OBS>> getvals2_;
+  bool geovalsTL_ = false;
 };
 
 // -----------------------------------------------------------------------------
@@ -108,11 +112,10 @@ GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::GetValues(const eckit::Configurati
                                  const Variables & vars, const Variables & varl)
   : geovars_(vars), linvars_(varl)
 {
-  Log::trace() << "GetValues::GetValues start" << std::endl;
+  Log::trace() << "GetValuesCoupled::GetValuesCoupled start" << std::endl;
   // decide what variables are provided by what model
   std::vector<Variables> splitgeovars = splitVariables(geovars_, geom.geometry().variables());
   std::vector<Variables> splitlinvars = splitVariables(linvars_, geom.geometry().variables());
-
   if (splitgeovars[0].size() > 0) {
     getvals1_ = std::make_unique<GetValues<MODEL1, OBS>>(conf.getSubConfiguration(MODEL1::name()),
                                  geom.geometry().geometry1(), timeWindow, locs, splitgeovars[0],
@@ -123,7 +126,7 @@ GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::GetValues(const eckit::Configurati
                                  geom.geometry().geometry2(), timeWindow, locs, splitgeovars[1],
                                  splitlinvars[1]);
   }
-  Log::trace() << "GetValues::GetValues done" << std::endl;
+  Log::trace() << "GetValuesCoupled::GetValuesCoupled done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -132,41 +135,41 @@ GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::GetValues(const eckit::Configurati
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::initialize(const util::Duration & tstep) {
-  Log::trace() << "GetValues::initialize start" << std::endl;
+  Log::trace() << "GetValuesCoupled::initialize start" << std::endl;
   if (getvals1_) getvals1_->initialize(tstep);
   if (getvals2_) getvals2_->initialize(tstep);
-  Log::trace() << "GetValues::initialize done" << std::endl;
+  Log::trace() << "GetValuesCoupled::initialize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::process(const State_ & xx) {
-  Log::trace() << "GetValues::process start" << std::endl;
+  Log::trace() << "GetValuesCoupled::process start" << std::endl;
   if (getvals1_) getvals1_->process(xx.state().state1());
   if (getvals2_) getvals2_->process(xx.state().state2());
-  Log::trace() << "GetValues::process done" << std::endl;
+  Log::trace() << "GetValuesCoupled::process done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::finalize() {
-  Log::trace() << "GetValues::finalize start" << std::endl;
+  Log::trace() << "GetValuesCoupled::finalize start" << std::endl;
   if (getvals1_) getvals1_->finalize();
   if (getvals2_) getvals2_->finalize();
-  Log::trace() << "GetValues::finalize done" << std::endl;
+  Log::trace() << "GetValuesCoupled::finalize done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
-  Log::trace() << "GetValues::fillGeoVaLs start" << std::endl;
+  Log::trace() << "GetValuesCoupled::fillGeoVaLs start" << std::endl;
 
   if (getvals1_) getvals1_->fillGeoVaLs(geovals);
   if (getvals2_) getvals2_->fillGeoVaLs(geovals);
 
-  Log::trace() << "GetValues::fillGeoVaLs done" << std::endl;
+  Log::trace() << "GetValuesCoupled::fillGeoVaLs done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -175,28 +178,42 @@ void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::fillGeoVaLs(GeoVaLs_ & geoval
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::initializeTL(const util::Duration & tstep) {
-  throw eckit::NotImplemented("GetValuesCoupled::initializeTL not implemented", Here());
+  Log::trace() << "GetValuesCoupled::initializeTL start" << std::endl;
+  if (getvals1_) getvals1_->initializeTL(tstep);
+  if (getvals2_) getvals2_->initializeTL(tstep);
+  geovalsTL_ = true;
+  Log::trace() << "GetValuesCoupled::initializeTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::processTL(const Increment_ & dx) {
-  throw eckit::NotImplemented("GetValuesCoupled::processTL not implemented", Here());
+  Log::trace() << "GetValuesCoupled::processTL start" << std::endl;
+  if (getvals1_) getvals1_->processTL(dx.increment().increment1());
+  if (getvals2_) getvals2_->processTL(dx.increment().increment2());
+  Log::trace() << "GetValuesCoupled::processTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::finalizeTL() {
-  throw eckit::NotImplemented("GetValuesCoupled::finalizeTL not implemented", Here());
+  Log::trace() << "GetValuesCoupled::finalizeTL start" << std::endl;
+  if (getvals1_) getvals1_->finalizeTL();
+  if (getvals2_) getvals2_->finalizeTL();
+  Log::trace() << "GetValuesCoupled::finalizeTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
-  throw eckit::NotImplemented("GetValuesCoupled::fillGeoVaLsTL not implemented", Here());
+  Log::trace() << "GetValuesCoupled::fillGeoVaLsTL start" << std::endl;
+  if (getvals1_) getvals1_->fillGeoVaLsTL(geovals);
+  if (getvals2_) getvals2_->fillGeoVaLsTL(geovals);
+  geovalsTL_ = false;
+  Log::trace() << "GetValuesCoupled::fillGeoVaLsTL done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -205,30 +222,62 @@ void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::fillGeoVaLsTL(GeoVaLs_ & geov
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::initializeAD() {
-  throw eckit::NotImplemented("GetValuesCoupled::initializeAD not implemented", Here());
+  Log::trace() << "GetValuesCoupled::initializeAD start" << std::endl;
+  if (getvals1_) getvals1_->initializeAD();
+  if (getvals2_) getvals2_->initializeAD();
+  Log::trace() << "GetValuesCoupled::initializeAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::processAD(Increment_ & dx) {
-  throw eckit::NotImplemented("GetValuesCoupled::processAD not implemented", Here());
+  Log::trace() << "GetValuesCoupled::processAD start" << std::endl;
+  if (getvals1_) {
+    getvals1_->processAD(dx.increment().increment1());
+    if (getvals1_->linearVariables().size() > 0) {
+      dx.increment().increment1().synchronizeFields();
+    }
+  }
+  if (getvals2_) {
+    getvals2_->processAD(dx.increment().increment2());
+    if (getvals2_->linearVariables().size() > 0) {
+      dx.increment().increment2().synchronizeFields();
+    }
+  }
+  Log::trace() << "GetValuesCoupled::processAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::finalizeAD(const util::Duration & tstep) {
-  throw eckit::NotImplemented("GetValuesCoupled::finalizeAD not implemented", Here());
+  Log::trace() << "GetValuesCoupled::finalizeAD start" << std::endl;
+  if (getvals1_) getvals1_->finalizeAD(tstep);
+  if (getvals2_) getvals2_->finalizeAD(tstep);
+  Log::trace() << "GetValuesCoupled::finalizeAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL1, typename MODEL2, typename OBS>
 void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
-  throw eckit::NotImplemented("GetValuesCoupled::fillGeoVaLsAD not implemented", Here());
+  Log::trace() << "GetValuesCoupled::fillGeoVaLsAD start" << std::endl;
+  if (getvals1_) getvals1_->fillGeoVaLsAD(geovals);
+  if (getvals2_) getvals2_->fillGeoVaLsAD(geovals);
+  Log::trace() << "GetValuesCoupled::fillGeoVaLsAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
+
+template <typename MODEL1, typename MODEL2, typename OBS>
+void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::updateGetVals(
+    const eckit::Configuration & conf) {
+  Log::trace() << "GetValuesCoupled::updateGetVals start" << std::endl;
+  // passing the same configuration since time window will be the same for both models
+  if (getvals1_) getvals1_->updateGetVals(conf);
+  if (getvals2_) getvals2_->updateGetVals(conf);
+  Log::trace() << "GetValuesCoupled::updateGetVals done" << std::endl;
+}
 
 }  // namespace oops

@@ -9,41 +9,44 @@
 
 #include <string>
 
+#include "model/ModelQG.h"
+#include "model/TlmQG.h"
+
+#include "model/ChangeVarQG.h"
+#include "model/ChangeVarTLADQG.h"
+#include "model/ErrorCovarianceIdQG.h"
+#include "model/GeometryQG.h"
+#include "model/GeometryQGIterator.h"
+#include "model/IncrementQG.h"
+#include "model/InterpolatorQG.h"
+#include "model/ModelBias.h"
+#include "model/ModelBiasCovariance.h"
+#include "model/ModelBiasIncrement.h"
+#include "model/ModelData.h"
+#include "model/StateQG.h"
+
 namespace qg {
-
-class GeometryQG;
-class GeometryQGIterator;
-
-class StateQG;
-class IncrementQG;
-class ErrorCovarianceQG;
-class InterpolatorQG;
-
-class ChangeVarQG;
-class ChangeVarTLADQG;
-
-class ModelBias;
-class ModelBiasIncrement;
-class ModelBiasCovariance;
-class ModelData;
 
 // copy of QgTraits with a different name for use with qg-qg
 // coupled applications
 struct QgTraits2 {
   static std::string name() {return "QG 2";}
-  static std::string nameCovar() {return "QgError";}
-  static std::string nameCovar4D() {return "QgError";}
+  static std::string nameCovar() {return "QgErrorId";}
+  static std::string nameCovar4D() {return "QgErrorId";}
 
   typedef qg::GeometryQG            Geometry;
 
   typedef qg::GeometryQGIterator    GeometryIterator;
+
+  typedef qg::ModelQG               Model;
+  typedef qg::TlmQG                 LinearModel;
 
   typedef qg::ChangeVarQG           VariableChange;
   typedef qg::ChangeVarTLADQG       LinearVariableChange;
 
   typedef qg::StateQG               State;
   typedef qg::IncrementQG           Increment;
-  typedef qg::ErrorCovarianceQG     Covariance;
+  typedef qg::ErrorCovarianceIdQG   Covariance;
   typedef qg::InterpolatorQG        LocalInterpolator;
 
   typedef qg::ModelBias             ModelAuxControl;
