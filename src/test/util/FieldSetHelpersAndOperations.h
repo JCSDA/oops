@@ -128,6 +128,25 @@ CASE("util/FieldSetHelpersAndOperations/StructuredColumns") {
   const double dp1sqrt = util::dotProductFieldSets(fset1sqrt, fset1sqrt, vars.variables(), comm);
   EXPECT(oops::is_close(dp1sqrt, dp1, 1.0e-12));
 
+  // Clamp FieldSet
+  atlas::FieldSet fset1clamp = util::copyFieldSet(fset1);
+  eckit::LocalConfiguration clampConfig;
+  std::vector<eckit::LocalConfiguration> boundaries;
+  eckit::LocalConfiguration boundary1;
+  boundary1.set("field", "var1");
+  boundary1.set("min", 0.0);
+  boundary1.set("max", 1.2);
+  boundaries.push_back(boundary1);
+  eckit::LocalConfiguration boundary2;
+  boundary2.set("field", "var2");
+  boundary2.set("min", -0.1);
+  boundary2.set("max", 0.7);
+  boundaries.push_back(boundary2);
+  clampConfig.set("boundaries", boundaries);
+  util::clampFieldSet(fset1clamp, clampConfig);
+  const double dp1clamp = util::dotProductFieldSets(fset1clamp, fset1clamp, vars.variables(), comm);
+  EXPECT(oops::is_close(dp1clamp, 1010.1199159347068, 1.0e-12));
+
   // Compare FieldSets
   EXPECT(util::compareFieldSets(comm, fset1, fset1copy));
   EXPECT_NOT(util::compareFieldSets(comm, fset1, fset2));

@@ -12,6 +12,7 @@
 
 #include "atlas/field.h"
 
+#include "eckit/config/Configuration.h"
 #include "eckit/mpi/Comm.h"
 
 namespace util {
@@ -48,6 +49,8 @@ void sqrtFieldSet(atlas::FieldSet &);
 void addZeroFieldToFieldSet(const std::string &,
                             const std::string &,
                             atlas::FieldSet & fset);
+void clampFieldSet(atlas::FieldSet &,
+                   const eckit::Configuration &);
 
 
 // -----------------------------------------------------------------------------

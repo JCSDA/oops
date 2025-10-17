@@ -309,4 +309,51 @@ void addZeroFieldToFieldSet(const std::string & fldname,
 
 // -----------------------------------------------------------------------------
 
+void clampFieldSet(atlas::FieldSet & fset,
+                   const eckit::Configuration & conf) {
+  oops::Log::trace() << "clampFieldSet starting" << std::endl;
+  std::vector<eckit::LocalConfiguration> confs = conf.getSubConfigurations("boundaries");
+
+  for (size_t ii = 0; ii < confs.size(); ++ii) {
+    const std::string fldname = confs[ii].getString("field");
+
+    if (fset.has(fldname)) {
+      int count = 0;
+      int total = 0;
+      const bool has_min = confs[ii].has("min");
+      const bool has_max = confs[ii].has("max");
+      const double min_val = confs[ii].getDouble("min", 0.0);
+      const double max_val = confs[ii].getDouble("max", 0.0);
+
+      if (has_min && has_max) ASSERT(min_val < max_val);
+
+      util::for_each_value(
+        ExecutionPattern::serial,  // serial execution facilitates implementation of
+                                   // diagnostic counters
+        util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
+        [&](double & val) {
+          if (has_min && val < min_val) {
+            val = min_val;
+            count++;
+          }
+          if (has_max && val > max_val) {
+            val = max_val;
+            count++;
+          }
+          total++;
+        },
+        fset.field(fldname));
+        oops::Log::info() << "clampFieldSet updated " << count << " " << fldname
+                          << " values out of " << total << " total values" << std::endl;
+    } else {
+      oops::Log::info() << "clampFieldSet field: " << fldname
+                        << " not found, no update" << std::endl;
+    }
+  }
+  fset.set_dirty(false);
+  oops::Log::trace() << "clampFieldSet done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 }  // namespace util
