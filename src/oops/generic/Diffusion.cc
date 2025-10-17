@@ -297,7 +297,7 @@ std::shared_ptr<Diffusion::DerivedGeom> Diffusion::calculateDerivedGeom(
                     +fs.type()+"\" is not supported");
   }
 
-  oops::Log::trace() << "Diffusion::Diffusion end" << std::endl;
+  oops::Log::trace() << "Diffusion::calculateDerivedGeom end" << std::endl;
   return derivedGeom;
 }
 
