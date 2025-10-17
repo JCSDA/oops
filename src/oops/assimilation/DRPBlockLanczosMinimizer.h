@@ -223,6 +223,7 @@ double DRPBlockLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh,
     }
 
     double costJoJc = costJ - costJb;
+    checkQuadraticCostFunction(costJb, costJoJc);
 
     Log::info() << "DRPBlockLanczos end of iteration " << jiter+1 << std::endl;
     printNormReduction(jiter+1, norm_jiter, normReduction);

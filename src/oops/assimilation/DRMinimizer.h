@@ -129,6 +129,7 @@ DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 // Set J[0] = 0.5 (x_i - x_b)^T B^{-1} (x_i - x_b) + 0.5 d^T R^{-1} d
   const double costJ0Jb = costJ0Jb_;
   const double costJ0JoJc = J_.getCostJoJc();
+  checkQuadraticCostFunction(costJ0Jb, costJ0JoJc);
 
 // Solve the linear system
   double reduc = this->solve(*dx, dxh, rhs, B, HtRinvH, *gradJb_,
@@ -148,6 +149,7 @@ DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
     CtrlInc_ dxhtmp(dx->geometry(), dxh_[jouter-1]);
     costJ0Jb_ += dot_product(*dx, dxhtmp);
   }
+  checkQuadraticCostFunction(costJ0Jb_, costJ0JoJc);
 
   if (config.has("fsoi")) {
     Log::info() << classname() << " Entering Observation Sensitivity Calculation" << std::endl;

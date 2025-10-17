@@ -266,6 +266,7 @@ double RPLanczosMinimizer<MODEL, OBS>::solve(Dual_ & vv, double & vvp, Dual_ & r
       costJb += 0.5 * y[jj] * zpVEC[jj] * tpVEC[jj] * y[jj];
     }
     double costJoJc = costJ - costJb;
+    checkQuadraticCostFunction(costJb, costJoJc);
 
     // Gradient norm in precond metric --> sqrt(r't) --> beta * y(jiter)
     double rznorm = beta*std::abs(y[jiter]);

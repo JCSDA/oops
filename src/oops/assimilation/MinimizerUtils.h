@@ -21,6 +21,8 @@
 
 namespace oops {
 
+/// Checks each cost function term is not negative, infinite, or NaN.
+void checkQuadraticCostFunction(const double costJb, const double costJoJc);
 /// Prints to Log::info gradient reduction \p grad and normalized gradient reduction \p norm
 /// for iteration \p iteration
 void printNormReduction(int iteration, const double & grad, const double & norm);

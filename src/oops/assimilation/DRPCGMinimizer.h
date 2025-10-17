@@ -215,6 +215,7 @@ double DRPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, CtrlInc_
     double costJb = costJ0Jb + dot_product(dx, gradJb) + 0.5 * dot_product(dx, dxh);
     // Jo[dx_{i}] + Jc[dx_{i}] = J[dx_{i}] - Jb[dx_{i}]
     double costJoJc = costJ - costJb;
+    checkQuadraticCostFunction(costJb, costJoJc);
 
     // Re-orthogonalization
     for (int jj = 0; jj < jiter; ++jj) {

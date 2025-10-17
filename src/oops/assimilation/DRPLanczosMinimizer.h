@@ -244,6 +244,7 @@ double DRPLanczosMinimizer<MODEL, OBS>::solve(CtrlInc_ & dx, CtrlInc_ & dxh, Ctr
     double costJb = costJ0Jb + dot_product(dx, gradJb) + 0.5 * dot_product(dx, dxh);
     // Jo[dx_{i}] + Jc[dx_{i}] = J[dx_{i}] - Jb[dx_{i}]
     double costJoJc = costJ - costJb;
+    checkQuadraticCostFunction(costJb, costJoJc);
 
     // Gradient norm in precond metric --> sqrt(r'z) --> beta * s_{i}
     double rznorm = beta*std::abs(ss[jiter]);

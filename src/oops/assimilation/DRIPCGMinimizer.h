@@ -188,6 +188,7 @@ double DRIPCGMinimizer<MODEL, OBS>::solve(CtrlInc_ & xx, CtrlInc_ & xh, CtrlInc_
     double costJ = costJ0 - 0.5 * dot_product(xx, r0);
     double costJb = costJ0Jb + dot_product(xx, gradJb) + 0.5 * dot_product(xx, xh);
     double costJoJc = costJ - costJb;
+    checkQuadraticCostFunction(costJb, costJoJc);
 
     // Re-orthogonalization
     for (int jj = 0; jj < jiter; ++jj) {

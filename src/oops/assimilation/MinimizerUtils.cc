@@ -6,12 +6,33 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <sstream>
+#include <string>
+
+#include "eckit/exception/Exceptions.h"
+
 #include "oops/assimilation/MinimizerUtils.h"
 
 #include "oops/util/formats.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
+
+void checkQuadraticCostFunction(const double costJb, const double costJoJc) {
+  auto checkValid = [](const std::string & costname, const double J) {
+    if (J < 0) {
+      std::stringstream sserr;
+      sserr << costname << " is negative (" << J << ")";
+      throw eckit::BadValue(sserr.str(), Here());
+    } else if (std::isinf(J)) {
+      throw eckit::BadValue(costname + " is infinite", Here());
+    } else if (std::isnan(J)) {
+      throw eckit::BadValue(costname + " is NaN", Here());
+    }
+  };
+  checkValid("Jb", costJb);
+  checkValid("JoJc", costJoJc);
+}
 
 void printNormReduction(int iteration, const double & grad, const double & norm) {
   Log::info() << "  Residual norm (" << std::setw(2) << iteration << ") = "
