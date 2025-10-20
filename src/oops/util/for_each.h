@@ -106,7 +106,9 @@ bool hasContiguousOwnedPoints(const AtlasField& f) {
   // identifies 1 of 3 possible cases, the owned points are at the beginning, and ignores
   // the cases where the owned points are in the middle or at the end of the horizontal
   // index space.
-  return f.halo().appended();
+  const bool all_owned = (f.halo().size() == 0);
+  const bool halo_appended = f.halo().appended();  // returns false if field has 0 halo points
+  return all_owned || halo_appended;
 }
 
 // TODO(adamsl): remove this specialization when Atlas version >= 0.43.0
@@ -135,9 +137,13 @@ getContiguousHorizontalIndexSpace(const AtlasField& f, bool include_halo) {
     return std::make_pair(0, f.shape(0));
   } else {
     ASSERT(hasContiguousOwnedPoints(f));
-
-    ASSERT(f.halo().appended());
-    return std::make_pair(0, f.halo().begin());
+    const bool all_owned = (f.halo().size() == 0);
+    if (all_owned) {
+      return std::make_pair(0, f.shape(0));
+    } else {
+      ASSERT(f.halo().appended());  // returns false if field has 0 halo points
+      return std::make_pair(0, f.halo().begin());
+    }
   }
 }
 
