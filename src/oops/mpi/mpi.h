@@ -47,6 +47,7 @@ const eckit::mpi::Comm & clone(const eckit::mpi::Comm &);
 template <typename SERIALIZABLE>
 void send(const eckit::mpi::Comm & comm, const SERIALIZABLE & sendobj,
           const int dest, const int tag) {
+  if (comm.rank() == dest) return;
   util::Timer timer("oops::mpi", "send");
   std::vector<double> sendbuf;
   sendobj.serialize(sendbuf);
@@ -58,6 +59,7 @@ void send(const eckit::mpi::Comm & comm, const SERIALIZABLE & sendobj,
 template <typename SERIALIZABLE>
 void receive(const eckit::mpi::Comm & comm, SERIALIZABLE & recvobj,
              const int source, const int tag) {
+  if (source == comm.rank()) return;
   util::Timer timer("oops::mpi", "receive");
   size_t sz = recvobj.serialSize();
   std::vector<double> recvbuf(sz);
@@ -72,6 +74,7 @@ void receive(const eckit::mpi::Comm & comm, SERIALIZABLE & recvobj,
 template <typename SERIALIZABLE>
 void sendReceiveReplace(const eckit::mpi::Comm & comm, SERIALIZABLE & sendrecvobj,
                         const int dest, const int sendtag, const int source, const int recvtag) {
+  if (comm.rank() == dest && comm.rank() == source) return;
   util::Timer timer("oops::mpi", "sendReceiveReplace");
   size_t sz = sendrecvobj.serialSize();
   std::vector<double> sendrecvbuf;
@@ -87,18 +90,23 @@ void sendReceiveReplace(const eckit::mpi::Comm & comm, SERIALIZABLE & sendrecvob
 
 template <typename SERIALIZABLE>
 void broadcast(const eckit::mpi::Comm & comm, SERIALIZABLE & obj, const size_t root) {
-  util::Timer timer("oops::mpi", "broadcast");
-  size_t sz = obj.serialSize();
-  std::vector<double> buf;
-  if (comm.rank() == root) {
-    obj.serialize(buf);
-  } else {
-    buf.resize(sz);
+  if (comm.size() > 1) {
+    util::Timer timer("oops::mpi", "broadcast");
+    size_t sz = obj.serialSize();
+    std::vector<double> buf;
+    buf.reserve(sz);
+    if (comm.rank() == root) {
+      obj.serialize(buf);
+    } else {
+      buf.resize(sz);
+    }
+    comm.broadcast(buf, root);
+    if (comm.rank() != root) {
+      size_t ii = 0;
+      obj.deserialize(buf, ii);
+      ASSERT(ii == sz);
+    }
   }
-  comm.broadcast(buf, root);
-  size_t ii = 0;
-  obj.deserialize(buf, ii);
-  ASSERT(ii == sz);
 }
 
 // ------------------------------------------------------------------------------------------------
