@@ -129,9 +129,10 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const eckit::Configuration & config,
   nonlinearEnsemble_(nlEnsConf_.has("read") ?
     StateSet_(*ensembleGeometry_,
       nlEnsConf_.getSubConfiguration("read")) :
-    StateSet_(*ensembleGeometry_, vars, {nonlinearControl_[0].validTime()}, oops::mpi::myself(),
-      getEnsVec(nlEnsConf_.getSubConfiguration("generate")
-        .getUnsigned("ensemble size")))),
+    StateSet_(*ensembleGeometry_, nonlinearControl_[0].variables(),
+      {nonlinearControl_[0].validTime()}, oops::mpi::myself(),
+        getEnsVec(nlEnsConf_.getSubConfiguration("generate")
+          .getUnsigned("ensemble size")))),
   spareStateEnsembleGeometry_(controlGeometry_ == ensembleGeometry_ ?
     nullptr : std::make_unique<State_>(*ensembleGeometry_, nonlinearControl_[0])),
   ensembleSize_(nonlinearEnsemble_.size()),
@@ -149,11 +150,11 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const eckit::Configuration & config,
       ABORT("HtlmEnsemble<MODEL>: both types of nonlinear ensemble initial conditions provided");
     }
     const eckit::LocalConfiguration genConf(config, "nonlinear ensemble.generate");
-    const Variables vars(genConf, "variables");
+    const Variables genVars(genConf, "variables");
     const eckit::LocalConfiguration covConf(genConf, "background error");
     std::unique_ptr<CovarianceBase_> Bmat(CovarianceFactory_::create(
-      *ensembleGeometry_, vars, covConf, nonlinearControl_, nonlinearControl_));
-    Increment4D_ dx(*ensembleGeometry_, vars, nonlinearControl_.times());
+      *ensembleGeometry_, genVars, covConf, nonlinearControl_, nonlinearControl_));
+    Increment4D_ dx(*ensembleGeometry_, genVars, nonlinearControl_.times());
     for (size_t m = 0; m < ensembleSize_; m++) {
       Bmat->randomize(dx);
       nonlinearEnsemble_[m] = nonlinearControl_[0];
