@@ -47,7 +47,7 @@ const eckit::mpi::Comm & clone(const eckit::mpi::Comm &);
 template <typename SERIALIZABLE>
 void send(const eckit::mpi::Comm & comm, const SERIALIZABLE & sendobj,
           const int dest, const int tag) {
-  if (comm.rank() == dest) return;
+  if (static_cast<int>(comm.rank()) == dest) return;
   util::Timer timer("oops::mpi", "send");
   std::vector<double> sendbuf;
   sendobj.serialize(sendbuf);
@@ -59,7 +59,7 @@ void send(const eckit::mpi::Comm & comm, const SERIALIZABLE & sendobj,
 template <typename SERIALIZABLE>
 void receive(const eckit::mpi::Comm & comm, SERIALIZABLE & recvobj,
              const int source, const int tag) {
-  if (source == comm.rank()) return;
+  if (source == static_cast<int>(comm.rank())) return;
   util::Timer timer("oops::mpi", "receive");
   size_t sz = recvobj.serialSize();
   std::vector<double> recvbuf(sz);
@@ -74,7 +74,8 @@ void receive(const eckit::mpi::Comm & comm, SERIALIZABLE & recvobj,
 template <typename SERIALIZABLE>
 void sendReceiveReplace(const eckit::mpi::Comm & comm, SERIALIZABLE & sendrecvobj,
                         const int dest, const int sendtag, const int source, const int recvtag) {
-  if (comm.rank() == dest && comm.rank() == source) return;
+  if (static_cast<int>(comm.rank()) == dest &&
+      static_cast<int>(comm.rank()) == source) return;
   util::Timer timer("oops::mpi", "sendReceiveReplace");
   size_t sz = sendrecvobj.serialSize();
   std::vector<double> sendrecvbuf;
