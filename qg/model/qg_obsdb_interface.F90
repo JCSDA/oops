@@ -13,7 +13,6 @@ use atlas_module
 use fckit_configuration_module, only: fckit_configuration
 use datetime_mod
 use duration_mod
-use fckit_log_module, only: fckit_log
 use iso_c_binding
 use string_f_c_mod
 use qg_locs_mod

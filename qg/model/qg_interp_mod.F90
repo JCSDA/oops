@@ -8,7 +8,6 @@
 
 module qg_interp_mod
 
-use fckit_log_module,only: fckit_log
 use kinds
 use qg_constants_mod
 use qg_geom_mod

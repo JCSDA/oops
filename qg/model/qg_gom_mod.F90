@@ -161,7 +161,7 @@ real(c_double), intent(in) :: c_vals(c_nlev, c_nloc)
 
 character(len=1024) :: fieldname
 real(kind_real),pointer :: gval(:,:)
-integer :: jlev, jloc, iloc, ii
+integer :: jloc, iloc
 
 if (.not.self%lalloc) call abor1_ftn('qg_gom_fill: gom not allocated')
 if (self%levs /= c_nlev) call abor1_ftn('qg_gom_fill: incorrect number of levels')
@@ -202,7 +202,7 @@ real(c_double), intent(inout) :: c_vals(c_nlev, c_nloc)
 
 character(len=1024) :: fieldname
 real(kind_real),pointer :: gval(:,:)
-integer :: jlev, jloc, iloc
+integer :: jloc, iloc
 
 if (.not.self%lalloc) call abor1_ftn('qg_gom_fillad: gom not allocated')
 if (self%levs /= c_nlev) call abor1_ftn('qg_gom_fillad: incorrect number of levels')
@@ -474,9 +474,6 @@ implicit none
 type(qg_gom),intent(in) :: gom1       !< GOM 1
 type(qg_gom),intent(in) :: gom2       !< GOM 2
 real(kind_real),intent(inout) :: prod !< Dot product
-
-! Local variables
-integer :: jo,jv
 
 ! Check
 if (gom1%nobs/=gom2%nobs) call abor1_ftn('qg_gom_dotprod: inconsistent GOM sizes')

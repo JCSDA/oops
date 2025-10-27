@@ -9,7 +9,6 @@
 module qg_model_interface
 
 use fckit_configuration_module, only: fckit_configuration
-use fckit_log_module, only: fckit_log
 use iso_c_binding
 use qg_fields_mod
 use qg_model_mod

@@ -8,7 +8,6 @@
 
 module qg_stream_interface
 
-use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use qg_gom_mod
 use qg_obsdb_mod

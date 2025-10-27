@@ -90,9 +90,6 @@ type(qg_geom),target,intent(in) :: geom !< Geometry
 type(oops_variables),intent(in) :: vars !< List of variables
 logical,intent(in) :: lbc               !< Boundaries flag
 
-! Local variables
-character(len=1024) :: record
-
 ! Associate geometry
 self%geom => geom
 
@@ -872,7 +869,6 @@ type(datetime),intent(in) :: vdate             !< Date and time
 ! Local variables
 integer :: ncid,nx_id,ny_id,nz_id,lon_id,lat_id,z_id,area_id,heat_id,x_id,q_id,u_id,v_id
 integer :: x_north_id,x_south_id,q_north_id,q_south_id
-integer :: info
 character(len=:),allocatable :: str
 character(len=20) :: sdate
 character(len=1024) :: typ,filename
@@ -1769,9 +1765,6 @@ character(len=1),intent(in) :: var    !< Reference variable ('x' or 'q')
 
 ! Local variables
 real(kind_real) :: x(self%geom%nx,self%geom%ny,self%geom%nz)
-real(kind_real) :: q(self%geom%nx,self%geom%ny,self%geom%nz)
-real(kind_real) :: u(self%geom%nx,self%geom%ny,self%geom%nz)
-real(kind_real) :: v(self%geom%nx,self%geom%ny,self%geom%nz)
 
 select case (var)
 case ('x')

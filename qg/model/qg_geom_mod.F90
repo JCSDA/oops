@@ -78,7 +78,6 @@ real(kind_real) :: norm
 character(len=1024) :: record
 logical :: htype
 real(kind_real) :: pcoeff
-character(len=:),allocatable :: str
 
 ! Get horizontal resolution data
 call f_conf%get_or_die("nx",self%nx)

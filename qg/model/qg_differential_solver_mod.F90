@@ -9,7 +9,6 @@
 module differential_solver_mod
 
 use iso_c_binding
-use fckit_log_module, only: fckit_log
 use fft_mod
 use kinds
 !$ use omp_lib
@@ -35,12 +34,10 @@ real(kind_real),intent(in) :: b(geom%nx,geom%ny)  !< Right hand side
 real(kind_real),intent(out) :: x(geom%nx,geom%ny) !< Solution
 
 ! Local variables
-integer :: kx,iri,ix,iy
+integer :: kx,iri,iy
 real(kind_real) :: v(geom%ny),w(geom%ny),z(geom%ny)
 real(kind_real) :: bext(geom%nx+2,geom%ny),xext(geom%nx+2,geom%ny)
 real(kind_real) :: am,bm
-real(kind_real) :: tmp_in(geom%nx,geom%ny),tmp_out(geom%nx,geom%ny)
-character(len=2014) :: record
 
 ! Transform
 do iy=1,geom%ny

@@ -8,7 +8,6 @@
 
 module qg_gom_interface
 
-use atlas_module, only: atlas_field
 use fckit_configuration_module, only: fckit_configuration
 use iso_c_binding
 use datetime_mod
@@ -219,7 +218,6 @@ real(c_double),intent(in) :: c_zz       !< Multiplier
 
 ! Local variables
 type(qg_gom),pointer :: self
-integer :: jo,jv
 
 ! Interface
 call qg_gom_registry%get(c_key_self,self)

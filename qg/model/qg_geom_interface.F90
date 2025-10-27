@@ -10,7 +10,6 @@ module qg_geom_interface
 
 use atlas_module, only: atlas_fieldset, atlas_functionspace_nodecolumns
 use fckit_configuration_module, only: fckit_configuration
-use fckit_log_module,only: fckit_log
 use kinds
 use iso_c_binding
 use qg_projection_mod
