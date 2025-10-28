@@ -15,7 +15,7 @@ integer, parameter, private :: MAXVARLEN = 100
 
 type obs_variables
 private
-  type(c_ptr) :: ptr
+  type(c_ptr), public :: ptr
 contains
   procedure, public :: destruct
 
