@@ -112,9 +112,11 @@ template <typename OBS> void testMultiplies() {
     const eckit::LocalConfiguration rconf(conf[jj], "obs error");
     Covar_ R(rconf, Test_::obspace()[jj]);
 
+    double RMSE_tolerance = rconf.getDouble("RMSE tolerance", 1.e-10);
     // RMSE should be equal to the rms that was read from the file
-    EXPECT(oops::is_close(R.getRMSE(), obserr.rms(), 1.e-10));
+    EXPECT(oops::is_close(R.getRMSE(), obserr.rms(), RMSE_tolerance));
 
+    double multiply_tolerance = rconf.getDouble("multiply tolerance", 1.e-10);
     // create random vector dy and its copies dy1, dy2
     ObsVector_ dy(Test_::obspace()[jj], "");
     R.randomize(dy);
@@ -127,14 +129,14 @@ template <typename OBS> void testMultiplies() {
     R.inverseMultiply(dy1);
     // dy1 = R^{-1}*R*dy
     oops::Log::info() << "R^{-1}*R*dy: " << dy1 << std::endl;
-    EXPECT(oops::is_close(dy1.rms(), dy.rms(), 1.e-10));
+    EXPECT(oops::is_close(dy1.rms(), dy.rms(), RMSE_tolerance));
 
     R.inverseMultiply(dy2);
     oops::Log::info() << "R^{-1}*dy: " << dy2 << std::endl;
     R.multiply(dy2);
     // dy2 = R*R^P-1}*dy
     oops::Log::info() << "R*R^{-1}*dy: " << dy2 << std::endl;
-    EXPECT(oops::is_close(dy2.rms(), dy.rms(), 1.e-10));
+    EXPECT(oops::is_close(dy2.rms(), dy.rms(), multiply_tolerance));
   }
 }
 
@@ -155,27 +157,28 @@ template <typename OBS> void testAccessors() {
     ObsVector_ obserr(Test_::obspace()[jj], "ObsError");
 
     const eckit::LocalConfiguration rconf(conf[jj], "obs error");
+    double RMSE_tolerance = rconf.getDouble("RMSE tolerance", 1.e-10);
     Covar_ R(rconf, Test_::obspace()[jj]);
 
     ObsVector_ dy(R.obserrors());
     oops::Log::info() << "ObsError: " << dy << std::endl;
-    EXPECT(oops::is_close(dy.rms(), obserr.rms(), 1.e-10));
+    EXPECT(oops::is_close(dy.rms(), obserr.rms(), RMSE_tolerance));
 
     ObsVector_ dy1(R.inverseVariance());
     oops::Log::info() << "inverseVariance: " << dy1 << std::endl;
     dy *= dy;
     dy.invert();
-    EXPECT(oops::is_close(dy.rms(), dy1.rms(), 1.e-10));
+    EXPECT(oops::is_close(dy.rms(), dy1.rms(), RMSE_tolerance));
 
     dy.ones();
     R.update(dy);
     oops::Log::info() << "R filled with ones: " << R.obserrors() << std::endl;
-    EXPECT(oops::is_close(R.obserrors().rms(), R.inverseVariance().rms(), 1.e-10));
-    EXPECT(oops::is_close(R.obserrors().rms(), dy.rms(), 1.e-10));
+    EXPECT(oops::is_close(R.obserrors().rms(), R.inverseVariance().rms(), RMSE_tolerance));
+    EXPECT(oops::is_close(R.obserrors().rms(), dy.rms(), RMSE_tolerance));
 
     R.save("Ones");
     ObsVector_ testOnes(Test_::obspace()[jj], "Ones");
-    EXPECT(oops::is_close(dy.rms(), testOnes.rms(), 1.e-10));
+    EXPECT(oops::is_close(dy.rms(), testOnes.rms(), RMSE_tolerance));
   }
 }
 
