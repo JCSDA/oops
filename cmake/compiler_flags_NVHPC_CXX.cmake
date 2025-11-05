@@ -13,7 +13,7 @@ set( CMAKE_CXX_FLAGS     "${CMAKE_CXX_FLAGS} -Mpreprocess" )
 # RELEASE FLAGS
 ####################################################################
 
-set( CMAKE_CXX_FLAGS_RELEASE     "-O2 --fast" )
+set( CMAKE_CXX_FLAGS_RELEASE     "-O2" )
 
 ####################################################################
 # DEBUG FLAGS
@@ -25,7 +25,7 @@ set( CMAKE_CXX_FLAGS_DEBUG       "-O0 -g -Mbounds -Mchkstk -traceback" )
 # BIT REPRODUCIBLE FLAGS
 ####################################################################
 
-set( CMAKE_CXX_FLAGS_BIT         "-O2 --fast" )
+set( CMAKE_CXX_FLAGS_BIT         "-O2" )
 
 ####################################################################
 # LINK FLAGS
