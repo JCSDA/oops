@@ -427,6 +427,9 @@ vars = oops_variables(c_vars)
 ! Call Fortran
 call qg_gom_read_file(self,vars,f_conf)
 
+! Release memory
+call f_conf%final()
+
 end subroutine qg_gom_read_file_c
 ! ------------------------------------------------------------------------------
 !> Write GOM to file
@@ -448,6 +451,9 @@ call qg_gom_registry%get(c_key_self,self)
 
 ! Call Fortran
 call qg_gom_write_file(self,f_conf)
+
+! Release memory
+call f_conf%final()
 
 end subroutine qg_gom_write_file_c
 ! ------------------------------------------------------------------------------
@@ -473,6 +479,9 @@ locs = qg_locs(c_locs)
 
 ! Call Fortran
 call qg_gom_analytic_init(self,locs,f_conf)
+
+! Release memory
+call f_conf%final()
 
 end subroutine qg_gom_analytic_init_c
 ! ------------------------------------------------------------------------------

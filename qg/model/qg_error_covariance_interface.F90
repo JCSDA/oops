@@ -48,6 +48,9 @@ call qg_error_covariance_registry%get(c_key_self,self)
 ! Call Fortran
 call qg_error_covariance_setup(self,f_conf,geom)
 
+! Release memory
+call f_conf%final()
+
 end subroutine qg_error_covariance_setup_c
 ! ------------------------------------------------------------------------------
 !> Delete error covariance matrix

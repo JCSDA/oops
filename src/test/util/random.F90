@@ -90,6 +90,7 @@ enddo
 
 ! clean up
 deallocate(x,x_check)
+call f_conf%final()
 
 end function c_test_uniform_real
 
@@ -160,6 +161,7 @@ enddo
 
 ! clean up
 deallocate(x,x_check)
+call f_conf%final()
 
 end function c_test_uniform_double
 
@@ -225,6 +227,7 @@ enddo
 
 ! clean up
 deallocate(x,x_check)
+call f_conf%final()
 
 end function c_test_uniform_int
 
@@ -290,6 +293,7 @@ enddo
 
 ! clean up
 deallocate(x,x_check)
+call f_conf%final()
 
 end function c_test_uniform_long
 
@@ -394,6 +398,7 @@ enddo
 
 ! clean up
 deallocate(x,x_2d,x_3d,x_check)
+call f_conf%final()
 
 end function c_test_normal_real
 
@@ -497,6 +502,7 @@ enddo
 
 ! clean up
 deallocate(x,x_2d,x_3d,x_check)
+call f_conf%final()
 
 end function c_test_normal_double
 

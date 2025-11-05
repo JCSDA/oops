@@ -40,7 +40,10 @@ call qg_model_registry%get(c_key_self,self)
 
 ! Call Fortran
 call qg_model_setup(self,f_conf)
-   
+
+! Release memory
+call f_conf%final()
+
 end subroutine qg_model_setup_c
 ! ------------------------------------------------------------------------------
 !> Delete the QG model

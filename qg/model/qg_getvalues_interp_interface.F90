@@ -51,6 +51,8 @@ enddo
 
 call qg_getvalues_interp(geom, afieldset, vars, lats, lons, c_vals)
 
+call afieldset%final()
+
 end subroutine qg_getvalues_interp_c
 
 ! ------------------------------------------------------------------------------
@@ -84,6 +86,8 @@ do jj = 1, c_nlocs
 enddo
 
 call qg_getvalues_interp_ad(geom, afieldset, vars, lats, lons, c_vals)
+
+call afieldset%final()
 
 end subroutine qg_getvalues_interp_ad_c
 

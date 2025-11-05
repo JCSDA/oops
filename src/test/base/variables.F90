@@ -92,6 +92,8 @@ if (trim(vars%variable(jvar)) /= varname) then
   call abor1_ftn(err_msg)
 endif
 
+call f_conf%final()
+
 end subroutine c_test_vars_interface
 
 end module test_oops_variables

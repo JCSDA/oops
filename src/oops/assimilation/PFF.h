@@ -116,13 +116,12 @@ PFF<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 // Define minimisation starting point
   // dx
   CtrlInc_ * dx = new CtrlInc_(J_.jb());
-  CtrlInc_ * rr = new CtrlInc_(J_.jb().getFirstGuess());
-  CtrlInc_ rr__(J_.jb().getFirstGuess());  // remove later
-  CtrlInc_ rrOther(rr__);
+  CtrlInc_ rr(J_.jb().getFirstGuess());
+  CtrlInc_ rrOther(J_.jb().getFirstGuess());
   CtrlInc_ zz(J_.jb());
 
-  J_.computeGradientFG(*rr);
-  J_.jb().addGradientFG(*rr, *gradJb_);
+  J_.computeGradientFG(rr);
+  J_.jb().addGradientFG(rr, *gradJb_);
 
 // Communicator and MPI parameters:
   const eckit::mpi::Comm & comm = oops::mpi::world();
@@ -138,7 +137,7 @@ PFF<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 
   computeMean(xx, xxOther, xxMean, comm);
   diagonalsOfB(B, standardDev);
-  dxi(*dx, xx, xxOther, xxMean, B, *rr, rrOther, comm);
+  dxi(*dx, xx, xxOther, xxMean, B, rr, rrOther, comm);
 
   Log::info() << classname() << " output increment" << *dx << std::endl;
 

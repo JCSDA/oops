@@ -41,6 +41,9 @@ call qg_geom_registry%get(c_key_self,self)
 ! Call Fortran
 call qg_geom_setup(self,f_conf)
 
+! Release memory
+call f_conf%final()
+
 end subroutine qg_geom_setup_c
 ! ------------------------------------------------------------------------------
 !> Set lon/lat field
@@ -60,6 +63,9 @@ afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
 call qg_geom_set_lonlat(self,afieldset)
+
+! Release memory
+call afieldset%final()
 
 end subroutine qg_geom_set_lonlat_c
 ! ------------------------------------------------------------------------------
@@ -98,6 +104,9 @@ afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
 call qg_geom_fill_geometry_fields(self,afieldset)
+
+! Release memory
+call afieldset%final()
 
 end subroutine qg_geom_fill_geometry_fields_c
 ! ------------------------------------------------------------------------------

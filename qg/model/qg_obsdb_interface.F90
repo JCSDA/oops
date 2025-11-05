@@ -52,6 +52,9 @@ call c_f_datetime(c_winend,winend)
 ! Call Fortran
 call qg_obsdb_setup(self,f_conf,winbgn,winend)
 
+! Release memory
+call f_conf%final()
+
 end subroutine qg_obsdb_setup_c
 ! ------------------------------------------------------------------------------
 !> Delete observation data
@@ -213,6 +216,9 @@ call c_f_duration(c_step,step)
 
 ! Call Fortran
 call qg_obsdb_generate(self,grp,f_conf,bgn,step,ktimes,kobs)
+
+! Release memory
+call f_conf%final()
 
 end subroutine qg_obsdb_generate_c
 ! ------------------------------------------------------------------------------

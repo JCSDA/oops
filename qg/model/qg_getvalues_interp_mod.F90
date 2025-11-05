@@ -72,6 +72,8 @@ enddo
 
 if (size(vals) /= ii) call abor1_ftn('qg_getvalues_interp: error size')
 
+call afield%final()
+
 end subroutine qg_getvalues_interp
 
 ! ------------------------------------------------------------------------------
@@ -125,6 +127,8 @@ do jvar=1,vars%nvars()
 enddo
 
 if (size(vals) /= ii) call abor1_ftn('qg_getvalues_interp_ad: error size')
+
+call afield%final()
 
 end subroutine qg_getvalues_interp_ad
 

@@ -39,6 +39,8 @@ call f_conf%get_or_die("string_vec",fort_vec)
 
 call f_c_push_string_vector(vec, fort_vec)
 
+call f_conf%final()
+
 end subroutine c_test_push_string_vector
 
 !-------------------------------------------------------------------------------

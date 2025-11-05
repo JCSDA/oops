@@ -162,6 +162,9 @@ call qg_fields_registry%get(c_key_self,self)
 ! Call Fortran
 call qg_fields_dirac(self,f_conf)
 
+! Release memory
+call f_conf%final()
+
 end subroutine qg_fields_dirac_c
 ! ------------------------------------------------------------------------------
 !> Generate random fields
@@ -448,6 +451,9 @@ call c_f_datetime(c_dt,fdate)
 ! Call Fortran
 call qg_fields_read_file(fld,f_conf,fdate)
 
+! Release memory
+call f_conf%final()
+
 end subroutine qg_fields_read_file_c
 ! ------------------------------------------------------------------------------
 !> Write fields to file
@@ -473,6 +479,9 @@ call c_f_datetime(c_dt,fdate)
 ! Call Fortran
 call qg_fields_write_file(fld,f_conf,fdate)
 
+! Release memory
+call f_conf%final()
+
 end subroutine qg_fields_write_file_c
 ! ------------------------------------------------------------------------------
 !> Analytic initialization of fields
@@ -497,6 +506,9 @@ call c_f_datetime(c_dt,fdate)
 
 ! Call Fortran
  call qg_fields_analytic_init(fld,f_conf,fdate)
+
+! Release memory
+call f_conf%final()
 
 end subroutine qg_fields_analytic_init_c
 ! ------------------------------------------------------------------------------
@@ -605,6 +617,9 @@ afieldset = atlas_fieldset(c_afieldset)
 ! Call Fortran
 call qg_fields_to_fieldset(fld,afieldset)
 
+! Release memory
+call afieldset%final()
+
 end subroutine qg_fields_to_fieldset_c
 ! ------------------------------------------------------------------------------
 !> Convert Fieldset to fields
@@ -626,6 +641,9 @@ afieldset = atlas_fieldset(c_afieldset)
 
 ! Call Fortran
 call qg_fields_from_fieldset(fld,afieldset)
+
+! Release memory
+call afieldset%final()
 
 end subroutine qg_fields_from_fieldset_c
 ! ------------------------------------------------------------------------------
