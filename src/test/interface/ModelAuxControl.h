@@ -57,8 +57,13 @@ template <typename MODEL> class ModelAuxControlFixture : private boost::noncopya
   typedef TestParameters<MODEL>        TestParameters_;
 
  public:
-  static const eckit::Configuration & config() {return getInstance().config_;}
+  static const eckit::Configuration & config() {return *getInstance().config_;}
   static const Geometry_    & resol()  {return *getInstance().resol_;}
+
+  static void reset() {
+    getInstance().config_.reset();
+    getInstance().resol_.reset();
+  }
 
  private:
   static ModelAuxControlFixture<MODEL>& getInstance() {
@@ -70,13 +75,14 @@ template <typename MODEL> class ModelAuxControlFixture : private boost::noncopya
     TestParameters_ parameters;
     parameters.validateAndDeserialize(TestEnvironment::config());
 
-    resol_.reset(new Geometry_(parameters.geometry, oops::mpi::world()));
-    config_ = eckit::LocalConfiguration(TestEnvironment::config(), "model aux control");
+    config_ = std::make_unique<eckit::LocalConfiguration>(
+        TestEnvironment::config(), "model aux control");
+    resol_ = std::make_unique<Geometry_>(parameters.geometry, oops::mpi::world());
   }
 
   ~ModelAuxControlFixture() {}
 
-  eckit::LocalConfiguration config_;
+  std::unique_ptr<eckit::LocalConfiguration> config_;
   std::unique_ptr<Geometry_> resol_;
 };
 
@@ -131,6 +137,8 @@ template <typename MODEL> void testChangeRes() {
 
 template <typename MODEL>
 class ModelAuxControl : public oops::Test {
+  typedef ModelAuxControlFixture<MODEL> Test_;
+
  public:
   using oops::Test::Test;
   virtual ~ModelAuxControl() {}
@@ -148,7 +156,7 @@ class ModelAuxControl : public oops::Test {
       { testChangeRes<MODEL>(); });
   }
 
-  void clear() const override {}
+  void clear() const override { Test_::reset(); }
 };
 
 // =============================================================================
