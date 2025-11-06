@@ -58,6 +58,7 @@ template <typename MODEL> class IncrementFixture : private boost::noncopyable {
     getInstance().ctlvars_.reset();
     getInstance().test_.reset();
     getInstance().resol_.reset();
+    getInstance().otherResol_.reset();
   }
 
  private:
