@@ -15,8 +15,6 @@
 #include "eckit/geometry/Point3.h"
 
 #include "lorenz95/Iterator.h"
-#include "lorenz95/L95ObsTraits.h"
-#include "lorenz95/L95Traits.h"
 #include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
 
@@ -24,8 +22,6 @@
 
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
-
-static oops::ObsLocalizationMaker<L95Traits, L95ObsTraits, ObsLocGC99> makerGC_("Gaspari-Cohn");
 
 // -----------------------------------------------------------------------------
 

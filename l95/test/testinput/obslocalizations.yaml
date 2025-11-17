@@ -12,10 +12,7 @@ observations:
     obsdataout:
       obsfile: Data/forecast-obslocalizations.2010-01-02T00:00:00Z.obt
   obs localizations:
-  - localization method: Gaspari-Cohn
-    lengthscale: 0.19
-  - localization method: Box Car
-    lengthscale: 0.19
+  - lengthscale: 0.19
 
 observation localizations reference:
   gridpoints:

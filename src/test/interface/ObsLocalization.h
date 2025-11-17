@@ -20,9 +20,9 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/ObsLocalizationBase.h"
 #include "oops/base/ObsVector.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/interface/ObsLocalization.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
@@ -42,7 +42,7 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
   typedef ObsTestsFixture<OBS>                   Test_;
   typedef oops::Geometry<MODEL>                  Geometry_;
   typedef oops::GeometryIterator<MODEL>          GeometryIterator_;
-  typedef oops::ObsLocalizationBase<MODEL, OBS>  ObsLocalization_;
+  typedef oops::ObsLocalization<MODEL, OBS>      ObsLocalization_;
   typedef oops::ObsSpace<OBS>                    ObsSpace_;
   typedef oops::ObsVector<OBS>                   ObsVector_;
 
@@ -75,7 +75,8 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
         reference_points.emplace_back(lons[jpoint], lats[jpoint], depths[jpoint]);
       }
       eckit::LocalConfiguration testconf;
-      testconf.set("localization method", locconf.getString("localization method"));
+      if (locconf.has("localization method"))
+        testconf.set("localization method", locconf.getString("localization method"));
       if (locconf.has("lengthscale"))
         testconf.set("lengthscale", locconf.getDouble("lengthscale"));
       if (locconf.has("soar horizontal decay"))
@@ -114,8 +115,7 @@ template <typename MODEL, typename OBS> void testObsLocalization() {
       if (locconf.has("distance type"))
         testconf.set("distance type", locconf.getString("distance type"));
 
-      std::unique_ptr<ObsLocalization_> obsloc =
-        oops::ObsLocalizationFactory<MODEL, OBS>::create(testconf, obspace);
+      std::unique_ptr<ObsLocalization_> obsloc(new ObsLocalization_(testconf, obspace));
       oops::Log::info() << "Testing obs-space localization: " << *obsloc << std::endl;
 
       ObsVector_ locvector(obspace);

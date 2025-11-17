@@ -17,8 +17,7 @@ observations:
   obs operator:
     obs type: Stream
   obs localizations:
-  - localization method: Heaviside
-    lengthscale: 0.0
+  - lengthscale: 0.0
     reference local nobs: [0]
     reference gridpoints:
       lons: [-175.5]
@@ -34,8 +33,7 @@ observations:
   obs operator:
     obs type: Wind
   obs localizations:
-  - localization method: Heaviside
-    lengthscale: 1.e8
+  - lengthscale: 1.e8
     reference local nobs: [800]
     reference gridpoints:
       lons: [-175.5]
@@ -51,8 +49,7 @@ observations:
   obs operator:
     obs type: WSpeed
   obs localizations:
-  - localization method: Heaviside
-    lengthscale: 5.e6
+  - lengthscale: 5.e6
     reference local nobs: [48]
     reference gridpoints:
       lons: [-175.5]

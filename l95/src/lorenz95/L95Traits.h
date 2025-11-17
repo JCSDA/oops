@@ -25,6 +25,7 @@
 #include "lorenz95/ModelData.h"
 #include "lorenz95/ModelL95.h"
 #include "lorenz95/NormGradientL95.h"
+#include "lorenz95/ObsLocGC99.h"
 #include "lorenz95/Resolution.h"
 #include "lorenz95/StateL95.h"
 #include "lorenz95/TLML95.h"
@@ -57,6 +58,8 @@ struct L95Traits {
   typedef lorenz95::ModelBiasCorrection    ModelAuxIncrement;
   typedef lorenz95::ModelBiasCovariance    ModelAuxCovariance;
   typedef lorenz95::ModelData              ModelData;
+
+  typedef lorenz95::ObsLocGC99             ObsLocalization;
 };
 
 }  // namespace lorenz95

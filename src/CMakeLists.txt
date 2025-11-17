@@ -161,7 +161,6 @@ list(
   oops/base/ObserversTLAD.h
   oops/base/ObserverTLAD.h
   oops/base/ObserverUtils.h
-  oops/base/ObsLocalizationBase.h
   oops/base/ObsLocalizations.h
   oops/base/ObsOperatorBase.h
   oops/base/ObsOperatorPert.h
@@ -306,6 +305,7 @@ list(
   oops/interface/ObsDiagnostics.h
   oops/interface/ObsErrorBase.h
   oops/interface/ObsFilter.h
+  oops/interface/ObsLocalization.h
   oops/interface/ObsOperator.h
   oops/interface/ObsSpace.h
   oops/interface/ObsVector.h

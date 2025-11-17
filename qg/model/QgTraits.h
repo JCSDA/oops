@@ -25,6 +25,7 @@
 #include "model/ModelBiasIncrement.h"
 #include "model/ModelData.h"
 #include "model/ModelQG.h"
+#include "model/ObsLocQG.h"
 #include "model/StateQG.h"
 #include "model/TlmQG.h"
 
@@ -55,6 +56,8 @@ struct QgTraits {
   typedef qg::ModelBiasIncrement    ModelAuxIncrement;
   typedef qg::ModelBiasCovariance   ModelAuxCovariance;
   typedef qg::ModelData             ModelData;
+
+  typedef qg::ObsLocQG              ObsLocalization;
 };
 
 }  // namespace qg

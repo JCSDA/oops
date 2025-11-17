@@ -132,7 +132,7 @@ template <typename OBS>
 ObsOperator<OBS>::ObsOperator(const ObsSpace_ & os, const eckit::Configuration & config)
   : name_("oops::ObsOperator::"+os.obsname()), oper_()
 {
-  Log::trace() << "ObsOperator<OBS>::ObsOperator starting" << std::endl;
+  Log::trace() << "ObsOperator<OBS>::ObsOperator start" << std::endl;
   util::Timer timer(name_, "ObsOperator");
   oper_.reset(new ObsOperator_(os.obsspace(), config));
   Log::trace() << "ObsOperator<OBS>::ObsOperator done" << std::endl;
@@ -142,7 +142,7 @@ ObsOperator<OBS>::ObsOperator(const ObsSpace_ & os, const eckit::Configuration &
 
 template <typename OBS>
 ObsOperator<OBS>::~ObsOperator() {
-  Log::trace() << "ObsOperator<OBS>::~ObsOperator starting" << std::endl;
+  Log::trace() << "ObsOperator<OBS>::~ObsOperator start" << std::endl;
   util::Timer timer(name_, "~ObsOperator");
   oper_.reset();
   Log::trace() << "ObsOperator<OBS>::~ObsOperator done" << std::endl;
@@ -152,11 +152,9 @@ ObsOperator<OBS>::~ObsOperator() {
 
 template <typename OBS>
 void ObsOperator<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                     const ObsAuxControl_ & aux,
-                                     const ObsDataInt_ & qc_flags,
-                                     ObsVector_ & ybias,
-                                     ObsDiags_ & ydiag) const {
-  Log::trace() << "ObsOperator<OBS>::simulateObs starting" << std::endl;
+                                   const ObsAuxControl_ & aux, const ObsDataInt_ & qc_flags,
+                                   ObsVector_ & ybias, ObsDiags_ & ydiag) const {
+  Log::trace() << "ObsOperator<OBS>::simulateObs start" << std::endl;
   util::Timer timer(name_, "simulateObs");
   oper_->simulateObs(gvals.geovals(), yy.obsvector(), aux.obsauxcontrol(),
                      qc_flags.obsdatavector(),
@@ -168,7 +166,7 @@ void ObsOperator<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
 
 template <typename OBS>
 const Variables & ObsOperator<OBS>::requiredVars() const {
-  Log::trace() << "ObsOperator<OBS>::requiredVars starting" << std::endl;
+  Log::trace() << "ObsOperator<OBS>::requiredVars start" << std::endl;
   util::Timer timer(name_, "requiredVars");
   return oper_->requiredVars();
 }
@@ -177,7 +175,7 @@ const Variables & ObsOperator<OBS>::requiredVars() const {
 
 template <typename OBS>
 Locations<OBS> ObsOperator<OBS>::locations() const {
-  Log::trace() << "ObsOperator<OBS>::locations starting" << std::endl;
+  Log::trace() << "ObsOperator<OBS>::locations start" << std::endl;
   util::Timer timer(name_, "locations");
   return oper_->locations();
 }
@@ -186,16 +184,17 @@ Locations<OBS> ObsOperator<OBS>::locations() const {
 
 template <typename OBS>
 void ObsOperator<OBS>::computeReducedVars(const oops::Variables & vars, GeoVaLs_ & gvals) const {
-  Log::trace() << "ObsOperator<OBS>::computeReducedVars starting" << std::endl;
+  Log::trace() << "ObsOperator<OBS>::computeReducedVars start" << std::endl;
   util::Timer timer(name_, "computeReducedVars");
   oper_->computeReducedVars(vars, gvals.geovals());
+  Log::trace() << "ObsOperator<OBS>::computeReducedVars done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
 
 template<typename OBS>
 void ObsOperator<OBS>::print(std::ostream & os) const {
-  Log::trace() << "ObsOperator<OBS>::print starting" << std::endl;
+  Log::trace() << "ObsOperator<OBS>::print start" << std::endl;
   util::Timer timer(name_, "print");
   os << *oper_;
   Log::trace() << "ObsOperator<OBS>::print done" << std::endl;

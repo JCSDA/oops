@@ -18,13 +18,11 @@
 #include "model/GeometryQGIterator.h"
 #include "model/LocationsQG.h"
 #include "model/ObsSpaceQG.h"
-#include "model/QgTraits.h"
+#include "model/ObsVecQG.h"
 
 using atlas::array::make_view;
 
 namespace qg {
-
-static oops::ObsLocalizationMaker<QgTraits, QgObsTraits, ObsLocQG> makerObsLoc_("Heaviside");
 
 // -----------------------------------------------------------------------------
 

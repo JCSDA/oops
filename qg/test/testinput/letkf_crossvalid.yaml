@@ -36,8 +36,7 @@ observations:
     obs error:
       covariance model: diagonal
     obs localizations:
-    - localization method: Heaviside
-      lengthscale: 5e6
+    - lengthscale: 5e6
   - obs operator:
       obs type: Wind
     obs space:
@@ -49,8 +48,7 @@ observations:
     obs error:
       covariance model: diagonal
     obs localizations:
-    - localization method: Heaviside
-      lengthscale: 5e6
+    - lengthscale: 5e6
   - obs operator:
       obs type: WSpeed
     obs space:
@@ -62,8 +60,7 @@ observations:
     obs error:
       covariance model: diagonal
     obs localizations:
-    - localization method: Heaviside
-      lengthscale: 5e6
+    - lengthscale: 5e6
 
 driver:
   update obs config with geometry info: false

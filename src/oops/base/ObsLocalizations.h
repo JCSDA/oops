@@ -16,8 +16,8 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Departures.h"
-#include "oops/base/ObsLocalizationBase.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/interface/ObsLocalization.h"
 #include "oops/util/Printable.h"
 
 namespace oops {
@@ -31,7 +31,7 @@ class ObsLocalizations : public util::Printable,
                          private boost::noncopyable {
   typedef GeometryIterator<MODEL>  GeometryIterator_;
   typedef Departures<OBS>          Observations_;
-  typedef ObsLocalizationBase<MODEL, OBS> ObsLocalization_;
+  typedef ObsLocalization<MODEL, OBS> ObsLocalization_;
   typedef ObsSpaces<OBS>           ObsSpaces_;
 
  public:
@@ -61,8 +61,7 @@ ObsLocalizations<MODEL, OBS>::ObsLocalizations(const eckit::Configuration & conf
                         obsconf[jj].getSubConfigurations("obs localizations");
     std::vector<std::unique_ptr<ObsLocalization_> > tmpVector;
     for (size_t oli = 0; oli < obsLocConfigs.size(); ++oli) {
-      tmpVector.emplace_back(ObsLocalizationFactory<MODEL, OBS>::
-                             create(obsLocConfigs[oli], obspaces[jj]));
+      tmpVector.emplace_back(new ObsLocalization_(obsLocConfigs[oli], obspaces[jj]));
     }
     //  move a vector of unique pointers form temp array to vector of vectors
     local_.emplace_back(std::move(tmpVector));
