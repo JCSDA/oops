@@ -23,6 +23,7 @@
 #include "oops/util/FieldSetHelpers.h"
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 #include "oops/util/ParallelFieldSetIO.h"
 
 namespace oops {
@@ -294,6 +295,7 @@ void FieldSet3D::print(std::ostream & os) const {
   std::vector<double> stats(4 * nflds);
   std::streamsize ss = os.precision();
   os << std::scientific << std::setprecision(6);
+  const double missing = util::missingValue<double>();
 
 // Local stats
   size_t jj = 0;
@@ -303,12 +305,15 @@ void FieldSet3D::print(std::ostream & os) const {
     double zmin = std::numeric_limits<double>::max();
     double zmax = std::numeric_limits<double>::lowest();
     const auto view = atlas::array::make_view<double, 2>(field);
+    const auto ghostView = atlas::array::make_view<int, 1>(field.functionspace().ghost());
     for (int jnode = 0; jnode < field.shape(0); ++jnode) {
       for (int jlevel = 0; jlevel < field.shape(1); ++jlevel) {
-        ++npts;
-        zrms += view(jnode, jlevel) * view(jnode, jlevel);
-        zmin = std::min(view(jnode, jlevel), zmin);
-        zmax = std::max(view(jnode, jlevel), zmax);
+        if (ghostView(jnode) == 0 && view(jnode, jlevel) != missing) {
+          ++npts;
+          zrms += view(jnode, jlevel) * view(jnode, jlevel);
+          zmin = std::min(view(jnode, jlevel), zmin);
+          zmax = std::max(view(jnode, jlevel), zmax);
+        }
       }
     }
     stats[jj] = static_cast<double>(npts);
@@ -338,13 +343,17 @@ void FieldSet3D::print(std::ostream & os) const {
       joff += 4 * nflds;
     }
     jj += 4;
-    ASSERT(zpts > 0.0);
-    zrms /= zpts;
+    if (zpts > 0.0) zrms /= zpts;
 
-    os << std::endl << std::left << std::setw(42) << field.name() << std::right
-       << std::setw(0) << ": Min=" << std::setw(13) << zmin
-       << std::setw(0) << ", Max=" << std::setw(13) << zmax
-       << std::setw(0) << ", RMS=" << std::setw(13) << std::sqrt(zrms);
+    if (zpts == 0.0) {
+      os << std::endl << std::left << std::setw(42) << field.name() << std::right
+         << ": No valid points.";
+    } else {
+      os << std::endl << std::left << std::setw(42) << field.name() << std::right
+         << std::setw(0) << ": Min=" << std::setw(13) << zmin
+         << std::setw(0) << ", Max=" << std::setw(13) << zmax
+         << std::setw(0) << ", RMS=" << std::setw(13) << std::sqrt(zrms);
+    }
   }
   os << std::setprecision(ss) << std::setw(0) << std::defaultfloat;
 }
