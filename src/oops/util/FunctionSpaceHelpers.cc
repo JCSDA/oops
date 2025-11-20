@@ -189,12 +189,12 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
       }
 
       // Create distribution from partitioner
-      std::vector<int> partition(grid.size());
-      partitioner.partition(grid, partition.data());
+      std::vector<int> partitioning(grid.size());
+      partitioner.partition(grid, partitioning.data());
 
       // Create distribution and mesh
       atlas::grid::Distribution distribution;
-      setupStructuredMeshWithCustomPartition(comm, grid, partition, distribution, mesh);
+      setupStructuredMeshWithCustomPartition(comm, grid, partitioning, distribution, mesh);
 
       // Create functionspace from distribution
       functionSpace = atlas::functionspace::StructuredColumns(grid, distribution,
@@ -250,7 +250,14 @@ void setupFunctionSpace(const eckit::mpi::Comm & comm,
     } else {
       // NodeColumns from an unstructured grid after triangulation
       // Regular or Structured grids could be supported with extra code
-      mesh = atlas::MeshGenerator("delaunay").generate(grid, partitioner);
+      if (noPointOnLastTask && (comm.size() > 1)) {
+        std::vector<int> partitioning(grid.size());
+        partitioner.partition(grid, partitioning.data());
+        atlas::grid::Distribution distribution(comm.size(), grid.size(), partitioning.data());
+        mesh = atlas::MeshGenerator("delaunay").generate(grid, distribution);
+      } else {
+        mesh = atlas::MeshGenerator("delaunay").generate(grid, partitioner);
+      }
       atlas::mesh::actions::build_halo(mesh, halo);
       functionSpace = atlas::functionspace::NodeColumns(mesh);
     }
