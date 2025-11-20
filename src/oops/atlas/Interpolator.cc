@@ -1,11 +1,11 @@
 /*
- * (C) Copyright 2023- UCAR
+ * (C) Copyright 2023-2025 UCAR
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
-#include "oops/generic/LocalInterpolatorBase.h"
+#include "oops/atlas/Interpolator.h"
 
 #include <string>
 
@@ -17,12 +17,56 @@
 #include "oops/base/Variables.h"
 
 namespace oops {
+namespace atlasbase {
+
+// -----------------------------------------------------------------------------
+
+Interpolator::Interpolator(const eckit::Configuration & /*conf*/,
+                           const GeometryData & /*source_geometry*/,
+                           const std::vector<double> & target_lats,
+                           const std::vector<double> & target_lons) {
+  ASSERT(target_lats.size() == target_lons.size());
+  nb_targets_ = target_lats.size();
+}
+
+// -----------------------------------------------------------------------------
+
+void Interpolator::apply(const Variables& vars,
+                         const atlas::FieldSet& fields,
+                         std::vector<double>& buffer) const {
+  std::vector<bool> mask(nb_targets_, true);
+  apply(vars, fields, mask, buffer);
+}
+
+// -----------------------------------------------------------------------------
+
+void Interpolator::applyAD(const Variables& vars,
+                           atlas::FieldSet& fields,
+                           const std::vector<double>& buffer) const {
+  std::vector<bool> mask(nb_targets_, true);
+  applyAD(vars, fields, mask, buffer);
+}
+
+// -----------------------------------------------------------------------------
+
+void Interpolator::preprocess(atlas::FieldSet & fields) {
+  fields.haloExchange();
+}
+
+// -----------------------------------------------------------------------------
+
+void Interpolator::preprocessAD(atlas::FieldSet & fields) {
+  fields.adjointHaloExchange();
+  fields.set_dirty();
+}
+
+// -----------------------------------------------------------------------------
 
 // Unscramble MPI buffer into the model's FieldSet representation
-void LocalInterpolatorBase::bufferToFieldSet(const Variables & vars,
-                                             const std::vector<size_t> & buffer_indices,
-                                             const std::vector<double> & buffer,
-                                             atlas::FieldSet & target) {
+void Interpolator::bufferToFieldSet(const Variables & vars,
+                                    const std::vector<size_t> & buffer_indices,
+                                    const std::vector<double> & buffer,
+                                    atlas::FieldSet & target) {
   const size_t buffer_chunk_size = buffer_indices.size();
   const size_t buffer_size = buffer.size();
   ASSERT(buffer_chunk_size > 0);
@@ -52,10 +96,10 @@ void LocalInterpolatorBase::bufferToFieldSet(const Variables & vars,
 // -----------------------------------------------------------------------------
 
 // (Adjoint of) Unscramble MPI buffer into the model's FieldSet representation
-void LocalInterpolatorBase::bufferToFieldSetAD(const Variables & vars,
-                                               const std::vector<size_t> & buffer_indices,
-                                               std::vector<double> & buffer,
-                                               const atlas::FieldSet & target) {
+void Interpolator::bufferToFieldSetAD(const Variables & vars,
+                                      const std::vector<size_t> & buffer_indices,
+                                      std::vector<double> & buffer,
+                                      const atlas::FieldSet & target) {
   const size_t buffer_chunk_size = buffer_indices.size();
   const size_t buffer_size = buffer.size();
   ASSERT(buffer_chunk_size > 0);
@@ -82,4 +126,7 @@ void LocalInterpolatorBase::bufferToFieldSetAD(const Variables & vars,
   }
 }
 
+// -----------------------------------------------------------------------------
+
+}  // namespace atlasbase
 }  // namespace oops

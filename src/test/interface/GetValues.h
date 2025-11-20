@@ -181,7 +181,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
                        Test_::sampledLocations(),
                        Test_::variables());
 
-  oops::PreProcessHelper<MODEL>::preProcessModelData(zz);
+  GetValues_::preprocess(zz);
   getvalues.initialize(Test_::timeWindow().length());
   getvalues.process(zz);
   getvalues.finalize();
@@ -230,7 +230,7 @@ template <typename MODEL, typename OBS> void testGetValuesTLZeroPert() {
 
   // Test passing zeros forward
   const util::Duration windowlength = Test_::timeWindow().length();
-  oops::PreProcessHelper<MODEL>::preProcessModelData(dx);
+  GetValues_::preprocess(dx);
   getvalues.initializeTL(windowlength);
   getvalues.processTL(dx);
   getvalues.finalizeTL();
@@ -244,8 +244,7 @@ template <typename MODEL, typename OBS> void testGetValuesTLZeroPert() {
   getvalues.finalizeAD(windowlength);
   getvalues.processAD(dx);
   getvalues.initializeAD();
-  oops::PreProcessHelper<MODEL>::preProcessModelDataAD(dx);
-  dx.synchronizeFields();
+  GetValues_::preprocessAD(dx);
 
   EXPECT(dx.norm() == 0.0);
   EXPECT(gv.rms() == 0.0);
@@ -281,7 +280,7 @@ template <typename MODEL, typename OBS> void testGetValuesLinearity() {
                        Test_::variables());  // linear variables
 
   // Compute geovals
-  oops::PreProcessHelper<MODEL>::preProcessModelData(dx1);
+  GetValues_::preprocess(dx1);
   getvalues.initializeTL(windowlength);
   getvalues.processTL(dx1);
   getvalues.finalizeTL();
@@ -291,7 +290,7 @@ template <typename MODEL, typename OBS> void testGetValuesLinearity() {
   dx2 *= zz;
 
   // Compute geovals
-  oops::PreProcessHelper<MODEL>::preProcessModelData(dx2);
+  GetValues_::preprocess(dx2);
   getvalues.initializeTL(windowlength);
   getvalues.processTL(dx2);
   getvalues.finalizeTL();
@@ -328,7 +327,7 @@ template <typename MODEL, typename OBS> void testGetValuesAdjoint() {
   const util::Duration windowlength = Test_::timeWindow().length();
   dx_in.random();
   EXPECT(dx_in.norm() > 0.0);
-  oops::PreProcessHelper<MODEL>::preProcessModelData(dx_in);
+  GetValues_::preprocess(dx_in);
   getvalues.initializeTL(windowlength);
   getvalues.processTL(dx_in);
   getvalues.finalizeTL();
@@ -344,8 +343,7 @@ template <typename MODEL, typename OBS> void testGetValuesAdjoint() {
   getvalues.finalizeAD(windowlength);
   getvalues.processAD(dx_out);
   getvalues.initializeAD();
-  oops::PreProcessHelper<MODEL>::preProcessModelDataAD(dx_out);
-  dx_out.synchronizeFields();
+  GetValues_::preprocessAD(dx_out);
   EXPECT(dx_out.norm() > 0.0);
 
   // Dot products

@@ -56,11 +56,12 @@ namespace oops {
 
 // -----------------------------------------------------------------------------
 
-UnstructuredInterpolator::UnstructuredInterpolator(const eckit::Configuration & /*config*/,
+UnstructuredInterpolator::UnstructuredInterpolator(const eckit::Configuration & config,
                                                    const GeometryData & geomData,
                                                    const std::vector<double> & lats_out,
                                                    const std::vector<double> & lons_out)
-  : geom_(geomData), nout_(0), interp_matrices_{}
+  : atlasbase::Interpolator(config, geomData, lats_out, lons_out),
+    geom_(geomData), nout_(0), interp_matrices_{}
 {
   Log::trace() << "UnstructuredInterpolator::UnstructuredInterpolator start" << std::endl;
   util::Timer timer("oops::UnstructuredInterpolator", "UnstructuredInterpolator");
@@ -71,23 +72,6 @@ UnstructuredInterpolator::UnstructuredInterpolator(const eckit::Configuration & 
   computeUnmaskedInterpMatrix(lats_out, lons_out);
 
   Log::trace() << "UnstructuredInterpolator::UnstructuredInterpolator done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-void UnstructuredInterpolator::apply(const Variables & vars, const atlas::FieldSet & fset,
-                                     std::vector<double> & locvals) const
-{
-  std::vector<bool> target_mask(nout_, true);
-  this->apply(vars, fset, target_mask, locvals);
-}
-
-// -----------------------------------------------------------------------------
-
-void UnstructuredInterpolator::applyAD(const Variables & vars, atlas::FieldSet & fset,
-                                       const std::vector<double> & vals) const {
-  std::vector<bool> target_mask(nout_, true);
-  this->applyAD(vars, fset, target_mask, vals);
 }
 
 // -----------------------------------------------------------------------------
@@ -330,13 +314,6 @@ void UnstructuredInterpolator::doApplyAD(
 
 // -----------------------------------------------------------------------------
 
-void UnstructuredInterpolator::print(std::ostream & os) const
-{
-  os << "UnstructuredInterpolator";
-}
-
-// -----------------------------------------------------------------------------
-
 void UnstructuredInterpolator::computeUnmaskedInterpMatrix(
     std::vector<double> lats_out,
     std::vector<double> lons_out) const {
@@ -426,6 +403,10 @@ void UnstructuredInterpolator::computeMaskedInterpMatrix(
     }
   }
 }
+
+// -----------------------------------------------------------------------------
+
+void UnstructuredInterpolator::print(std::ostream & os) const { os << classname(); }
 
 // -----------------------------------------------------------------------------
 

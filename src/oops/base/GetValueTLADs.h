@@ -104,11 +104,9 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTraj(const State_ & xx) {
   State_ zz(xx);
   chvar.changeVar(zz, geovars_);
 
-  // Optimization: if underlying interpolations are done using the atlas representation of the
-  // model data, then call FieldSet::haloExchange before entering the loop over obs types:
-  std::unique_ptr<util::Timer> timer(new util::Timer("oops::GetValueTLADs", "preProcessModelData"));
-  PreProcessHelper<MODEL>::preProcessModelData(zz);
-  timer.reset();
+  // Optimization: enable any preprocessing of the state, if required by the interpolator
+  // inside GetValues, to be applied once before the loop over obs types:
+  GetValues<MODEL, OBS>::preprocess(zz);
 
   for (GetValPtr_ getval : getvals_) getval->process(zz);
 
@@ -143,11 +141,9 @@ void GetValueTLADs<MODEL, OBS>::doProcessingTL(const Increment_ & dx) {
   Increment_ dz(dx);
   chvartlad_[now]->changeVarTL(dz, linvars_);
 
-  // Optimization: if underlying interpolations are done using the atlas representation of the
-  // model data, then call FieldSet::haloExchange before entering the loop over obs types:
-  std::unique_ptr<util::Timer> timer(new util::Timer("oops::GetValueTLADs", "preProcessModelData"));
-  PreProcessHelper<MODEL>::preProcessModelData(dz);
-  timer.reset();
+  // Optimization: enable any preprocessing of the increment, if required by the interpolator
+  // inside GetValues, to be applied once before the loop over obs types:
+  GetValues<MODEL, OBS>::preprocess(dz);
 
   for (GetValPtr_ getval : getvals_) getval->processTL(dz);
 
@@ -181,15 +177,9 @@ void GetValueTLADs<MODEL, OBS>::doProcessingAD(Increment_ & dx) {
     getval->processAD(dz);
   }
 
-  // Optimization: if underlying interpolations are done using the atlas representation of the
-  // model data, then call FieldSet::adjointHaloExchange after exiting the loop over obs types:
-  std::unique_ptr<util::Timer> timer(new util::Timer("oops::GetValueTLADs", "preProcessModelData"));
-  PreProcessHelper<MODEL>::preProcessModelDataAD(dz);
-  timer.reset();
-
-  // Increment::synchronizeFields checks that the fields are not empty
-  // If all obs spaces are in monitoring only, dz may be empty (linvars_ are empty)
-  if (linvars_.size() > 0) dz.synchronizeFields();
+  // Optimization: enable any preprocessing of the increment, if required by the interpolator
+  // inside GetValues, to be applied once before the loop over obs types:
+  GetValues<MODEL, OBS>::preprocessAD(dz);
 
   chvartlad_[now]->changeVarAD(dz, dx.variables());
   dx += dz;

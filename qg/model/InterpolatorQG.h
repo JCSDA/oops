@@ -40,6 +40,10 @@ class InterpolatorQG : public util::Printable {
                  const std::vector<double> &, const std::vector<double> &);
   ~InterpolatorQG();
 
+  static void preprocess(StateQG &);
+  static void preprocess(IncrementQG &);
+  static void preprocessAD(IncrementQG &);
+
   void apply(const oops::Variables &, const StateQG &, const std::vector<bool> &,
              std::vector<double> &) const;
   void apply(const oops::Variables &, const IncrementQG &, const std::vector<bool> &,
@@ -47,19 +51,10 @@ class InterpolatorQG : public util::Printable {
   void applyAD(const oops::Variables &, IncrementQG &, const std::vector<bool> &,
                const std::vector<double> &) const;
 
-  // TODO(FH)
-  // The existence here of a masked FieldSet overload of apply(AD) means the oops::LocalInterpolator
-  // will select the FieldSet inteface in GetValues applications. The InterpolatorQG doesn't yet
-  // support the interface needed by other applications like GlobalInterpolator.
-  void apply(const oops::Variables &, const atlas::FieldSet &,
-             const std::vector<bool> &, std::vector<double> &) const;
-  void applyAD(const oops::Variables &, atlas::FieldSet &,
-               const std::vector<bool> &, const std::vector<double> &) const;
-
  private:
   void apply(const oops::Variables &, const FieldsQG &, const std::vector<bool> &,
              std::vector<double> &) const;
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
 
   const GeometryQG & grid_;;
   const size_t nlocs_;

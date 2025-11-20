@@ -23,10 +23,10 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 
+#include "oops/atlas/Interpolator.h"
 #include "oops/base/GeometryData.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/AtlasInterpolator.h"
-#include "oops/generic/LocalInterpolatorBase.h"
 #include "oops/generic/UnstructuredInterpolator.h"
 #include "oops/runs/Test.h"
 #include "oops/util/FloatCompare.h"
@@ -92,7 +92,7 @@ void testLocalInterpolator(
   const std::vector<double> target_lons = rand_lons.data();
   const std::vector<double> target_lats = rand_lats.data();
 
-  std::unique_ptr<oops::LocalInterpolatorBase> interpolator;
+  std::unique_ptr<oops::atlasbase::Interpolator> interpolator;
   const eckit::LocalConfiguration interp_config(config, "local interpolator");
   const std::string interp_type = interp_config.getString("local interpolator type");
   if (interp_type == "atlas interpolator") {

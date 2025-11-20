@@ -104,6 +104,10 @@ list(
   oops/assimilation/TriDiagSpectrum.h
   oops/assimilation/UpHessSolve.h
   oops/assimilation/UpTriSolve.h
+
+  oops/atlas/Interpolator.cc
+  oops/atlas/Interpolator.h
+
   oops/base/Accumulator.h
   oops/base/AnalyticInit.h
   oops/base/DataSetBase.h
@@ -251,7 +255,6 @@ list(
   oops/generic/gc99_mod.F90
   oops/generic/GlobalInterpolator.cc
   oops/generic/GlobalInterpolator.h
-  oops/generic/GlobalTemplatedInterpolator.h
   oops/generic/HtlmCalculator.h
   oops/generic/HtlmEnsemble.h
   oops/generic/HtlmRegularization.cc
@@ -260,8 +263,6 @@ list(
   oops/generic/HybridLinearModelCoeffs.h
   oops/generic/IdentityLinearModel.h
   oops/generic/IdentityModel.h
-  oops/generic/LocalInterpolatorBase.cc
-  oops/generic/LocalInterpolatorBase.h
   oops/generic/instantiateLinearModelFactory.h
   oops/generic/instantiateModelFactory.h
   oops/generic/instantiateObsErrorFactory.h
@@ -639,7 +640,6 @@ if(BUILD_TESTING)
     test/interface/GeometryIterator.h
     test/interface/GeoVaLs.h
     test/interface/GetValues.h
-    test/interface/GlobalInterpolator.h
     test/interface/Increment.h
     test/interface/LinearModel.h
     test/interface/LinearObsOperator.h
@@ -660,7 +660,6 @@ if(BUILD_TESTING)
     test/interface/ObsVector.h
     test/interface/SampledLocations.h
     test/interface/State.h
-    test/interface/UnstructuredInterpolator.h
     test/interface/VariableChange.h
 
     test/mpi/mpi.h

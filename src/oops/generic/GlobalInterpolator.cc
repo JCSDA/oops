@@ -229,8 +229,8 @@ void GlobalInterpolator::apply(const atlas::FieldSet & source,
     const size_t nvals = mytarget_index_by_task_[jtask].size() * nvars;
     ASSERT(mytarget_interp[jtask].size() == nvals);
     if (nvals > 0) {
-      LocalInterpolatorBase::bufferToFieldSet(vars, mytarget_index_by_task_[jtask],
-                                              mytarget_interp[jtask], target);
+      atlasbase::Interpolator::bufferToFieldSet(vars, mytarget_index_by_task_[jtask],
+                                                mytarget_interp[jtask], target);
     }
   }
 
@@ -278,8 +278,8 @@ void GlobalInterpolator::applyAD(atlas::FieldSet & source,
     const size_t nvals = mytarget_index_by_task_[jtask].size() * nvars;
     mytarget_interp[jtask].resize(nvals, 0.0);
     if (nvals > 0) {
-      LocalInterpolatorBase::bufferToFieldSetAD(vars, mytarget_index_by_task_[jtask],
-                                                mytarget_interp[jtask], target);
+      atlasbase::Interpolator::bufferToFieldSetAD(vars, mytarget_index_by_task_[jtask],
+                                                  mytarget_interp[jtask], target);
     }
   }
 

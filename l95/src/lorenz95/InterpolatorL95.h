@@ -33,6 +33,10 @@ class InterpolatorL95 : public util::Printable {
                   const std::vector<double> &, const std::vector<double> &);
   ~InterpolatorL95();
 
+  static void preprocess(StateL95 &);
+  static void preprocess(IncrementL95 &);
+  static void preprocessAD(IncrementL95 &);
+
   void apply(const oops::Variables &, const StateL95 &, const std::vector<bool> &,
              std::vector<double> &) const;
   void apply(const oops::Variables &, const IncrementL95 &, const std::vector<bool> &,
@@ -41,7 +45,7 @@ class InterpolatorL95 : public util::Printable {
                const std::vector<double> &) const;
 
  private:
-  void print(std::ostream &) const;
+  void print(std::ostream &) const override;
 
   size_t nout_;
   std::vector<size_t> ilocs_;

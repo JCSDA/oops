@@ -16,24 +16,17 @@
 
 #include "eckit/config/Configuration.h"
 
+#include "oops/atlas/Interpolator.h"
 #include "oops/base/GeometryData.h"
-#include "oops/generic/LocalInterpolatorBase.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
 
 namespace oops {
 
 class Variables;
 
-template <typename MODEL>
-class Geometry;
-
-template <typename MODEL>
-class State;
-
-template <typename MODEL>
-class Increment;
-
-class AtlasInterpolator : public LocalInterpolatorBase,
+class AtlasInterpolator : public atlasbase::Interpolator,
+                          public util::Printable,
                           private util::ObjectCounter<AtlasInterpolator> {
  public:
   /// Class name string.
@@ -45,67 +38,21 @@ class AtlasInterpolator : public LocalInterpolatorBase,
                     const std::vector<double>& targetLats,
                     const std::vector<double>& targetLons);
 
-  /// Construct interpolator from Geometry and target lat-lons.
-  template <typename MODEL>
-  AtlasInterpolator(const eckit::Configuration& conf,
-                    const Geometry<MODEL>& geom,
-                    const std::vector<double>& targetLats,
-                    const std::vector<double>& targetLons);
-
   /// Destructor.
   ~AtlasInterpolator();
 
-  /// Interpolate Variables from source fields to target fields (no
-  /// mask).
-  void apply(const Variables& variables, const atlas::FieldSet& sourceFieldSet,
-             std::vector<double>& targetFieldVec) const;
+  using atlasbase::Interpolator::apply;
+  using atlasbase::Interpolator::applyAD;
 
   /// Interpolate Variables from source fields to target fields.
   void apply(const Variables& variables, const atlas::FieldSet& sourceFieldSet,
              const std::vector<bool>& mask,
-             std::vector<double>& targetFieldsVec) const;
-
-  /// Adjoint of interpolation from source to target fields (no mask).
-  void applyAD(const Variables& variables, atlas::FieldSet& sourceFieldSet,
-               const std::vector<double>& targetFieldVec) const;
+             std::vector<double>& targetFieldsVec) const override;
 
   /// Adjoint of interpolation from source to target fields.
   void applyAD(const Variables& variables, atlas::FieldSet& sourceFieldSet,
                const std::vector<bool>& mask,
-               const std::vector<double>& targetFieldVec) const;
-
-  /// Interpolate Variables from State to targetFields (no mask).
-  template <typename MODEL>
-  void apply(const Variables& variables, const State<MODEL>& state,
-             std::vector<double>& targetFieldVec) const;
-
-  /// Interpolate Variables from State to targetFields.
-  template <typename MODEL>
-  void apply(const Variables& variables, const State<MODEL>& state,
-             const std::vector<bool>& mask,
-             std::vector<double>& targetFieldVec) const;
-
-  /// Interpolate Variables from Increment to target fields (no mask).
-  template <typename MODEL>
-  void apply(const Variables& variables, const Increment<MODEL>& increment,
-             std::vector<double>& targetFieldVec) const;
-
-  /// Interpolate Variables from Increment to target fields.
-  template <typename MODEL>
-  void apply(const Variables& variables, const Increment<MODEL>& inc,
-             const std::vector<bool>& mask,
-             std::vector<double>& targetFieldVec) const;
-
-  /// Adjoint of interpolation from Increment to target fields (no mask).
-  template <typename MODEL>
-  void applyAD(const Variables& variables, Increment<MODEL>& inc,
-               const std::vector<double>& targetFieldVec) const;
-
-  /// Adjoint of interpolation from Increment to target fields.
-  template <typename MODEL>
-  void applyAD(const Variables& variables, Increment<MODEL>& inc,
-               const std::vector<bool>& mask,
-               const std::vector<double>& targetFieldVec) const;
+               const std::vector<double>& targetFieldVec) const override;
 
  protected:
   /// Apply pre-processing to sourceFields (overridable)
@@ -165,58 +112,4 @@ class AtlasInterpolator : public LocalInterpolatorBase,
   eckit::LocalConfiguration interpMethod_;
 };
 
-template <typename MODEL>
-AtlasInterpolator::AtlasInterpolator(const eckit::Configuration& conf,
-                                     const Geometry<MODEL>& geom,
-                                     const std::vector<double>& targetLats,
-                                     const std::vector<double>& targetLons)
-    : AtlasInterpolator(conf, geom.generic(), targetLats, targetLons) {}
-
-template <typename MODEL>
-void AtlasInterpolator::apply(const Variables& variables,
-                              const State<MODEL>& state,
-                              std::vector<double>& targetFieldVec) const {
-  apply(variables, state.fieldSet().fieldSet(),
-        std::vector<bool>(targetLonLats_.size(), true), targetFieldVec);
-}
-
-template <typename MODEL>
-void AtlasInterpolator::apply(const Variables& variables,
-                              const State<MODEL>& state,
-                              const std::vector<bool>& mask,
-                              std::vector<double>& targetFieldVec) const {
-  apply(variables, state.fieldSet().fieldSet(), mask, targetFieldVec);
-}
-
-template <typename MODEL>
-void AtlasInterpolator::apply(const Variables& variables,
-                              const Increment<MODEL>& increment,
-                              const std::vector<bool>& mask,
-                              std::vector<double>& targetFieldVec) const {
-  apply(variables, increment.fieldSet().fieldSet(), mask, targetFieldVec);
-}
-
-template <typename MODEL>
-void AtlasInterpolator::apply(const Variables& variables,
-                              const Increment<MODEL>& increment,
-                              std::vector<double>& targetFieldVec) const {
-  apply(variables, increment.fieldSet().fieldSet(),
-        std::vector<bool>(targetLonLats_.size(), true), targetFieldVec);
-}
-
-template <typename MODEL>
-void AtlasInterpolator::applyAD(
-    const Variables& variables, Increment<MODEL>& increment,
-    const std::vector<double>& targetFieldVec) const {
-  applyAD(variables, increment.fieldSet().fieldSet(),
-          std::vector<bool>(targetLonLats_.size(), true), targetFieldVec);
-}
-
-template <typename MODEL>
-void AtlasInterpolator::applyAD(
-    const Variables& variables, Increment<MODEL>& increment,
-    const std::vector<bool>& mask,
-    const std::vector<double>& targetFieldVec) const {
-  applyAD(variables, increment.fieldSet().fieldSet(), mask, targetFieldVec);
-}
 }  // namespace oops

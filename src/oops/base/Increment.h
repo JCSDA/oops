@@ -154,7 +154,11 @@ template<typename MODEL>
 void Increment<MODEL>::synchronizeFields() {
   // TODO(JEDI core team): remove this method when accessors are fully implemented
   if (interface::Increment<MODEL>::fset_) {
-    ASSERT(!interface::Increment<MODEL>::fset_->empty());
+    // The FieldSet should contain fields to synchronize, *unless* if we're in the
+    // edge case where the increment itself contains no variables
+    const bool incr_empty = (this->variables().size() == 0);
+    const bool fset_empty = interface::Increment<MODEL>::fset_->empty();
+    ASSERT(!fset_empty || incr_empty);
     this->fromFieldSet(interface::Increment<MODEL>::fset_->fieldSet());
   }
 }

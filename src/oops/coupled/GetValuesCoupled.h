@@ -32,24 +32,6 @@ namespace util {
 
 namespace oops {
 
-/// PreProcessHelper template specialization for coupled traits: delegate to unspecialized template
-/// for each model component.
-template <typename MODEL1, typename MODEL2>
-struct PreProcessHelper<TraitCoupled<MODEL1, MODEL2>> {
-  static void preProcessModelData(const State<TraitCoupled<MODEL1, MODEL2>> & state) {
-    PreProcessHelper<MODEL1>::preProcessModelData(state.state().state1());
-    PreProcessHelper<MODEL2>::preProcessModelData(state.state().state2());
-  }
-  static void preProcessModelData(const Increment<TraitCoupled<MODEL1, MODEL2>> & increment) {
-    PreProcessHelper<MODEL1>::preProcessModelData(increment.increment().increment1());
-    PreProcessHelper<MODEL2>::preProcessModelData(increment.increment().increment2());
-  }
-  static void preProcessModelDataAD(const Increment<TraitCoupled<MODEL1, MODEL2>> & increment) {
-    PreProcessHelper<MODEL1>::preProcessModelDataAD(increment.increment().increment1());
-    PreProcessHelper<MODEL2>::preProcessModelDataAD(increment.increment().increment2());
-  }
-};
-
 /// GetValues template specialization for coupled traits
 template <typename MODEL1, typename MODEL2, typename OBS>
 class GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>:
@@ -67,6 +49,10 @@ class GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>:
             const util::TimeWindow &,
             const SampledLocations_ &,
             const Variables &, const Variables & varl = Variables());
+
+  static void preprocess(State_ &);
+  static void preprocess(Increment_ &);
+  static void preprocessAD(Increment_ &);
 
 /// Nonlinear
   void initialize(const util::Duration &);
@@ -127,6 +113,28 @@ GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::GetValues(const eckit::Configurati
                                  splitlinvars[1]);
   }
   Log::trace() << "GetValuesCoupled::GetValuesCoupled done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+//  Preprocess methods
+// -----------------------------------------------------------------------------
+
+template <typename MODEL1, typename MODEL2, typename OBS>
+void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::preprocess(State_ & xx) {
+  GetValues<MODEL1, OBS>::preprocess(xx.state().state1());
+  GetValues<MODEL2, OBS>::preprocess(xx.state().state2());
+}
+
+template <typename MODEL1, typename MODEL2, typename OBS>
+void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::preprocess(Increment_ & dx) {
+  GetValues<MODEL1, OBS>::preprocess(dx.increment().increment1());
+  GetValues<MODEL2, OBS>::preprocess(dx.increment().increment2());
+}
+
+template <typename MODEL1, typename MODEL2, typename OBS>
+void GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::preprocessAD(Increment_ & dx) {
+  GetValues<MODEL1, OBS>::preprocessAD(dx.increment().increment1());
+  GetValues<MODEL2, OBS>::preprocessAD(dx.increment().increment2());
 }
 
 // -----------------------------------------------------------------------------

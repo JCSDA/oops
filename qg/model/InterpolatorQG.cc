@@ -36,6 +36,12 @@ InterpolatorQG::~InterpolatorQG() {}
 
 // -----------------------------------------------------------------------------
 
+void InterpolatorQG::preprocess(StateQG &) {}
+void InterpolatorQG::preprocess(IncrementQG &) {}
+void InterpolatorQG::preprocessAD(IncrementQG &) {}
+
+// -----------------------------------------------------------------------------
+
 void InterpolatorQG::apply(const oops::Variables & vars, const StateQG & xx,
                            const std::vector<bool> & mask,
                            std::vector<double> & values) const {
@@ -120,78 +126,6 @@ void InterpolatorQG::applyAD(const oops::Variables & vars, IncrementQG & dx,
   }
 
   qg_fields_getvalsad_f90(dx.fields().toFortran(), vars, nout, locs[0], nvals, tmp[0]);
-}
-
-// -----------------------------------------------------------------------------
-
-void InterpolatorQG::apply(const oops::Variables & vars, const atlas::FieldSet & fset,
-                           const std::vector<bool> & mask,
-                           std::vector<double> & values) const {
-  const size_t nlevs = grid_.levels();
-  ASSERT(mask.size() == nlocs_);
-  ASSERT(values.size() == vars.size() * nlevs * nlocs_);
-
-  size_t nout = 0;
-  std::vector<double> locs;
-  for (size_t jj = 0; jj < nlocs_; ++jj) {
-    if (mask[jj]) {
-      locs.push_back(locs_[2*jj]);
-      locs.push_back(locs_[2*jj+1]);
-      ++nout;
-    }
-  }
-  const size_t nvals = vars.size() * nlevs * nout;
-  std::vector<double> tmp(nvals);
-
-  qg_getvalues_interp_f90(grid_.toFortran(), fset.get(), vars, nout, locs[0], nvals, tmp[0]);
-
-  // Restructure data: fill unmasked array values with masked data from tmp
-  size_t itmp = 0;
-  for (size_t jv = 0; jv < vars.size(); ++jv) {
-    for (size_t jj = 0; jj < nlocs_; ++jj) {
-      if (mask[jj]) {
-        for (size_t jl = 0; jl < nlevs; ++jl, ++itmp) {
-          values[jv * nlocs_ * nlevs + jj * nlevs + jl] = tmp[itmp];
-        }
-      }
-    }
-  }
-}
-
-// -----------------------------------------------------------------------------
-
-void InterpolatorQG::applyAD(const oops::Variables & vars, atlas::FieldSet & fset,
-                             const std::vector<bool> & mask,
-                             const std::vector<double> & values) const {
-  const size_t nlevs = grid_.levels();
-  ASSERT(mask.size() == nlocs_);
-  ASSERT(values.size() == vars.size() * nlevs * nlocs_);
-
-  size_t nout = 0;
-  std::vector<double> locs;
-  for (size_t jj = 0; jj < nlocs_; ++jj) {
-    if (mask[jj]) {
-      locs.push_back(locs_[2*jj]);
-      locs.push_back(locs_[2*jj+1]);
-      ++nout;
-    }
-  }
-  const size_t nvals = vars.size() * nlevs * nout;
-  std::vector<double> tmp(nvals);
-
-  // (Adjoint of) Restructure data: fill unmasked array values with masked data from tmp
-  size_t itmp = 0;
-  for (size_t jv = 0; jv < vars.size(); ++jv) {
-    for (size_t jj = 0; jj < nlocs_; ++jj) {
-      if (mask[jj]) {
-        for (size_t jl = 0; jl < nlevs; ++jl, ++itmp) {
-          tmp[itmp] = values[jv * nlocs_ * nlevs + jj * nlevs + jl];
-        }
-      }
-    }
-  }
-
-  qg_getvalues_interp_ad_f90(grid_.toFortran(), fset.get(), vars, nout, locs[0], nvals, tmp[0]);
 }
 
 // -----------------------------------------------------------------------------

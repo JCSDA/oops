@@ -101,11 +101,9 @@ void GetValuePosts<MODEL, OBS>::doProcessing(const State_ & xx) {
   State_ zz(xx);
   chvar.changeVar(zz, geovars_);
 
-  // Optimization: if underlying interpolations are done using the atlas representation of the
-  // model data, then call FieldSet::haloExchange before entering the loop over obs types:
-  std::unique_ptr<util::Timer> timer(new util::Timer("oops::GetValuePosts", "preProcessModelData"));
-  PreProcessHelper<MODEL>::preProcessModelData(zz);
-  timer.reset();
+  // Optimization: enable any preprocessing of the state, if required by the interpolator
+  // inside GetValues, to be applied once before the loop over obs types:
+  GetValues<MODEL, OBS>::preprocess(zz);
 
   for (GetValuePtr_ getval : getvals_) getval->process(zz);
 

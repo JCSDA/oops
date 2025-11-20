@@ -126,7 +126,8 @@ AtlasInterpolator::AtlasInterpolator(const eckit::Configuration& conf,
                                      const GeometryData& geomData,
                                      const std::vector<double>& targetLats,
                                      const std::vector<double>& targetLons)
-    : sourceFunctionSpace_{geomData.functionSpace()},
+    : atlasbase::Interpolator(conf, geomData, targetLats, targetLons),
+      sourceFunctionSpace_{geomData.functionSpace()},
       interpMethod_{conf.getSubConfiguration("interpolation method")} {
   Log::trace() << classname() + "::AtlasInterpolator start" << std::endl;
   util::Timer timer(classname(), "AtlasInterpolator");
@@ -142,13 +143,6 @@ AtlasInterpolator::AtlasInterpolator(const eckit::Configuration& conf,
 }
 
 AtlasInterpolator::~AtlasInterpolator() {}
-
-void AtlasInterpolator::apply(const Variables& variables,
-                              const atlas::FieldSet& sourceFieldSet,
-                              std::vector<double>& targetFieldVec) const {
-  apply(variables, sourceFieldSet,
-        std::vector<bool>(targetLonLats_.size(), true), targetFieldVec);
-}
 
 void AtlasInterpolator::apply(const Variables& variables,
                               const atlas::FieldSet& sourceFieldSet,
@@ -190,13 +184,6 @@ void AtlasInterpolator::apply(const Variables& variables,
   fieldSetToVector(variables, mask, targetFieldSet, targetFieldVec, dataCopy);
 
   Log::trace() << classname() + "::apply done" << std::endl;
-}
-
-void AtlasInterpolator::applyAD(
-    const Variables& variables, atlas::FieldSet& sourceFieldSet,
-    const std::vector<double>& targetFieldVec) const {
-  applyAD(variables, sourceFieldSet,
-          std::vector<bool>(targetLonLats_.size(), true), targetFieldVec);
 }
 
 void AtlasInterpolator::applyAD(

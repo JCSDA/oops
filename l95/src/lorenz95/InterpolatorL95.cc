@@ -39,6 +39,12 @@ InterpolatorL95::~InterpolatorL95() {}
 
 // -----------------------------------------------------------------------------
 
+void InterpolatorL95::preprocess(StateL95 &) {}
+void InterpolatorL95::preprocess(IncrementL95 &) {}
+void InterpolatorL95::preprocessAD(IncrementL95 &) {}
+
+// -----------------------------------------------------------------------------
+
 void InterpolatorL95::apply(const oops::Variables &, const StateL95 & xx,
                             const std::vector<bool> & mask,
                             std::vector<double> & vals) const {
