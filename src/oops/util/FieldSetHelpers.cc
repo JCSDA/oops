@@ -1874,8 +1874,8 @@ std::vector<double> fieldSetToBuffer(const atlas::FieldSet & fields) {
   size_t index = 0;
   for (const auto & field : fields) {
     const auto & view = atlas::array::make_view<double, 2>(field);
-    for (size_t i = 0; i < field.shape(0); i++) {
-      for (size_t j = 0; j < field.shape(1); j++) {
+    for (atlas::idx_t i = 0; i < field.shape(0); i++) {
+      for (atlas::idx_t j = 0; j < field.shape(1); j++) {
         buf[index++] = view(i, j);
       }
     }
@@ -1888,8 +1888,8 @@ void fieldSetFromBuffer(atlas::FieldSet & fields, const std::vector<double> & bu
   size_t index = 0;
   for (auto & field : fields) {
     auto view = atlas::array::make_view<double, 2>(field);
-    for (size_t i = 0; i < view.shape(0); i++) {
-      for (size_t j = 0; j < view.shape(1); j++) {
+    for (atlas::idx_t i = 0; i < view.shape(0); i++) {
+      for (atlas::idx_t j = 0; j < view.shape(1); j++) {
         view(i, j) = buf[index++];
       }
     }

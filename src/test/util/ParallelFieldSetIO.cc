@@ -69,7 +69,7 @@ std::vector<atlas::FunctionSpace> Test_::setupNativeFunctionSpaces() const {
 std::vector<util::ParallelFieldSetIO> Test_::setupParallelFieldSetIOs() const {
     std::vector<util::ParallelFieldSetIO> parallelFieldSetIOs;
     parallelFieldSetIOs.reserve(configs_->size());
-    for (auto c = 0; c < configs_->size(); c++) {
+    for (size_t c = 0; c < configs_->size(); c++) {
         const std::string gridName = (*configs_)[c].getSubConfiguration("grid").getString("name");
         parallelFieldSetIOs.emplace_back((*nativeFunctionSpaces_)[c], gridName);
     }
@@ -158,7 +158,7 @@ void test(const size_t configNumber) {
 // -------------------------------------------------------------------------------------------------
 
 CASE("test") {
-    for (auto c = 0; c < Test_::configs().size(); c++) {
+    for (size_t c = 0; c < Test_::configs().size(); c++) {
         SECTION("config" + std::to_string(c)) {
             test(c);
         }

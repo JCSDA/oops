@@ -40,7 +40,6 @@ void testFieldSets() {
 
   // Setup atlas FunctionSpace
   const auto & commGeom = oops::mpi::world();
-  const auto & commTime = oops::mpi::myself();
 
   const auto fspaceConfig(config.getSubConfiguration("functionspace"));
 

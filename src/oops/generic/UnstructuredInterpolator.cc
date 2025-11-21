@@ -249,7 +249,7 @@ void UnstructuredInterpolator::doApply(
         for (int jlev = 0; jlev < nb_levels; ++jlev) {
           int minval = std::numeric_limits<int>().max();
           int maxval = std::numeric_limits<int>().min();
-          for (int jj = 0; jj < nstencil_; ++jj) {
+          for (size_t jj = 0; jj < nstencil_; ++jj) {
             minval = std::min(minval, static_cast<int>(std::round(source(interp_is[jj], jlev))));
             maxval = std::max(maxval, static_cast<int>(std::round(source(interp_is[jj], jlev))));
           }
