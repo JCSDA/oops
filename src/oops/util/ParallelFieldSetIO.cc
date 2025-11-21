@@ -17,6 +17,7 @@
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/util/FunctionSpaceHelpers.h"
+#include "oops/util/Timer.h"
 
 namespace util {
 
@@ -140,6 +141,7 @@ void ParallelFieldSetIO::readFieldByTypeAndRank(atlas::Field& field,
 void ParallelFieldSetIO::write(const atlas::FieldSet& source, const std::string& ncfilepath) const {
     ASSERT_MSG(redistributeWrite_,
                "util::ParallelFieldSetIO::write: redistributeWrite_ not initialised");
+    util::Timer timer(classname(), "write");
 
     // Redistribute data to Fields where it is ordered by global_index
     atlas::FieldSet output = ioFieldSet(source);
@@ -233,6 +235,8 @@ void ParallelFieldSetIO::write(const atlas::Field& source, const std::string& nc
 // -------------------------------------------------------------------------------------------------
 
 void ParallelFieldSetIO::read(atlas::FieldSet& target, const std::string& ncfilepath) const {
+    util::Timer timer(classname(), "read");
+
     ASSERT_MSG(redistributeRead_,
                "util::ParallelFieldSetIO::read: redistributeRead_ not initialised");
 

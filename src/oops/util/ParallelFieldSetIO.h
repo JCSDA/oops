@@ -24,6 +24,8 @@ namespace util {
 
 class ParallelFieldSetIO {
  public:
+    static const std::string classname() { return "oops::util::ParallelFieldSetIO"; }
+
     enum class Mode { Read, Write, ReadWrite };
 
     explicit ParallelFieldSetIO(const atlas::FunctionSpace&,
