@@ -19,6 +19,8 @@
 #include "oops/util/FunctionSpaceHelpers.h"
 #include "oops/util/Timer.h"
 
+#define ERR(e) {throw eckit::Exception(nc_strerror(e), Here());}
+
 namespace util {
 
 // -------------------------------------------------------------------------------------------------

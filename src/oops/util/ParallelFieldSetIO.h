@@ -16,8 +16,6 @@
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/AtlasArrayUtil.h"
 
-#define ERR(e) {throw eckit::Exception(nc_strerror(e), Here());}
-
 namespace util {
 
 // -------------------------------------------------------------------------------------------------
