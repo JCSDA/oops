@@ -8,7 +8,7 @@
 
 #include "test/util/ParallelFieldSetIO.h"
 
-#ifndef AOCC
+#if !defined(AOCC) && !defined(NVHPC)
 #include <filesystem>
 #endif
 #include <algorithm>
@@ -139,10 +139,10 @@ void test(const size_t configNumber) {
         const auto ncfilepathSerial = TestEnvironment::config().getString("datadir") + "/" +
                                       "test_util_parallelfieldsetio_1PE-" +
                                       "config" + std::to_string(configNumber) + ".nc";
-#ifdef AOCC
-        if (access(ncfilepathSerial.c_str(), 0) == 0) {
-#else
+#if !defined(AOCC) && !defined(NVHPC)
         if (std::filesystem::exists(ncfilepathSerial)) {
+#else
+        if (access(ncfilepathSerial.c_str(), 0) == 0) {
 #endif
             parallelFieldSetIO.read(target, ncfilepath);
             EXPECT(util::compareFieldSets(source, target, 1.0e-16));
