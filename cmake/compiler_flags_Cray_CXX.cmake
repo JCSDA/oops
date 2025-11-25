@@ -32,7 +32,7 @@ set( CMAKE_CXX_FLAGS_RELEASE     "-O3 -hfp3 -hscalar3 -hvector3 -hPIC" )
 ####################################################################
 
 set( CMAKE_Fortran_FLAGS_DEBUG   "-O0 -Gfast -Ktrap=fp" )
-set( CMAKE_CXX_FLAGS_DEBUG       "-O0 -Gfast -Ktrap=fp" )
+set( CMAKE_CXX_FLAGS_DEBUG       "-O0 -Gfast" )
 
 ####################################################################
 # BIT REPRODUCIBLE FLAGS
@@ -46,7 +46,7 @@ set( CMAKE_CXX_FLAGS_BIT         "-O2 -hflex_mp=conservative -hadd_paren -hfp1" 
 ####################################################################
 
 set( CMAKE_Fortran_LINK_FLAGS    "-Wl,-Map,loadmap" )
-set( CMAKE_CXX_LINK_FLAGS        "-Wl,-Map,loadmap -Wl,-z,muldefs -Ktrap=fp $ENV{CRAYLIBS_X86_64}/btswap.o" )
+set( CMAKE_CXX_LINK_FLAGS        "-Wl,-Map,loadmap -Wl,-z,muldefs $ENV{CRAYLIBS_X86_64}/btswap.o" )
 set( CMAKE_CXX_LINK_EXECUTABLE   "<CMAKE_CXX_COMPILER>  <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS>  -o <TARGET> <LINK_LIBRARIES> -Wl,-Bdynamic")
 
 ####################################################################
