@@ -18,6 +18,7 @@
 #include "oops/base/IncrementSet.h"
 #include "oops/generic/HtlmEnsemble.h"
 #include "oops/generic/HtlmRegularization.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -37,6 +38,7 @@ class HtlmCalculator {
                  const atlas::idx_t,
                  const HtlmEnsemble_ &,
                  const std::vector<atlas::idx_t> &);
+  static const std::string classname() {return "oops::HtlmCalculator";}
   void setOfCoeffs(const IncrementSet_ &, const IncrementSet_ &, atlas::FieldSet &) const;
 
  private:
@@ -127,6 +129,7 @@ void HtlmCalculator<MODEL>::singularValueDecomposition(const atlas::idx_t i,
                                                        const atlas::array::Range & range,
                                                        const IncrementSet_ & linearEnsemble)
 const {
+  util::Timer timer(classname(), "singularValueDecomposition");
   // M is a matrix where each column forms a vector of (no. variables) segments, each of length
   // influenceSize_, and each column is taken from one ensemble member
   for (size_t v = 0; v < updateVars_.size(); v++) {
@@ -150,6 +153,7 @@ void HtlmCalculator<MODEL>::compute(const atlas::idx_t i, const atlas::idx_t k,
                                     const atlas::array::Range & range,
                                     const IncrementSet_ & linearErrors,
                                     atlas::FieldSet & coeffsFSet) const {
+  util::Timer timer(classname(), "compute");
   for (const auto & var : updateVars_.variables()) {
     // Produce VectorXd of linear errors at var, i, k for each ensemble member
     for (auto m = 0; m < ensembleSize_; m++) {

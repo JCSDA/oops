@@ -271,6 +271,7 @@ void HybridLinearModelCoeffs<MODEL>::write() const {
 template<typename MODEL>
 void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
   Log::trace() << "HybridLinearModelCoeffs<MODEL>::updateIncTL() starting" << std::endl;
+  util::Timer timer(classname(), "updateIncTL");
   const auto updateStencilArray = atlas::array::make_view<int, 2>(updateStencil_);
   atlas::FieldSet & dxFSet = dx.fieldSet().fieldSet();
   auto updateBuffer = util::perThreadStorage<double>(updateVars_.size()*nLevels_);
@@ -313,6 +314,7 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
 template<typename MODEL>
 void HybridLinearModelCoeffs<MODEL>::updateIncAD(Increment_ & dx) const {
   Log::trace() << "HybridLinearModelCoeffs<MODEL>::updateIncAD() starting" << std::endl;
+  util::Timer timer(classname(), "updateIncAD");
   const auto updateStencilArray = atlas::array::make_view<int, 2>(updateStencil_);
   atlas::FieldSet & dxFSet = dx.fieldSet().fieldSet();
   auto updateBuffer = util::perThreadStorage<double>(updateVars_.size()*nLevels_);

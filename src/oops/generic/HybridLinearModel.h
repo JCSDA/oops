@@ -105,6 +105,7 @@ HybridLinearModel<MODEL>::HybridLinearModel(const Geometry_ & updateGeometry,
 template<typename MODEL>
 void HybridLinearModel<MODEL>::stepTL(Increment_ & dx, const ModelAuxInc_ & merr) const {
   Log::trace() << "HybridLinearModel<MODEL>::stepTL() starting" << std::endl;
+  util::Timer timer(classname(), "stepTL");
   simpleLinearModel_->forecastTL(dx, merr, updateTstep_);
   coeffs_.updateIncTL(dx);
   Log::trace() << "HybridLinearModel<MODEL>::stepTL() done" << std::endl;
@@ -115,6 +116,7 @@ void HybridLinearModel<MODEL>::stepTL(Increment_ & dx, const ModelAuxInc_ & merr
 template<typename MODEL>
 void HybridLinearModel<MODEL>::stepAD(Increment_ & dx, ModelAuxInc_ & merr) const {
   Log::trace() << "HybridLinearModel<MODEL>::stepAD() starting" << std::endl;
+  util::Timer timer(classname(), "stepAD");
   coeffs_.updateIncAD(dx);
   simpleLinearModel_->forecastAD(dx, merr, updateTstep_);
   Log::trace() << "HybridLinearModel<MODEL>::stepAD() done" << std::endl;
