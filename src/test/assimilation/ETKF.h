@@ -31,14 +31,16 @@ namespace test {
     return std::chrono::duration_cast<std::chrono::milliseconds>(tB - tA).count();
   };
 
-  void compareWeights(const Eigen::VectorXd & wa, const Eigen::VectorXd & wa_d,
-                      const Eigen::MatrixXd & Wa, const Eigen::MatrixXd & Wa_d) {
+  void compareWeights(const Eigen::VectorXf & wa, const Eigen::VectorXf & wa_f,
+                      const Eigen::MatrixXf & Wa, const Eigen::MatrixXf & Wa_f) {
+    const float wa_tol = 1.0e-6;
+    const float Wa_tol = 1.0e-5;
     for (int i = 0; i < wa.rows(); ++i) {
-      EXPECT(oops::is_close_absolute(wa(i), wa_d(i), 1.0e-6));
+      EXPECT(oops::is_close_absolute(wa(i), wa_f(i), wa_tol));
     }
     for (int i = 0; i < Wa.rows(); ++i) {
       for (int j = 0; j < Wa.cols(); ++j) {
-        EXPECT(oops::is_close_absolute(Wa(i, j), Wa_d(i, j), 1.0e-5));
+        EXPECT(oops::is_close_absolute(Wa(i, j), Wa_f(i, j), Wa_tol));
       }
     }
   }
@@ -50,13 +52,14 @@ namespace test {
     const Eigen::VectorXd dy = Eigen::VectorXd::Random(nobs);
     const Eigen::MatrixXf Yb = Eigen::MatrixXf::Random(nens, nobs);
     const Eigen::VectorXd invVarR = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
-    Eigen::VectorXd wa(nens);
-    Eigen::MatrixXd Wa(nens, nens);
+    Eigen::VectorXf wa(nens);
+    Eigen::MatrixXf Wa(nens, nens);
 
     // Eigen implementation
 
-    const auto times = oops::detLETKF_computeWeights(dy, Yb, invVarR, (nens - 1) / 1.0,
-                                                     singularValueDecomposition, wa, Wa);
+    const auto times = oops::detLETKF_computeWeights(
+        dy.cast<float>(), Yb, invVarR.cast<float>(), (nens - 1) / 1.0,
+        singularValueDecomposition, wa, Wa);
 
     // LAPACK implementation
 
@@ -89,9 +92,6 @@ namespace test {
                          getkf,
                          infl);
 
-    const Eigen::VectorXd wa_d = wa_f.cast<double>();
-    const Eigen::MatrixXd Wa_d = Wa_f.cast<double>();
-
     const auto tL1 = std::chrono::system_clock::now();
 
     // Timing information
@@ -111,7 +111,7 @@ namespace test {
 
     // Compare the weights produced by the two implementations
 
-    compareWeights(wa, wa_d, Wa, Wa_d);
+    compareWeights(wa, wa_f, Wa, Wa_f);
   }
 
   void GETKF(const int nobs, const int nens, const int neig) {
@@ -125,10 +125,11 @@ namespace test {
     // modulated ensemble
     const Eigen::MatrixXf Yb = Eigen::MatrixXf::Random(nana, nobs);
     const Eigen::VectorXd invVarR = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
-    Eigen::VectorXd wa(nana);
-    Eigen::MatrixXd Wa(nana, nens);
+    Eigen::VectorXf wa(nana);
+    Eigen::MatrixXf Wa(nana, nens);
 
-    const auto times = oops::detGETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, svd, wa, Wa);
+    const auto times = oops::detGETKF_computeWeights(
+        dy.cast<float>(), Yb, YbOrig, invVarR.cast<float>(), infl, svd, wa, Wa);
 
     // LAPACK implementation
 
@@ -162,9 +163,6 @@ namespace test {
                          infl);
     const auto tL1 = std::chrono::system_clock::now();
 
-    const Eigen::VectorXd wa_d = wa_f.cast<double>();
-    const Eigen::MatrixXd Wa_d = Wa_f.cast<double>();
-
     // Timing information
 
     oops::Log::info() << std::endl;
@@ -187,7 +185,7 @@ namespace test {
 
     // Compare the weights produced by the two implementations
 
-    compareWeights(wa, wa_d, Wa, Wa_d);
+    compareWeights(wa, wa_f, Wa, Wa_f);
   }
 
   void eigendecompositionWithSVD(const int nobs, const int nens, const int neig) {
@@ -202,40 +200,44 @@ namespace test {
     const Eigen::MatrixXf YbOrig_Gevd = Eigen::MatrixXf::Random(nens, nobs);
     const Eigen::MatrixXf Yb_Gevd = Eigen::MatrixXf::Random(nana, nobs);
     const Eigen::VectorXd invVarR_Gevd = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
-    Eigen::VectorXd wa_Gevd(nana);
-    Eigen::MatrixXd Wa_Gevd(nana, nens);
+    Eigen::VectorXf wa_Gevd(nana);
+    Eigen::MatrixXf Wa_Gevd(nana, nens);
     const auto dy_Gsvd = dy_Gevd;
     const auto YbOrig_Gsvd = YbOrig_Gevd;
     const auto Yb_Gsvd = Yb_Gevd;
     const auto invVarR_Gsvd = invVarR_Gevd;
-    Eigen::VectorXd wa_Gsvd(nana);
-    Eigen::MatrixXd Wa_Gsvd(nana, nens);
+    Eigen::VectorXf wa_Gsvd(nana);
+    Eigen::MatrixXf Wa_Gsvd(nana, nens);
 
     bool svd = false;
     const auto GETKF_times_EigenValue = oops::detGETKF_computeWeights(
-        dy_Gevd, Yb_Gevd, YbOrig_Gevd, invVarR_Gevd, infl, svd, wa_Gevd, Wa_Gevd);
+        dy_Gevd.cast<float>(), Yb_Gevd, YbOrig_Gevd, invVarR_Gevd.cast<float>(),
+        infl, svd, wa_Gevd, Wa_Gevd);
     svd = true;
     const auto GETKF_times_SingularValue = oops::detGETKF_computeWeights(
-        dy_Gsvd, Yb_Gsvd, YbOrig_Gsvd, invVarR_Gsvd, infl, svd, wa_Gsvd, Wa_Gsvd);
+        dy_Gsvd.cast<float>(), Yb_Gsvd, YbOrig_Gsvd, invVarR_Gsvd.cast<float>(),
+        infl, svd, wa_Gsvd, Wa_Gsvd);
 
     // LETKF - deterministic
     const Eigen::VectorXd dy_Levd = Eigen::VectorXd::Random(nobs);
     const Eigen::MatrixXf Yb_Levd = Eigen::MatrixXf::Random(nens, nobs);
     const Eigen::VectorXd invVarR_Levd = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
-    Eigen::VectorXd wa_Levd(nens);
-    Eigen::MatrixXd Wa_Levd(nens, nens);
+    Eigen::VectorXf wa_Levd(nens);
+    Eigen::MatrixXf Wa_Levd(nens, nens);
     const auto dy_Lsvd = dy_Levd;
     const auto Yb_Lsvd = Yb_Levd;
     const auto invVarR_Lsvd = invVarR_Levd;
-    Eigen::VectorXd wa_Lsvd(nens);
-    Eigen::MatrixXd Wa_Lsvd(nens, nens);
+    Eigen::VectorXf wa_Lsvd(nens);
+    Eigen::MatrixXf Wa_Lsvd(nens, nens);
     svd = false;
     const auto LETKF_times_EigenValue = oops::detLETKF_computeWeights(
-        dy_Levd, Yb_Levd, invVarR_Levd, (nens - 1) / 1.0, svd, wa_Levd, Wa_Levd);
+        dy_Levd.cast<float>(), Yb_Levd, invVarR_Levd.cast<float>(),
+        (nens - 1) / 1.0, svd, wa_Levd, Wa_Levd);
 
     svd = true;
     const auto LETKF_times_SingularValue = oops::detLETKF_computeWeights(
-        dy_Lsvd, Yb_Lsvd, invVarR_Lsvd, (nens - 1) / 1.0, svd, wa_Lsvd, Wa_Lsvd);
+        dy_Lsvd.cast<float>(), Yb_Lsvd, invVarR_Lsvd.cast<float>(),
+        (nens - 1) / 1.0, svd, wa_Lsvd, Wa_Lsvd);
 
     // Timing information
 

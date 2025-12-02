@@ -82,3 +82,4 @@ output variance posterior:
 test:
   reference filename: testoutput/letkf.test
   test output filename: testoutput/letkf.out
+  float relative tolerance: 5.0e-5

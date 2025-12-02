@@ -103,8 +103,8 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
                          IncrementSet_ &) override;
 
  protected:
-  Eigen::MatrixXd Wa_;  // transformation matrix for ens. perts. Xa_=Xf*Wa
-  Eigen::VectorXd wa_;  // transformation matrix for ens. mean xa_=xf*wa
+  Eigen::MatrixXf Wa_;  // transformation matrix for ens. perts. Xa_=Xf*Wa
+  Eigen::VectorXf wa_;  // transformation matrix for ens. mean xa_=xf*wa
   size_t nens_;
   const Geometry_ & geometry_;
   VerticalLocEV_ vertloc_;
@@ -364,15 +364,9 @@ void DeterministicGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   // compute transformation matrix, save in Wa_, wa_
   // Yb(nobs,neig*nens), YbOrig(nobs,nens)
   util::Timer timer(classname(), "computeWeights");
-  const double infl = this->inflopt_.getDouble("mult", 1.0);
-
-  Eigen::MatrixXf Wa_f(nanal_, this->nens_);
-  Eigen::VectorXf wa_f(nanal_);
+  const float infl = this->inflopt_.getFloat("mult", 1.0);
 
   if (fortranETKF_) {
-    Eigen::MatrixXf Wa_f(nanal_, this->nens_);
-    Eigen::VectorXf wa_f(nanal_);
-
     // cast eigen<double> to eigen<float>
     const Eigen::VectorXf dy_f = dy.cast<float>();
     const Eigen::VectorXf invVarR_f = invVarR.cast<float>();
@@ -383,14 +377,12 @@ void DeterministicGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
     const int denkf = 0;
     const int getkf = 1;
     letkf_core_f90(nobsl, Yb.data(), YbOrig.data(), dy_f.data(),
-                   wa_f.data(), Wa_f.data(),
+                   this->wa_.data(), this->Wa_.data(),
                    invVarR_f.data(), nanal_, neig_,
                    getkf_inflation, denkf, getkf, infl);
-
-    this->Wa_ = Wa_f.cast<double>();
-    this->wa_ = wa_f.cast<double>();
   } else {
-    oops::detGETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, useSVD_, wa_, Wa_);
+    oops::detGETKF_computeWeights(dy.cast<float>(), Yb, YbOrig,
+                                  invVarR.cast<float>(), infl, useSVD_, wa_, Wa_);
   }
 }
 

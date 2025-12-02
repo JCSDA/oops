@@ -80,10 +80,10 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   ///                                subensemble members for cross validation (nens, nens)
   void computeWeights(const Eigen::VectorXd & omb,
                       const Eigen::MatrixXf & OmbPert_f,
-                      const Eigen::MatrixXd & YbRinvYbpI,
-                      const Eigen::MatrixXd & YbRinv,
-                      const Eigen::SparseMatrix<double> & excludedProjection,
-                      const Eigen::SparseMatrix<double> & includedProjection);
+                      const Eigen::MatrixXf & YbRinvYbpI,
+                      const Eigen::MatrixXf & YbRinv,
+                      const Eigen::SparseMatrix<float> & excludedProjection,
+                      const Eigen::SparseMatrix<float> & includedProjection);
 
   /// Computes localised YbRinv and YbRinvYbpI
   /// \param[in]  locvector          Departures vector used for localisation
@@ -93,9 +93,9 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   ///                                perturbations multiplying inverse R (nens*neig, nlocalobs)
   /// \param[out] YbRinvYbpI         Matrix equal to (HZb)^T R^-1 HZb + (nens-1)/infl I
   ///                                (nens*neig, nens*neig)
-  const std::tuple<Eigen::MatrixXd, Eigen::MatrixXd> computeYbRinvMatrices(const Departures_ &
+  const std::tuple<Eigen::MatrixXf, Eigen::MatrixXf> computeYbRinvMatrices(const Departures_ &
                                                                            locvector,
-                                                                           const Eigen::VectorXd &
+                                                                           const Eigen::VectorXf &
                                                                            local_invVarR_vec);
 
   /// Applies weights and adds posterior inflation
@@ -178,9 +178,10 @@ void StochasticGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
                                                  const Eigen::VectorXd & invVarR) {
   // compute transformation matrix, save in Wa_
   util::Timer timer(classname(), "computeWeights");
-  const double infl = this->inflopt_.getDouble("mult", 1.0);
+  const float infl = this->inflopt_.getFloat("mult", 1.0);
 
-  oops::stoETKF_computeWeights(dy, Yb, YbOrig, invVarR, infl, useSVD_, this->Wa_);
+  oops::stoETKF_computeWeights(dy.cast<float>(), Yb, YbOrig,
+                               invVarR.cast<float>(), infl, useSVD_, this->Wa_);
 }
 
 // -----------------------------------------------------------------------------
@@ -188,32 +189,32 @@ void StochasticGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
 template <typename MODEL, typename OBS>
 void StochasticGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
                                                  const Eigen::MatrixXf & YbOrig,
-                                                 const Eigen::MatrixXd & YbRinvYbpI,
-                                                 const Eigen::MatrixXd & YbRinv,
-                                                 const Eigen::SparseMatrix<double> &
+                                                 const Eigen::MatrixXf & YbRinvYbpI,
+                                                 const Eigen::MatrixXf & YbRinv,
+                                                 const Eigen::SparseMatrix<float> &
                                                  excludedProjection,
-                                                 const Eigen::SparseMatrix<double> &
+                                                 const Eigen::SparseMatrix<float> &
                                                  includedProjection) {
   // compute transformation matrix, save in Wa_
   util::Timer timer(classname(), "incrementWeights");
 
-  oops::stoETKF_computeWeights(dy, YbRinvYbpI, YbRinv, YbOrig,
+  oops::stoETKF_computeWeights(dy.cast<float>(), YbRinvYbpI, YbRinv, YbOrig,
                                excludedProjection, includedProjection, this->Wa_);
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-const std::tuple<Eigen::MatrixXd, Eigen::MatrixXd>
+const std::tuple<Eigen::MatrixXf, Eigen::MatrixXf>
 StochasticGETKF<MODEL, OBS>::computeYbRinvMatrices(const Departures_ & locvector,
-                                                   const Eigen::VectorXd & local_invVarR_vec) {
+                                                   const Eigen::VectorXf & local_invVarR_vec) {
   // Pre-calculate YbRinv and YbRinvYbpI
   const Eigen::MatrixXf local_HZb_mat_f = (this->HZb_)->packEigen(locvector);
-  const double infl = this->inflopt_.getDouble("mult", 1.0);
-  const double scale = (this->nens_ - 1) / infl;
+  const float infl = this->inflopt_.getFloat("mult", 1.0);
+  const float scale = (this->nens_ - 1) / infl;
 
-  const Eigen::MatrixXd YbRinv = oops::ETKF_YbRinv(local_HZb_mat_f, local_invVarR_vec);
-  const Eigen::MatrixXd YbRinvYbpI = oops::ETKF_YbRinvYbpI(local_HZb_mat_f, YbRinv, scale);
+  const Eigen::MatrixXf YbRinv = oops::ETKF_YbRinv(local_HZb_mat_f, local_invVarR_vec);
+  const Eigen::MatrixXf YbRinvYbpI = oops::ETKF_YbRinvYbpI(local_HZb_mat_f, YbRinv, scale);
 
   return std::make_tuple(YbRinv, YbRinvYbpI);
 }
@@ -245,19 +246,17 @@ void StochasticGETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & loca
   const Eigen::MatrixXf local_OmbPert_mat_f = (this->Yb_)->packEigen(locvector);
   if (this->doCrossValidation) {
     this->Wa_.setZero();
-    const std::tuple<Eigen::MatrixXd, Eigen::MatrixXd>
-    ETKFCoreMatrices = this->computeYbRinvMatrices(locvector, local_invVarR_vec);
-    const Eigen::MatrixXd & YbRinv = std::get<0>(ETKFCoreMatrices);
-    const Eigen::MatrixXd & YbRinvYbpI = std::get<1>(ETKFCoreMatrices);
+    const std::tuple<Eigen::MatrixXf, Eigen::MatrixXf>
+    ETKFCoreMatrices = this->computeYbRinvMatrices(locvector, local_invVarR_vec.cast<float>());
+    const Eigen::MatrixXf & YbRinv = std::get<0>(ETKFCoreMatrices);
+    const Eigen::MatrixXf & YbRinvYbpI = std::get<1>(ETKFCoreMatrices);
     const bool modulated = true;
 
     for (size_t isubens = 0; isubens < (this->nsubens_); ++isubens) {
       const std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>, std::vector<size_t>>
       projectionMatrices = this->SubensembleSplitter_->getProjectionMatrices(isubens, modulated);
-      const Eigen::SparseMatrix<double> & excludedProjection = std::get<0>(projectionMatrices)
-                                                               .template cast<double>();
-      const Eigen::SparseMatrix<double> & includedProjection = std::get<1>(projectionMatrices)
-                                                               .template cast<double>();
+      const Eigen::SparseMatrix<float> & excludedProjection = std::get<0>(projectionMatrices);
+      const Eigen::SparseMatrix<float> & includedProjection = std::get<1>(projectionMatrices);
       this->computeWeights(local_omb_vec, local_OmbPert_mat_f, YbRinvYbpI, YbRinv,
                            excludedProjection, includedProjection);
     }

@@ -28,8 +28,8 @@ namespace oops {
   ///   invVarR: Inverse observation error covariance matrix.
   /// Output:
   ///   Yb * invVarR.
-  Eigen::MatrixXd ETKF_YbRinv(const Eigen::MatrixXf &,
-                              const Eigen::VectorXd &);
+  Eigen::MatrixXf ETKF_YbRinv(const Eigen::MatrixXf &,
+                              const Eigen::VectorXf &);
 
   /// \brief Compute Yb * R^{-1} * Yb^T + (nens - 1) * I / infl.
   /// \details
@@ -40,9 +40,9 @@ namespace oops {
   ///          and infl is a user-defined inflation parameter.
   /// Output:
   ///   Yb * Rinv * Yb^T + scale * I, where I is the identity matrix.
-  Eigen::MatrixXd ETKF_YbRinvYbpI(const Eigen::MatrixXf &,
-                                  const Eigen::MatrixXd &,
-                                  const double);
+  Eigen::MatrixXf ETKF_YbRinvYbpI(const Eigen::MatrixXf &,
+                                  const Eigen::MatrixXf &,
+                                  const float);
 
   /// \brief Perform eigendecomposition on a self-adjoint matrix.
   /// \details
@@ -59,7 +59,7 @@ namespace oops {
   ///   A: matrix to be decomposed.
   /// Output:
   ///   {svals, U}: tuple of singular values and left-singular vectors.
-  std::tuple<Eigen::VectorXd, Eigen::MatrixXd> SingularValueDecomposition(const Eigen::MatrixXd &);
+  std::tuple<Eigen::VectorXf, Eigen::MatrixXf> SingularValueDecomposition(const Eigen::MatrixXf &);
 
   /// \brief Compute Pa.
   /// \details
@@ -68,8 +68,8 @@ namespace oops {
   ///   eivec: Eigenvectors of Yb * R^{-1} * Yb^T + (nens - 1) * I / infl.
   /// Output:
   ///   Pa = eivec * eival^{-1/2} * eivec.
-  Eigen::MatrixXd ETKF_Pa(const Eigen::VectorXd &,
-                          const Eigen::MatrixXd &);
+  Eigen::MatrixXf ETKF_Pa(const Eigen::VectorXf &,
+                          const Eigen::MatrixXf &);
 
   /// \brief Compute ETKF weights applied to a model state field.
   /// \details
@@ -80,8 +80,8 @@ namespace oops {
   /// Output:
   ///   Pa * Yb * R^{-1} * y
   template <typename T>
-  T ETKF_stateWeights(const Eigen::MatrixXd & Pa,
-                      const Eigen::MatrixXd & YbRinv,
+  T ETKF_stateWeights(const Eigen::MatrixXf & Pa,
+                      const Eigen::MatrixXf & YbRinv,
                       const T & y) {
     return Pa * (YbRinv * y);
   }
@@ -93,8 +93,8 @@ namespace oops {
   ///   eivec: Eigenvectors of Yb * R^{-1} * Yb^T + (nens - 1) * I / infl.
   /// Output:
   ///   LETKF weights = eivec * ((nens - 1) * eival)^{-1/2} * eivec.
-  Eigen::MatrixXd LETKF_pertWeights(const Eigen::VectorXd &,
-                                    const Eigen::MatrixXd &);
+  Eigen::MatrixXf LETKF_pertWeights(const Eigen::VectorXf &,
+                                    const Eigen::MatrixXf &);
 
   /// \brief Compute GETKF weights applied to a model perturbation field.
   /// \details
@@ -107,11 +107,11 @@ namespace oops {
   ///   infl: a user-defined inflation parameter.
   /// Output:
   ///   GETKF weights (see code for formula).
-  Eigen::MatrixXd GETKF_pertWeights(const Eigen::VectorXd &,
-                                    const Eigen::MatrixXd &,
+  Eigen::MatrixXf GETKF_pertWeights(const Eigen::VectorXf &,
                                     const Eigen::MatrixXf &,
                                     const Eigen::MatrixXf &,
-                                    const Eigen::VectorXd &,
+                                    const Eigen::MatrixXf &,
+                                    const Eigen::VectorXf &,
                                     const float);
 
   /// \brief Compute GETKF weights applied to a model perturbation field
@@ -130,12 +130,12 @@ namespace oops {
   /// Output:
   ///   GETKF weights (see code for formula).
   ///   timings: Vector of timings of internal routines.
-  Eigen::MatrixXd GETKF_pertWeights(const Eigen::MatrixXd &,
+  Eigen::MatrixXf GETKF_pertWeights(const Eigen::MatrixXf &,
                                     const Eigen::MatrixXf &,
                                     const Eigen::MatrixXf &,
-                                    const Eigen::VectorXd &,
-                                    const Eigen::SparseMatrix<double> &,
-                                    const Eigen::SparseMatrix<double> &,
+                                    const Eigen::VectorXf &,
+                                    const Eigen::SparseMatrix<float> &,
+                                    const Eigen::SparseMatrix<float> &,
                                     const float,
                                     std::vector<std::chrono::time_point
                                     <std::chrono::system_clock>> &);
@@ -153,13 +153,13 @@ namespace oops {
   ///    Wa [passed by reference]: perturbation weights calculated using LETKF_pertWeights.
   ///    A vector of times that can be used to profile the performance of this routine.
   std::vector<std::chrono::time_point<std::chrono::system_clock>>
-  detLETKF_computeWeights(const Eigen::VectorXd &,
+  detLETKF_computeWeights(const Eigen::VectorXf &,
                           const Eigen::MatrixXf &,
-                          const Eigen::VectorXd &,
-                          const double,
+                          const Eigen::VectorXf &,
+                          const float,
                           const bool,
-                          Eigen::VectorXd &,
-                          Eigen::MatrixXd &);
+                          Eigen::VectorXf &,
+                          Eigen::MatrixXf &);
 
   /// \brief Compute state and perturbation weights for determinstic GETKF.
   /// \details
@@ -174,14 +174,14 @@ namespace oops {
   ///    Wa [passed by reference]: perturbation weights calculated using GETKF_pertWeights.
   ///    A vector of times that can be used to profile the performance of this routine.
   std::vector<std::chrono::time_point<std::chrono::system_clock>>
-  detGETKF_computeWeights(const Eigen::VectorXd &,
+  detGETKF_computeWeights(const Eigen::VectorXf &,
                           const Eigen::MatrixXf &,
                           const Eigen::MatrixXf &,
-                          const Eigen::VectorXd &,
-                          const double,
+                          const Eigen::VectorXf &,
+                          const float,
                           const bool,
-                          Eigen::VectorXd &,
-                          Eigen::MatrixXd &);
+                          Eigen::VectorXf &,
+                          Eigen::MatrixXf &);
 
   /// \brief Computes state and perturbation weights for determinstic ETKF
   ///        for a given set of projection matrices.
@@ -204,18 +204,18 @@ namespace oops {
   ///    Wa [passed by reference]: Perturbation weights calculated using GETKF_pertWeights.
   ///    A vector of times that can be used to profile the performance of this routine.
   std::vector<std::chrono::time_point<std::chrono::system_clock>>
-  detGETKF_computeWeights(const Eigen::VectorXd &,
+  detGETKF_computeWeights(const Eigen::VectorXf &,
                           const Eigen::MatrixXf &,
-                          const Eigen::MatrixXd &,
-                          const Eigen::MatrixXd &,
                           const Eigen::MatrixXf &,
-                          const Eigen::VectorXd &,
-                          const double,
-                          const Eigen::SparseMatrix<double> &,
-                          const Eigen::SparseMatrix<double> &,
+                          const Eigen::MatrixXf &,
+                          const Eigen::MatrixXf &,
+                          const Eigen::VectorXf &,
+                          const float,
+                          const Eigen::SparseMatrix<float> &,
+                          const Eigen::SparseMatrix<float> &,
                           const bool,
-                          Eigen::VectorXd &,
-                          Eigen::MatrixXd &);
+                          Eigen::VectorXf &,
+                          Eigen::MatrixXf &);
 
   /// \brief Compute state and perturbation weights for stochastic ETKF.
   /// \details
@@ -230,13 +230,13 @@ namespace oops {
   ///   eigendecomposition.
   /// Output:
   ///    Wa [passed by reference]: perturbation weights calculated using ETKF_stateWeights.
-  void stoETKF_computeWeights(const Eigen::VectorXd &,
+  void stoETKF_computeWeights(const Eigen::VectorXf &,
                               const Eigen::MatrixXf &,
                               const Eigen::MatrixXf &,
-                              const Eigen::VectorXd &,
-                              const double,
+                              const Eigen::VectorXf &,
+                              const float,
                               const bool,
-                              Eigen::MatrixXd &);
+                              Eigen::MatrixXf &);
 
   /// \brief Computes state and perturbation weights for stochastic ETKF
   ///        for a given set of projection matrices.
@@ -252,13 +252,13 @@ namespace oops {
   ///                              subensemble members for cross validation.
   /// Output:
   ///    Wa [passed by reference]: Perturbation weights calculated using ETKF_stateWeights.
-  void stoETKF_computeWeights(const Eigen::VectorXd &,
-                              const Eigen::MatrixXd &,
-                              const Eigen::MatrixXd &,
+  void stoETKF_computeWeights(const Eigen::VectorXf &,
                               const Eigen::MatrixXf &,
-                              const Eigen::SparseMatrix<double> &,
-                              const Eigen::SparseMatrix<double> &,
-                              Eigen::MatrixXd &);
+                              const Eigen::MatrixXf &,
+                              const Eigen::MatrixXf &,
+                              const Eigen::SparseMatrix<float> &,
+                              const Eigen::SparseMatrix<float> &,
+                              Eigen::MatrixXf &);
 
   /// \brief Compute ensemble increment.
   /// \details
@@ -347,7 +347,7 @@ namespace oops {
   void stoETKF_applyWeights(const IncSet & bkg_pert,
                             IncSet & ana_pert,
                             const GeomIt & geomIter,
-                            const Eigen::MatrixXd & Wa,
+                            const Eigen::MatrixXf & Wa,
                             const eckit::Configuration & inflopt,
                             const VerticalLocEV<MODEL> * const vertLoc = nullptr) {
     // Loop through analysis times.
@@ -364,7 +364,7 @@ namespace oops {
       // Compute the ensemnble increment using either original or modulated Xb.
       // Xinc = Xb * Wa and xinc is the row-wise mean of Xinc.
       const auto[Xinc, xinc] =
-        oops::ETKF_ensembleIncrement(Xc, Wa);
+        oops::ETKF_ensembleIncrement(Xc, Wa.cast<double>());
 
       // Generate analysis perturbations for inflation.
       Eigen::MatrixXd Xa = oops::ETKF_analysisPerturbations(Xb, Xinc, xinc);
@@ -396,8 +396,8 @@ namespace oops {
   void detETKF_applyWeights(const IncSet & bkg_pert,
                             IncSet & ana_pert,
                             const GeomIt & geomIter,
-                            const Eigen::VectorXd & wa,
-                            const Eigen::MatrixXd & Wa,
+                            const Eigen::VectorXf & wa,
+                            const Eigen::MatrixXf & Wa,
                             const eckit::Configuration & inflopt,
                             const VerticalLocEV<MODEL> * const vertLoc = nullptr) {
     // Loop through analysis times.
@@ -412,12 +412,12 @@ namespace oops {
         vertLoc->modulateIncrement(bkg_pert, geomIter, itime) : Xb;
 
       // Update ensemble mean using either original or modulated Xb.
-      const Eigen::VectorXd xa = oops::ETKF_updateEnsembleMean(Xc, wa);
+      const Eigen::VectorXd xa = oops::ETKF_updateEnsembleMean(Xc, wa.cast<double>());
 
       // Update ensemble perturbations using either original or modulated Xb.
       Eigen::MatrixXd Xa = vertLoc ?
-        oops::GETKF_updateEnsemblePerturbation(Xb, Xc * Wa) :
-        oops::LETKF_updateEnsemblePerturbation(Xb, Wa);
+        oops::GETKF_updateEnsemblePerturbation(Xb, Xc * Wa.cast<double>()) :
+        oops::LETKF_updateEnsemblePerturbation(Xb, Wa.cast<double>());
 
       // Apply posterior inflation.
       oops::ETKF_posteriorInflation(Xb, Xa, inflopt);

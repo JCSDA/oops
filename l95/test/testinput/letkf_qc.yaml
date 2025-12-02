@@ -48,3 +48,4 @@ output:
 test:
   reference filename: testoutput/letkf_qc.test
   test output filename: testoutput/letkf_qc.out
+  float relative tolerance: 5.0e-5

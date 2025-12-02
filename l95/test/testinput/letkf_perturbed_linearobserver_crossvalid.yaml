@@ -88,4 +88,4 @@ output variance posterior:
 test:
   reference filename: testoutput/letkf_perturbed_linearobserver_crossvalid.test
   test output filename: testoutput/letkf_perturbed_linearobserver_crossvalid.out
-  float relative tolerance: 1.0e-3
+  float relative tolerance: 5.0e-3

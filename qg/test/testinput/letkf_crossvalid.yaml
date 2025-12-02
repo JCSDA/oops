@@ -91,3 +91,4 @@ output:
 test:
   reference filename: testoutput/letkf_crossvalid.test
   test output filename: testoutput/letkf_crossvalid.out
+  float relative tolerance: 5.0e-5
