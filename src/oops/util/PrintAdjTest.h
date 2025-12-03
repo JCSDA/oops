@@ -25,20 +25,20 @@ namespace util {
 
 class PrintAdjTest : public Printable {
  public:
-  PrintAdjTest(double& dp1, double& dp2, std::string op);
+  PrintAdjTest(const double& dp1, const double& dp2, std::string op);
   virtual ~PrintAdjTest() {}
 
  private:
   void print(std::ostream &) const;
 
-  double& dp1_;
-  double& dp2_;
+  const double& dp1_;
+  const double& dp2_;
   std::string op_;
 };
 
 // -----------------------------------------------------------------------------
 
-PrintAdjTest::PrintAdjTest(double& dp1, double& dp2, std::string op)
+PrintAdjTest::PrintAdjTest(const double& dp1, const double& dp2, std::string op)
   : dp1_(dp1), dp2_(dp2), op_(op)
 {}
 

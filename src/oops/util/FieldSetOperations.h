@@ -24,6 +24,8 @@ void addFieldSets(atlas::FieldSet &,
                   const atlas::FieldSet &);
 void subtractFieldSets(atlas::FieldSet &,
                        const atlas::FieldSet &);
+void multiplyField(atlas::Field &,
+                   const double);
 void multiplyFieldSet(atlas::FieldSet &,
                       const double);
 void multiplyFieldSets(atlas::FieldSet &,

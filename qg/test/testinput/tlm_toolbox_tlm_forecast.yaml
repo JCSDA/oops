@@ -1,0 +1,37 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+linear model:
+  name: QgTLM
+  tstep: PT15M
+  trajectory:
+    tstep: PT15M
+model aux increment: null
+
+model:
+  name: QG
+  tstep: PT15M
+model aux control: null
+
+forecast length: PT3H
+
+x1:
+  date: 2010-01-01T12:00:00Z
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+dx:
+  date: 2010-01-01T12:00:00Z
+  filename: Data/difst.in.2010-01-01T12:00:00Z.nc
+  state variables: [x]
+
+output:
+  dx:
+    model grid:
+      datadir: Data
+      exp: tlm_toolbox_tlm_forecast_dx
+      type: in
+  error: null
+
+test:
+  reference filename: testoutput/tlm_toolbox_tlm_forecast.test

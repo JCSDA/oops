@@ -1,0 +1,43 @@
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+linear model:
+  name: QgTLM
+  tstep: PT15M
+  trajectory:
+    tstep: PT15M
+model aux increment: null
+
+model:
+  name: QG
+  tstep: PT15M
+model aux control: null
+
+forecast length: PT3H
+time resolution: PT1H
+
+x1:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1D.nc
+x2:
+  date: 2010-01-01T00:00:00Z
+  filename: Data/4dvar_drplanczos_hybrid.an.2010-01-01T00:00:00Z.nc
+
+compute error: true
+
+output:
+  dx:
+    model grid:
+      datadir: Data
+      exp: tlm_toolbox_linearization_error_dx
+      type: in
+  error:
+    model grid:
+      datadir: Data
+      exp: tlm_toolbox_linearization_error
+      type: in
+
+test:
+  reference filename: testoutput/tlm_toolbox_linearization_error.test

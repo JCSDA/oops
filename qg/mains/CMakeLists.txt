@@ -111,3 +111,8 @@ ecbuild_add_executable( TARGET  qg_templated_eda.x
                         SOURCES qgTemplatedEDA.cc
                         LIBS    qg
                       )
+
+ecbuild_add_executable( TARGET  qg_tlm_toolbox.x
+                        SOURCES qgTLMToolbox.cc
+                        LIBS    qg
+                      )

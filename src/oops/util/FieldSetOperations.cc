@@ -91,16 +91,27 @@ void subtractFieldSets(atlas::FieldSet & fset,
 
 // -----------------------------------------------------------------------------
 
+void multiplyField(atlas::Field & field,
+                   const double mul) {
+  oops::Log::trace() << "multiplyField starting" << std::endl;
+
+  util::for_each_value(
+    util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
+    [=](double & val) { val *= mul; },
+    field);
+
+  oops::Log::trace() << "multiplyField done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 void multiplyFieldSet(atlas::FieldSet & fset,
                       const double mul) {
   oops::Log::trace() << "multiplyFieldSet starting" << std::endl;
 
   // Loop over fields
   for (auto & field : fset) {
-    util::for_each_value(
-      util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
-      [=](double & val) { val *= mul; },
-      field);
+    multiplyField(field, mul);
   }
 
   oops::Log::trace() << "multiplyFieldSet done" << std::endl;

@@ -1,0 +1,35 @@
+linear geometry:
+  nx: 20
+  ny: 10
+  depths: [4500.0, 5500.0]
+
+nonlinear geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+linear model:
+  name: QgTLM
+  tstep: PT15M
+  trajectory:
+    tstep: PT15M
+model aux increment: null
+
+model:
+  name: QG
+  tstep: PT15M
+model aux control: null
+
+forecast length: PT6H
+
+x1:
+  date: 2010-01-01T12:00:00Z
+  filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+
+output:
+  dx: null
+  error: null
+
+test:
+  reference filename: testoutput/tlm_toolbox_adjoint_test.test
+  float absolute tolerance: 1e-13

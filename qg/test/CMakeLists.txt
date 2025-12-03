@@ -126,6 +126,9 @@ list( APPEND qg_testinput
   testinput/obsvector.yaml
   testinput/rescale_ens_perts.yaml
   testinput/state.yaml
+  testinput/tlm_toolbox_adjoint_test.yaml
+  testinput/tlm_toolbox_linearization_error.yaml
+  testinput/tlm_toolbox_tlm_forecast.yaml
   testinput/truth.yaml
   testinput/truth_5level_pert_heat.yaml
   testinput/variable_change.yaml
@@ -212,6 +215,9 @@ list( APPEND qg_testoutput
   testoutput/make_single-obs_3d.test
   testoutput/make_single-obs_4d_12h.test
   testoutput/rescale_ens_perts.test
+  testoutput/tlm_toolbox_adjoint_test.test
+  testoutput/tlm_toolbox_linearization_error.test
+  testoutput/tlm_toolbox_tlm_forecast.test
   testoutput/truth.test
   testoutput/truth_5level_pert_heat.test
   testoutput/uniform_field_hybrid.test
@@ -658,6 +664,24 @@ ecbuild_add_test( TARGET test_qg_linearization_error
                   ARGS testinput/linearization_error.yaml
                   COMMAND qg_linearization_error.x
                   TEST_DEPENDS test_qg_4dvar_drplanczos_hybrid )
+
+ecbuild_add_test( TARGET test_qg_tlm_toolbox_adjoint_test
+                  OMP    2
+                  ARGS testinput/tlm_toolbox_adjoint_test.yaml
+                  COMMAND qg_tlm_toolbox.x
+                  TEST_DEPENDS test_qg_4dvar_drplanczos_hybrid )
+
+ecbuild_add_test( TARGET test_qg_tlm_toolbox_linearization_error
+                  OMP    2
+                  ARGS testinput/tlm_toolbox_linearization_error.yaml
+                  COMMAND qg_tlm_toolbox.x
+                  TEST_DEPENDS test_qg_4dvar_drplanczos_hybrid )
+
+ecbuild_add_test( TARGET test_qg_tlm_toolbox_tlm_forecast
+                  OMP    2
+                  ARGS testinput/tlm_toolbox_tlm_forecast.yaml
+                  COMMAND qg_tlm_toolbox.x
+                  TEST_DEPENDS test_qg_diffstates )
 
 #####################################################################
 # QG single-obs tests

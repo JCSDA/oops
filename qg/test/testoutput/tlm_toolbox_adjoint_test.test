@@ -1,0 +1,12 @@
+dx at 2010-01-01T12:00:00Z:
+  Valid time: 2010-01-01T12:00:00Z
+  Resolution = 20, 10, 2
+  Streamfunction         :  Min=-2.6985897439331730e+00, Max=2.8864598760511977e+00, RMS=9.7071340718333976e-01
+dx at 2010-01-01T18:00:00Z:
+  Valid time: 2010-01-01T18:00:00Z
+  Resolution = 20, 10, 2
+  Streamfunction         :  Min=-2.6996753050362128e+00, Max=2.6930674886133903e+00, RMS=8.6300346332123568e-01
+  SM adjoint test: <SM dx1,  dx2>         : 0.03763970168073459
+  SM adjoint test: <dx1, SMt dx2>         : 0.03763970168073463
+  SM adjoint test: difference            : 3.469446951953614e-17
+  SM adjoint test: normalized difference : 9.21751979168689e-16
