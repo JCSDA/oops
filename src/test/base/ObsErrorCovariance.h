@@ -19,9 +19,8 @@
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
 #include "eckit/testing/Test.h"
-#include "oops/base/ObsError.h"
 #include "oops/base/ObsVector.h"
-#include "oops/generic/instantiateObsErrorFactory.h"
+#include "oops/interface/ObsError.h"
 #include "oops/runs/Test.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
@@ -33,8 +32,6 @@ namespace test {
 template <typename OBS> void testConstructor() {
   typedef ObsTestsFixture<OBS>                 Test_;
   typedef oops::ObsError<OBS>                  Covar_;
-
-  oops::instantiateObsErrorFactory<OBS>();
 
   std::vector<eckit::LocalConfiguration> conf;
   TestEnvironment::config().get("observations", conf);
@@ -58,8 +55,6 @@ template <typename OBS> void testReader() {
   typedef ObsTestsFixture<OBS>                 Test_;
   typedef oops::ObsError<OBS>                  Covar_;
   typedef oops::ObsVector<OBS>                 ObsVector_;
-
-  oops::instantiateObsErrorFactory<OBS>();
 
   std::vector<eckit::LocalConfiguration> conf;
   TestEnvironment::config().get("observations", conf);
@@ -100,8 +95,6 @@ template <typename OBS> void testMultiplies() {
   typedef ObsTestsFixture<OBS>                 Test_;
   typedef oops::ObsError<OBS>                  Covar_;
   typedef oops::ObsVector<OBS>                 ObsVector_;
-
-  oops::instantiateObsErrorFactory<OBS>();
 
   std::vector<eckit::LocalConfiguration> conf;
   TestEnvironment::config().get("observations", conf);
@@ -147,8 +140,6 @@ template <typename OBS> void testAccessors() {
   typedef ObsTestsFixture<OBS>                 Test_;
   typedef oops::ObsError<OBS>                  Covar_;
   typedef oops::ObsVector<OBS>                 ObsVector_;
-
-  oops::instantiateObsErrorFactory<OBS>();
 
   std::vector<eckit::LocalConfiguration> conf;
   TestEnvironment::config().get("observations", conf);

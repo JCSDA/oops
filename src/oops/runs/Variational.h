@@ -33,7 +33,6 @@
 #include "oops/base/StructuredGridWriter.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
 #include "oops/generic/instantiateModelFactory.h"
-#include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -54,7 +53,6 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     instantiateCostFactory<MODEL, OBS>();
     instantiateCovarFactory<MODEL>();
     instantiateMinFactory<MODEL, OBS>();
-    instantiateObsErrorFactory<OBS>();
     instantiateModelFactory<MODEL>();
     instantiateLinearModelFactory<MODEL>();
   }

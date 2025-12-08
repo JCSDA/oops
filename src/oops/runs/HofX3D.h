@@ -21,7 +21,6 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
-#include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -47,9 +46,7 @@ template <typename MODEL, typename OBS> class HofX3D : public Application {
 
  public:
 // -----------------------------------------------------------------------------
-  explicit HofX3D(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {
-    instantiateObsErrorFactory<OBS>();
-  }
+  explicit HofX3D(const eckit::mpi::Comm & comm = oops::mpi::world()) : Application(comm) {}
 // -----------------------------------------------------------------------------
   virtual ~HofX3D() = default;
 // -----------------------------------------------------------------------------

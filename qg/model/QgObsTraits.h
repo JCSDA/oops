@@ -22,6 +22,7 @@
 #include "model/ObsBiasPreconditioner.h"
 #include "model/ObsDataQG.h"
 #include "model/ObsDiagsQG.h"
+#include "model/ObsErrorDiagQG.h"
 #include "model/ObsFilter.h"
 #include "model/ObsIteratorQG.h"
 #include "model/ObsOperatorQG.h"

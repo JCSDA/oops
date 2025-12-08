@@ -86,11 +86,11 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
  private:
   void print(std::ostream &) const;
 
-  mutable F90odb key_;               // pointer to Fortran structure
-  const std::string obsname_;        // corresponds with obstype
-  const util::TimeWindow timeWindow_;      // window for the observations
-  oops::ObsVariables assimvars_;          // variables simulated by ObsOperators
-  oops::ObsVariables obsvars_;          // variables that are observed
+  mutable F90odb key_;                 // pointer to Fortran structure
+  const std::string obsname_;          // corresponds with obstype
+  const util::TimeWindow timeWindow_;  // window for the observations
+  oops::ObsVariables assimvars_;       // variables simulated by ObsOperators
+  oops::ObsVariables obsvars_;         // variables that are observed
 
   // defines mapping for Fortran structures
   static std::map < std::string, F90odb > theObsFileRegister_;

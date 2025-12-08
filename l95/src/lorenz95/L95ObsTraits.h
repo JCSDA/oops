@@ -20,6 +20,7 @@
 #include "lorenz95/ObsBiasPreconditioner.h"
 #include "lorenz95/ObsData1D.h"
 #include "lorenz95/ObsDiags1D.h"
+#include "lorenz95/ObsErrorDiagonal95.h"
 #include "lorenz95/ObservationL95.h"
 #include "lorenz95/ObservationTLAD.h"
 #include "lorenz95/ObsFilter.h"

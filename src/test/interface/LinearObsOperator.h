@@ -18,7 +18,6 @@
 #include "eckit/testing/Test.h"
 #include "oops/base/ObsVariables.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/LinearObsOperator.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsAuxCovariance.h"
@@ -556,11 +555,7 @@ class LinearObsOperator : public oops::Test {
 
  public:
   explicit LinearObsOperator(const eckit::mpi::Comm & comm = oops::mpi::world()) :
-    oops::Test(comm)
-  {
-    // Needed because oops::ObsTypeParametersBase contains obs error parameters.
-    oops::instantiateObsErrorFactory<OBS>();
-  }
+    oops::Test(comm) {}
   virtual ~LinearObsOperator() {}
 
  private:

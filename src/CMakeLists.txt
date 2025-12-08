@@ -157,7 +157,6 @@ list(
   oops/base/ObsAuxIncrements.h
   oops/base/ObsAuxPreconditioners.h
   oops/base/ObsEnsemble.h
-  oops/base/ObsError.h
   oops/base/ObsErrors.h
   oops/base/Observations.h
   oops/base/Observer.h
@@ -265,10 +264,7 @@ list(
   oops/generic/IdentityModel.h
   oops/generic/instantiateLinearModelFactory.h
   oops/generic/instantiateModelFactory.h
-  oops/generic/instantiateObsErrorFactory.h
   oops/generic/LocalizationBase.h
-  oops/generic/ObsErrorDiag.h
-  oops/generic/ObsErrorBase.h
   oops/generic/PseudoLinearModelIncrement4D.h
   oops/generic/PseudoModel.h
   oops/generic/PseudoModelState4D.h
@@ -304,7 +300,7 @@ list(
   oops/interface/ObsDataVector.h
   oops/interface/ObsDataVector_head.h
   oops/interface/ObsDiagnostics.h
-  oops/interface/ObsErrorBase.h
+  oops/interface/ObsError.h
   oops/interface/ObsFilter.h
   oops/interface/ObsLocalization.h
   oops/interface/ObsOperator.h

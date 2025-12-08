@@ -18,8 +18,8 @@
 #include <boost/noncopyable.hpp>
 
 #include "oops/base/Departures.h"
-#include "oops/base/ObsError.h"
 #include "oops/base/ObsSpaces.h"
+#include "oops/interface/ObsError.h"
 #include "oops/util/ConfigFunctions.h"  // for vectoriseAndFilter
 #include "oops/util/Printable.h"
 

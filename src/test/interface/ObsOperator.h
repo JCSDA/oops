@@ -21,7 +21,6 @@
 #include "oops/base/ObsVariables.h"
 #include "oops/base/ObsVector.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/instantiateObsErrorFactory.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/ObsAuxControl.h"
 #include "oops/interface/ObsDataVector.h"

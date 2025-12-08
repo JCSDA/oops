@@ -10,9 +10,7 @@ cost function:
     resol: 40
   observations:
     observers:
-    - obs error:
-        covariance model: diagonal
-      obs space:
+    - obs space:
         obsdatain:
           obsfile: Data/truth4d.2010-01-01T12:00:00Z.obt
         obsdataout:

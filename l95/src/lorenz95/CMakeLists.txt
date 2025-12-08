@@ -45,6 +45,8 @@ set( _l95_srcs
         ObsBiasPreconditioner.cc
         ObsBiasPreconditioner.h
         ObsDiags1D.h
+        ObsErrorDiagonal95.cc
+        ObsErrorDiagonal95.h
         ObsFilter.cc
         ObsFilter.h
         ObsIterator.cc

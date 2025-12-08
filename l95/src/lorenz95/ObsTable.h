@@ -80,7 +80,7 @@ class ObsTable : public oops::ObsSpaceBase,
   std::vector<double> locations_;
   mutable std::map<std::string, std::vector<double> > data_;
 
-  const eckit::mpi::Comm & comm_;
+  const eckit::mpi::Comm & comm_;  // time communicator
   const util::TimeWindow timeWindow_;
   const oops::ObsVariables obsvars_;
   const oops::ObsVariables assimvars_;

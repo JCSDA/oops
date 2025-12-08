@@ -42,6 +42,8 @@ ObsBiasPreconditioner.cc
 ObsBiasPreconditioner.h
 ObsDataQG.h
 ObsDiagsQG.h
+ObsErrorDiagQG.cc
+ObsErrorDiagQG.h
 ObsFilter.cc
 ObsFilter.h
 ObsIteratorQG.cc

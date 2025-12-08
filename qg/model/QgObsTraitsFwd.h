@@ -26,6 +26,7 @@ class ObsBiasIncrement;
 class ObsBiasCovariance;
 class ObsBiasPreconditioner;
 class ObsDiagsQG;
+class ObsErrorDiagQG;
 class ObsFilter;
 
 class GomQG;
@@ -47,6 +48,7 @@ struct QgObsTraits {
   typedef qg::ObsBiasPreconditioner ObsAuxPreconditioner;
 
   typedef qg::ObsDiagsQG            ObsDiagnostics;
+  typedef qg::ObsErrorDiagQG        ObsError;
   typedef qg::ObsFilter             ObsFilter;
 
   typedef qg::GomQG                 GeoVaLs;
