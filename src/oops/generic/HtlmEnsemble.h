@@ -165,9 +165,8 @@ HtlmEnsemble<MODEL>::HtlmEnsemble(const eckit::Configuration & config,
   Increment_ linearEnsembleMemberEnsembleGeometry(*ensembleGeometry_, vars,
                                                   nonlinearControl_[0].validTime());
   for (size_t m = 0; m < ensembleSize_; m++) {
-    linearEnsembleMemberEnsembleGeometry.diff(
-      controlGeometry_ == ensembleGeometry_ ? nonlinearControl_[0] : *spareStateEnsembleGeometry_,
-      nonlinearEnsemble_[m]);
+    linearEnsembleMemberEnsembleGeometry.diff(nonlinearEnsemble_[m],
+      controlGeometry_ == ensembleGeometry_ ? nonlinearControl_[0] : *spareStateEnsembleGeometry_);
     linearEnsemble_[m] = Increment_(updateGeometry_, linearEnsembleMemberEnsembleGeometry);
   }
   // Set up a TrajectorySaver for simpleLinearModel_
@@ -205,9 +204,8 @@ void HtlmEnsemble<MODEL>::step(const util::Duration & tstep,
   for (size_t m = 0; m < ensembleSize_; m++) {
     modelEnsemble_->forecast(nonlinearEnsemble_[m], maux_, tstep, emptyPp_);
     nonlinearDifferences_[m].updateTime(tstep);
-    nonlinearDifferences_[m].diff(
-      controlGeometry_ == ensembleGeometry_ ? nonlinearControl_[0] : *spareStateEnsembleGeometry_,
-      nonlinearEnsemble_[m]);
+    nonlinearDifferences_[m].diff(nonlinearEnsemble_[m],
+      controlGeometry_ == ensembleGeometry_ ? nonlinearControl_[0] : *spareStateEnsembleGeometry_);
     linearErrors_[m] = Increment_(updateGeometry_, nonlinearDifferences_[m]);
     simpleLinearModel.forecastTL(linearEnsemble_[m], mauxinc_, tstep);
     linearErrors_[m] -= linearEnsemble_[m];
