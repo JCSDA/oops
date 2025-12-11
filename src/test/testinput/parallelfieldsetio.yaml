@@ -1,14 +1,6 @@
 datadir: test
 test configurations:
 - grid:
-    name: S5x4
-  partitioner: checkerboard
-  function space: NodeColumns
-  halo: 2
-  nfields: 2
-  rank 2 sizes: [4, 5]
-  rank 3 sizes: [3, 1]
-- grid:
     name: O8
   partitioner: regular_bands
   function space: StructuredColumns
@@ -25,7 +17,7 @@ test configurations:
   rank 2 sizes: [0]
   rank 3 sizes: [1]
 - grid:
-    name: N16
+    name: CS-LFR-4
   partitioner: equal_regions
   function space: NodeColumns
   halo: 2
@@ -33,7 +25,7 @@ test configurations:
   rank 2 sizes: [2]
   rank 3 sizes: [2]
 - grid:
-    name: H3
+    name: CS-LFR-3
   partitioner: equal_regions
   function space: NodeColumns
   halo: 2

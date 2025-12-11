@@ -59,10 +59,7 @@ ParallelFieldSetIO::ParallelFieldSetIO(const atlas::FunctionSpace& nativeFunctio
       redistributeWrite_((mode == Mode::Write || mode == Mode::ReadWrite) ?
           atlas::Redistribution(nativeFunctionSpace, functionSpace_) : atlas::Redistribution()),
       redistributeRead_((mode == Mode::Read || mode == Mode::ReadWrite) ?
-          atlas::Redistribution(functionSpace_, nativeFunctionSpace) : atlas::Redistribution()),
-      startGidx_(atlas::array::make_view<atlas::gidx_t, 1>(functionSpace_.global_index())[0] - 1),
-      countGidx_((gridSize_ / atlas::mpi::comm().size()) +
-          (atlas::mpi::comm().rank() < (gridSize_ % atlas::mpi::comm().size())))
+          atlas::Redistribution(functionSpace_, nativeFunctionSpace) : atlas::Redistribution())
     {}
 
 // -------------------------------------------------------------------------------------------------
@@ -77,6 +74,7 @@ atlas::FieldSet ParallelFieldSetIO::ioFieldSet(const atlas::FieldSet& nativeFiel
         // ASSERT_MSG(field.functionspace().grid() == functionSpace_.grid(),
         //            "util::ParallelFieldSetIO::ioFieldSet: Field's Grid doesn't match I/O Grid");
         auto fieldSetConfig = atlas::option::name(field.name());
+        fieldSetConfig.set(atlas::option::halo(0));
         if (shape.size() > 1) fieldSetConfig.set(atlas::option::levels(shape[1]));
         if (shape.size() > 2) fieldSetConfig.set(atlas::option::vector(shape[2]));
         switch (field.datatype().kind()) {

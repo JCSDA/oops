@@ -15,6 +15,7 @@
 #include "atlas/redistribution/Redistribution.h"
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/AtlasArrayUtil.h"
+#include "oops/util/FunctionSpaceHelpers.h"
 
 namespace util {
 
@@ -68,8 +69,6 @@ class ParallelFieldSetIO {
     const atlas::FunctionSpace functionSpace_;
     const atlas::Redistribution redistributeWrite_;
     const atlas::Redistribution redistributeRead_;
-    const size_t startGidx_;
-    const size_t countGidx_;
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -77,7 +76,8 @@ class ParallelFieldSetIO {
 template <int Rank>
 std::vector<size_t> ParallelFieldSetIO::starts() const {
     std::vector<size_t> starts(Rank, 0);
-    starts[0] = startGidx_;  // order data in file by global index
+    // Order data in file by global index, which starts at 1
+    starts[0] = atlas::array::make_view<atlas::gidx_t, 1>(functionSpace_.global_index())[0] - 1;
     return starts;
 }
 
@@ -89,7 +89,7 @@ std::vector<size_t> ParallelFieldSetIO::counts(const atlas::Field& field) const 
     const std::vector<atlas::idx_t> shape(field.shape());
     std::transform(shape.begin(), shape.end(), counts.begin(),
                    [](auto x){ return static_cast<size_t>(x); });  // netCDF API requires size_t
-    counts[0] = countGidx_;  // ignore ghost points
+    counts[0] = getSizeOwned(functionSpace_);  // ignore ghost points
     return counts;
 }
 
