@@ -9,6 +9,7 @@
 #ifndef OOPS_GENERIC_HTLMCALCULATOR_H_
 #define OOPS_GENERIC_HTLMCALCULATOR_H_
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <string>
@@ -21,6 +22,23 @@
 #include "oops/util/Timer.h"
 
 namespace oops {
+
+/*
+ * Configuration options for HtlmCalculator:
+ *
+ * Keys:
+ * ─────────────────────────────────────────────────────────────────────────────
+ * "regularization"     : (Optional) configuration for regularization options
+ *
+ *  regularization sub keys
+ *
+ *    parts                : (Optional) specific regularization for specific lat lon
+ *                                        locations, see HtlmRegularization.h for details
+ *
+ *    max condition number : (Optional) Maximum allowed condition number for SVD.
+ *
+ *    min singular value   : (Optional) Minimum singular value threshold.
+ */
 
 //------------------------------------------------------------------------------
 
@@ -56,6 +74,12 @@ class HtlmCalculator {
   mutable Eigen::VectorXd linearErrorVector_;
   mutable Eigen::BDCSVD<Eigen::MatrixXd> SVD_;
   std::unique_ptr<HtlmRegularization> regularization_;
+  // note recipMaxCondNum_ has a default value of -1 when unspecified, this cuts down on the
+  // the needed number of if statements for adaptive regularization by inverting the inequality
+  // comparison to check if the condintion number is too high. That is the the recip of the
+  // condition number will always be positive and no adaption is done if the max in negative.
+  const double recipMaxCondNum_;
+  const double minSingVal_;
 
   void singularValueDecomposition(const atlas::idx_t, const atlas::array::Range &,
                                   const IncrementSet_ &) const;
@@ -77,10 +101,16 @@ HtlmCalculator<MODEL>::HtlmCalculator(const eckit::Configuration & config,
   halfInfluenceSize_(influenceSize_ / 2),
   ensembleSize_(ensemble.size()), vectorSize_(influenceSize_ * updateVars_.size()), owned_(owned),
   rmsVals_(ensemble.getRmsVals(updateVars_, nLevels_)), M_(vectorSize_, ensembleSize_),
-  linearErrorVector_(ensembleSize_), SVD_(vectorSize_, vectorSize_, Eigen::ComputeThinU) {
+  linearErrorVector_(ensembleSize_), SVD_(vectorSize_, vectorSize_, Eigen::ComputeThinU),
+  recipMaxCondNum_(1.0 / config.getDouble("regularization.max condition number", -1)),
+  minSingVal_(config.getDouble("regularization.min singular value", 0.0)) {
+  // Check max condition number is > 1
+  if (recipMaxCondNum_ >= 1.0) {
+    throw eckit::UserError("HtlmCalculator: regularization max condition number must be > 1");
+  }
   // Set up regularization, can be empty
   const eckit::LocalConfiguration regConfig = config_.getSubConfiguration("regularization");
-  if (!regConfig.has("parts"))  {
+  if (!regConfig.has("parts")) {
     regularization_ = std::make_unique<HtlmRegularization>(regConfig);
   } else {
     Increment_ regularizationIncrement(updateGeometry, updateVars_, util::DateTime());
@@ -163,11 +193,19 @@ void HtlmCalculator<MODEL>::compute(const atlas::idx_t i, const atlas::idx_t k,
 
     // Add regularization value to singular values
     // TODO(Tom): change regularization to use variables
-    const Eigen::ArrayXd singVals = SVD_.singularValues().array()
+    Eigen::ArrayXd singVals = SVD_.singularValues().array()
                                     + regularization_->getRegularizationValue(var, i, k);
+    const double maxSingVal = singVals.maxCoeff();
+    const double minSingVal = singVals.minCoeff();
+    const double recipCondNum = minSingVal/maxSingVal;
+    if (recipCondNum < recipMaxCondNum_) {
+      const double newRegVal = (recipMaxCondNum_ * maxSingVal-minSingVal) / (1 - recipMaxCondNum_);
+      singVals += newRegVal;
+    }
 
     // Compute vector of coeffs for var at i, k, assigning directly into FieldSet
-    const double tol = (singVals.matrix().norm() * std::numeric_limits<double>::epsilon());
+    const double tol = std::max(minSingVal_,
+      singVals.matrix().norm() * std::numeric_limits<double>::epsilon());
     Eigen::Map<Eigen::VectorXd> coeffsMap(
       &atlas::array::make_view<double, 3>(coeffsFSet[var])(i, k, 0), vectorSize_);
     coeffsMap.noalias() = SVD_.matrixU()
