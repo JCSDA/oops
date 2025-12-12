@@ -82,6 +82,9 @@ atlas::FieldSet ParallelFieldSetIO::ioFieldSet(const atlas::FieldSet& nativeFiel
                 ioFieldSet.add(functionSpace_.createField<int>(fieldSetConfig));
                 break;
             case atlas::array::DataType::KIND_REAL32:
+                // Note - although this class can deal with 32-bit floating point data,
+                // AtlasArrayUtil cannot yet, and will throw an exception.
+                // TODO(tom-j-h): Add further datatypes to AtlasArrayUtil.
                 ioFieldSet.add(functionSpace_.createField<float>(fieldSetConfig));
                 break;
             case atlas::array::DataType::KIND_REAL64:
@@ -201,7 +204,29 @@ void ParallelFieldSetIO::write(const atlas::FieldSet& source, const std::string&
     dimNames.insert(dimNames.end(), r3DimNames.begin(), r3DimNames.end());
 
     // Write header
-    const auto variables = oops::Variables(source.field_names());
+    std::vector<oops::Variable> variablesVec;
+    variablesVec.reserve(output.size());
+    for (auto f = 0; f < output.size(); f++) {
+        oops::ModelDataType dt;
+        switch (output[f].datatype().kind()) {
+            case atlas::array::DataType::KIND_INT32:
+                dt = oops::ModelDataType::Int32;
+                break;
+            case atlas::array::DataType::KIND_REAL32:
+                dt = oops::ModelDataType::Real32;
+                break;
+            case atlas::array::DataType::KIND_REAL64:
+                dt = oops::ModelDataType::Real64;
+                break;
+            default:
+                ABORT("util::ParallelFieldSetIO::write: invalid datatype for Atlas Field");
+        }
+        variablesVec.push_back(oops::Variable(
+            output[f].name(),
+            oops::VariableMetaData(oops::defaultVerticalStagger, dt, oops::defaultVariableDomain),
+            output[f].levels()));
+    }
+    const auto variables = oops::Variables(variablesVec);
     std::vector<int> netcdfGeneralIDs, netcdfDimIDs, netcdfVarIDs;
     std::vector<std::vector<int>> netcdfDimVarIDs;
     const eckit::LocalConfiguration config;
