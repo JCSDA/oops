@@ -21,6 +21,7 @@
 #include "eckit/mpi/Comm.h"
 #include "oops/mpi/mpi.h"
 #include "oops/util/Printable.h"
+#include "oops/util/TimerTree.h"
 
 namespace util {
   class Timer;
@@ -35,10 +36,14 @@ class TimerHelper : public util::Printable,
   static void add(const std::string &, const double, const bool);
 //               const std::chrono::duration<double> &);
   static void setComm(const eckit::mpi::Comm & comm);
+  static TimerTree* getCurrentTree();
+  static void setCurrentTree(TimerTree* ttree);
   ~TimerHelper();
 
  private:
   static TimerHelper & getHelper();
+  static TimerTree* ttree_ptr_root_;
+  static TimerTree* ttree_ptr_current_;
   TimerHelper();
   void print(std::ostream &) const;
 

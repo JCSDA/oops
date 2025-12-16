@@ -24,6 +24,9 @@
 
 namespace util {
 
+TimerTree* TimerHelper::ttree_ptr_root_ = nullptr;
+TimerTree* TimerHelper::ttree_ptr_current_ = nullptr;
+
 // -----------------------------------------------------------------------------
 
 TimerHelper & TimerHelper::getHelper() {
@@ -35,6 +38,8 @@ TimerHelper & TimerHelper::getHelper() {
 
 void TimerHelper::start() {
   getHelper().on_ = true;
+  getHelper().ttree_ptr_root_ = new TimerTree("root");
+  getHelper().ttree_ptr_current_ = getHelper().ttree_ptr_root_;
   getHelper().total_.reset(new Timer("util::Timers", "Total"));
   getHelper().timers_["util::Timers::measured"] = 0.0;
   getHelper().counts_["util::Timers::measured"] = 1;
@@ -48,6 +53,9 @@ void TimerHelper::stop() {
   getHelper().timers_.clear();
   getHelper().counts_.clear();
   getHelper().on_ = false;
+  delete getHelper().ttree_ptr_root_;
+  getHelper().ttree_ptr_root_ = nullptr;
+  getHelper().ttree_ptr_current_ = nullptr;
 }
 
 // -----------------------------------------------------------------------------
@@ -186,8 +194,32 @@ void TimerHelper::print(std::ostream & os) const {
     os << std::string(std::floor(title_half_width), '-')
        << title << std::string(std::ceil(title_half_width), '-') << std::endl;
   }
+
+  // Print hierarchical timer tree structure
+  if (ttree_ptr_root_ != nullptr) {
+    os << std::endl;
+    os << std::string(table_width, '-') << std::endl;
+    std::string tree_title = " Hierarchical Timer Tree";
+    float tree_title_half_width = (table_width - tree_title.size()) / 2.;
+    os << std::string(std::floor(tree_title_half_width), '-')
+       << tree_title << std::string(std::ceil(tree_title_half_width), '-') << std::endl;
+    os << std::string(table_width, '-') << std::endl;
+    
+    // Print the tree structure starting from root
+    ttree_ptr_root_->printTree(os);
+    
+    os << std::string(table_width, '-') << std::endl;
+  }
+  
 }
 
+TimerTree* TimerHelper::getCurrentTree() {
+  return ttree_ptr_current_;
+}
+
+void TimerHelper::setCurrentTree(TimerTree* ttree) {
+  ttree_ptr_current_ = ttree;
+}
 // -----------------------------------------------------------------------------
 
 }  // namespace util
