@@ -127,8 +127,7 @@ void redistributeToSubcommunicator(const atlas::FieldSet & fsetIn,
     }
 
     fspaceOut.scatter(rootField, fsetOut[fieldName]);
-
-    fsetOut[fieldName].set_dirty(fieldIn.dirty());
+    fsetOut[fieldName].set_dirty();
   }
 
   eckit::mpi::setCommDefault(initialDefaultComm.name().c_str());
@@ -205,10 +204,8 @@ void gatherAndSumFromSubcommunicator(const atlas::FieldSet & fsetIn,
                                    [&](const double a, double& b) { b += a; });
     }
 
-    // 4. Set dirty halos if any of the input fields is dirty
-    int dirty = static_cast<int>(fieldIn.dirty());
-    comm.allReduceInPlace(dirty, eckit::mpi::max());
-    fieldOut.set_dirty(static_cast<bool>(dirty));
+    // 4. Set dirty halos
+    fieldOut.set_dirty();
   }
 
   eckit::mpi::setCommDefault(initialDefaultComm.name().c_str());
