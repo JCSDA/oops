@@ -423,7 +423,7 @@ subroutine qg_obsvec_size(self,kobs)
 implicit none
 type(qg_obsvec),intent(in) :: self !< Observation vector
 integer,intent(inout) :: kobs      !< Observation vector size
-kobs = size(self%values) + 2
+kobs = size(self%values)
 end subroutine qg_obsvec_size
 
 ! ------------------------------------------------------------------------------
@@ -565,12 +565,6 @@ do jobs=1,self%nobs
       self%values(jlev, jobs) = vals(ind)
   enddo
 enddo
-
-! Return index
-! Note: Observation vector size is 2 more than observation number
-!       e.g., (kobs = size(self%values) + 2),
-!       so returned index is (ind + 2).
-ind = ind + 2
 
 end subroutine qg_obsvec_deserialize
 ! ------------------------------------------------------------------------------
