@@ -98,15 +98,20 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     if (finalConfig.has("increment")) {
       const eckit::LocalConfiguration incConfig(finalConfig, "increment");
       ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
-      const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
-      Geometry<MODEL> incGeom(incGeomConfig,
-                              xx.states().geometry().getComm(),
-                              xx.states().commTime());
-      ControlIncrement<MODEL, OBS> dx_tmp(J->jb());
-      ControlIncrement<MODEL, OBS> dx(incGeom, dx_tmp);
+      ControlIncrement<MODEL, OBS> dx(J->jb());
       dx.diff(xx, x_b);
+
       const eckit::LocalConfiguration incOutConfig(incConfig, "output");
-      dx.write(incOutConfig);
+      if (incConfig.has("geometry")) {
+        const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
+        Geometry<MODEL> incGeom(incGeomConfig,
+                                xx.states().geometry().getComm(),
+                                xx.states().commTime());
+        ControlIncrement<MODEL, OBS> dx_geom_resolution(incGeom, dx);
+        dx_geom_resolution.write(incOutConfig);
+      } else {
+        dx.write(incOutConfig);
+      }
     }
 
     if (finalConfig.has("increment to structured grid")) {
