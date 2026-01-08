@@ -81,10 +81,14 @@ class HtlmCalculator {
   const double recipMaxCondNum_;
   const double minSingVal_;
 
-  void singularValueDecomposition(const atlas::idx_t, const atlas::array::Range &,
-                                  const IncrementSet_ &) const;
+  void singularValueDecomposition(
+      const atlas::idx_t, const atlas::array::Range &,
+      const std::vector<std::vector<atlas::array::ArrayView<const double, 2>>> &,
+      const std::vector<atlas::array::ArrayView<const double, 1>> &) const;
   void compute(const atlas::idx_t, const atlas::idx_t, const atlas::array::Range &,
-               const IncrementSet_ &, atlas::FieldSet &) const;
+               const std::vector<std::vector<atlas::array::ArrayView<const double, 2>>> &,
+               const std::vector<atlas::array::ArrayView<const double, 1>> &,
+               std::vector<atlas::array::ArrayView<double, 3>> &) const;
 };
 
 //------------------------------------------------------------------------------
@@ -133,21 +137,57 @@ void HtlmCalculator<MODEL>::setOfCoeffs(const IncrementSet_ & linearEnsemble,
   // Generally the regions of influence are centred on the level of interest, expect near the bottom
   // and top, where they are the bottom-most/top-most (influenceSize_) levels. The loop over k is
   // therefore split at the ends to avoid repeating the same SVD multiple times.
+
+  // Pre-calculate views
+  std::vector<std::vector<atlas::array::ArrayView<const double, 2>>>
+    linearEnsembleViews(ensembleSize_);
+  for (atlas::idx_t m = 0; m < ensembleSize_; ++m) {
+    linearEnsembleViews[m].reserve(updateVars_.size());
+    for (size_t v = 0; v < updateVars_.size(); ++v) {
+      linearEnsembleViews[m].emplace_back(atlas::array::make_view<const double, 2>(
+          linearEnsemble[m].fieldSet()[updateVars_[v].name()]));
+    }
+  }
+
+  std::vector<std::vector<atlas::array::ArrayView<const double, 2>>>
+    linearErrorsViews(ensembleSize_);
+  for (atlas::idx_t m = 0; m < ensembleSize_; ++m) {
+    linearErrorsViews[m].reserve(updateVars_.size());
+    for (size_t v = 0; v < updateVars_.size(); ++v) {
+      linearErrorsViews[m].emplace_back(atlas::array::make_view<const double, 2>(
+          linearErrors[m].fieldSet()[updateVars_[v].name()]));
+    }
+  }
+
+  std::vector<atlas::array::ArrayView<double, 3>> coeffsViews;
+  coeffsViews.reserve(updateVars_.size());
+  for (size_t v = 0; v < updateVars_.size(); ++v) {
+    coeffsViews.emplace_back(atlas::array::make_view<double, 3>
+      (coeffsFSet[updateVars_[v].name()]));
+  }
+
+  std::vector<atlas::array::ArrayView<const double, 1>> rmsViews;
+  rmsViews.reserve(updateVars_.size());
+  for (size_t v = 0; v < updateVars_.size(); ++v) {
+    rmsViews.emplace_back(atlas::array::make_view<const double, 1>
+      (rmsVals_[updateVars_[v].name()]));
+  }
+
   for (auto i : owned_) {
     atlas::array::Range range(0, influenceSize_);
-    singularValueDecomposition(i, range, linearEnsemble);
+    singularValueDecomposition(i, range, linearEnsembleViews, rmsViews);
     for (auto k = 0; k < halfInfluenceSize_; k++) {
-      compute(i, k, range, linearErrors, coeffsFSet);
+      compute(i, k, range, linearErrorsViews, rmsViews, coeffsViews);
     }
     for (auto k = halfInfluenceSize_; k < nLevels_ - halfInfluenceSize_; k++) {
       range = atlas::array::Range(k - halfInfluenceSize_, k + halfInfluenceSize_ + 1);
-      singularValueDecomposition(i, range, linearEnsemble);
-      compute(i, k, range, linearErrors, coeffsFSet);
+      singularValueDecomposition(i, range, linearEnsembleViews, rmsViews);
+      compute(i, k, range, linearErrorsViews, rmsViews, coeffsViews);
     }
     range = atlas::array::Range(nLevels_ - influenceSize_, nLevels_);
-    singularValueDecomposition(i, range, linearEnsemble);
+    singularValueDecomposition(i, range, linearEnsembleViews, rmsViews);
     for (auto k = nLevels_ - halfInfluenceSize_; k < nLevels_; k++) {
-      compute(i, k, range, linearErrors, coeffsFSet);
+      compute(i, k, range, linearErrorsViews, rmsViews, coeffsViews);
     }
   }
 }
@@ -155,18 +195,18 @@ void HtlmCalculator<MODEL>::setOfCoeffs(const IncrementSet_ & linearEnsemble,
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HtlmCalculator<MODEL>::singularValueDecomposition(const atlas::idx_t i,
-                                                       const atlas::array::Range & range,
-                                                       const IncrementSet_ & linearEnsemble)
-const {
+void HtlmCalculator<MODEL>::singularValueDecomposition(
+  const atlas::idx_t i,
+  const atlas::array::Range & range,
+  const std::vector<std::vector<atlas::array::ArrayView<const double, 2>>> & linearEnsembleViews,
+  const std::vector<atlas::array::ArrayView<const double, 1>> & rmsViews)const {
   util::Timer timer(classname(), "singularValueDecomposition");
   // M is a matrix where each column forms a vector of (no. variables) segments, each of length
   // influenceSize_, and each column is taken from one ensemble member
   for (size_t v = 0; v < updateVars_.size(); v++) {
-    auto rms = atlas::array::make_view<double, 1>(rmsVals_[updateVars_[v].name()]).slice(range);
+    auto rms = rmsViews[v].slice(range);
     for (auto m = 0; m < ensembleSize_; m++) {
-      const auto values = atlas::array::make_view<double, 2>(
-        linearEnsemble[m].fieldSet()[updateVars_[v].name()]).slice(i, range);
+      const auto values = linearEnsembleViews[m][v].slice(i, range);
       for (auto s = 0; s < influenceSize_; s++) {
         // Values are normalized by typical magnitudes (from rmsVals_) as preconditioning
         M_(v * influenceSize_ + s, m) = values(s) / rms[s];
@@ -179,22 +219,26 @@ const {
 //------------------------------------------------------------------------------
 
 template<typename MODEL>
-void HtlmCalculator<MODEL>::compute(const atlas::idx_t i, const atlas::idx_t k,
-                                    const atlas::array::Range & range,
-                                    const IncrementSet_ & linearErrors,
-                                    atlas::FieldSet & coeffsFSet) const {
+void HtlmCalculator<MODEL>::compute(
+  const atlas::idx_t i,
+  const atlas::idx_t k,
+  const atlas::array::Range & range,
+  const std::vector<std::vector<atlas::array::ArrayView<const double, 2>>> & linearErrorsViews,
+  const std::vector<atlas::array::ArrayView<const double, 1>> & rmsViews,
+  std::vector<atlas::array::ArrayView<double, 3>> & coeffsViews) const {
   util::Timer timer(classname(), "compute");
-  for (const auto & var : updateVars_.variables()) {
+  for (size_t v = 0; v < updateVars_.size(); ++v) {
+    const auto & var = updateVars_[v];
     // Produce VectorXd of linear errors at var, i, k for each ensemble member
     for (auto m = 0; m < ensembleSize_; m++) {
       linearErrorVector_(m, 0)
-        = atlas::array::make_view<double, 2>(linearErrors[m].fieldSet()[var])(i, k);
+        = linearErrorsViews[m][v](i, k);
     }
 
     // Add regularization value to singular values
     // TODO(Tom): change regularization to use variables
     Eigen::ArrayXd singVals = SVD_.singularValues().array()
-                                    + regularization_->getRegularizationValue(var, i, k);
+                                    + regularization_->getRegularizationValue(var.name(), i, k);
     const double maxSingVal = singVals.maxCoeff();
     const double minSingVal = singVals.minCoeff();
     const double recipCondNum = minSingVal/maxSingVal;
@@ -207,17 +251,17 @@ void HtlmCalculator<MODEL>::compute(const atlas::idx_t i, const atlas::idx_t k,
     const double tol = std::max(minSingVal_,
       singVals.matrix().norm() * std::numeric_limits<double>::epsilon());
     Eigen::Map<Eigen::VectorXd> coeffsMap(
-      &atlas::array::make_view<double, 3>(coeffsFSet[var])(i, k, 0), vectorSize_);
+      &coeffsViews[v](i, k, 0), vectorSize_);
     coeffsMap.noalias() = SVD_.matrixU()
       * ((singVals > tol).select(singVals.inverse(), 0.0)).matrix().asDiagonal()
       * SVD_.matrixU().transpose() * M_ * linearErrorVector_;
     // (equation 26 in https://doi.org/10.1175/MWR-D-20-0088.1)
 
     // Un-normalize to account for preconditioning
-    for (size_t v = 0; v < updateVars_.size(); v++) {
-      auto rms = atlas::array::make_view<double, 1>(rmsVals_[updateVars_[v].name()]).slice(range);
+    for (size_t v2 = 0; v2 < updateVars_.size(); v2++) {
+      auto rms = rmsViews[v2].slice(range);
       for (auto s = 0; s < influenceSize_; s++) {
-        coeffsMap(v * influenceSize_ + s, 0) /= rms[s];
+        coeffsMap(v2 * influenceSize_ + s, 0) /= rms[s];
       }
     }
   }

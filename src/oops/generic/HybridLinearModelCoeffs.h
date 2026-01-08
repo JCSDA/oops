@@ -277,6 +277,20 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
   auto updateBuffer = util::perThreadStorage<double>(updateVars_.size()*nLevels_);
   auto bufferView = atlas::array::make_view<double, 2>(updateBuffer);
   util::IndexSpace1D owned_range = {0, static_cast<atlas::idx_t>(owned_.size())};
+
+  // Pre-calculate views
+  std::vector<atlas::array::ArrayView<double, 2>> dxViews;
+  std::vector<atlas::array::ArrayView<const double, 3>> coeffsViews;
+  dxViews.reserve(updateVars_.size());
+  coeffsViews.reserve(updateVars_.size());
+
+  const auto & coeffs = coeffsSaver_.at(dx.validTime());
+  for (size_t v = 0; v < updateVars_.size(); ++v) {
+    dxViews.emplace_back(atlas::array::make_view<double, 2>(dxFSet[updateVars_[v].name()]));
+    coeffsViews.emplace_back(atlas::array::make_view<const double, 3>(
+                             coeffs[updateVars_[v].name()]));
+  }
+
   util::for_each_index(owned_range,
   [&](atlas::idx_t idx) {
     const atlas::idx_t i = owned_[idx];
@@ -285,23 +299,20 @@ void HybridLinearModelCoeffs<MODEL>::updateIncTL(Increment_ & dx) const {
     updateValsView.assign(0.0);
     // Calculate update values
     for (size_t v = 0; v < updateVars_.size(); v++) {
-      auto coeffsView  = atlas::array::make_view<double, 3>(
-           coeffsSaver_.at(dx.validTime())[updateVars_[v].name()]);
       for (auto k = 0; k < nLevels_; k++) {
         for (size_t v2 = 0; v2 < updateVars_.size(); v2++) {
-          auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v2].name()]);
           for (auto s = 0; s < influenceSize_; s++) {
             updateValsView(k + v * nLevels_)
-              += coeffsView(i, k, v2 * influenceSize_ + s) * dxArray(i, updateStencilArray(k, s));
+              += coeffsViews[v](i, k, v2 * influenceSize_ + s) *
+                dxViews[v2](i, updateStencilArray(k, s));
           }
         }
       }
     }
     // Update column
     for (size_t v = 0; v < updateVars_.size(); v++) {
-      auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v].name()]);
       for (auto k = 0; k < nLevels_; k++) {
-        dxArray(i, k) += updateValsView(k + v * nLevels_);
+        dxViews[v](i, k) += updateValsView(k + v * nLevels_);
       }
     }
   });
@@ -320,6 +331,20 @@ void HybridLinearModelCoeffs<MODEL>::updateIncAD(Increment_ & dx) const {
   auto updateBuffer = util::perThreadStorage<double>(updateVars_.size()*nLevels_);
   auto bufferView = atlas::array::make_view<double, 2>(updateBuffer);
   util::IndexSpace1D owned_range = {0, static_cast<atlas::idx_t>(owned_.size())};
+
+  // Pre-calculate views
+  std::vector<atlas::array::ArrayView<double, 2>> dxViews;
+  std::vector<atlas::array::ArrayView<const double, 3>> coeffsViews;
+  dxViews.reserve(updateVars_.size());
+  coeffsViews.reserve(updateVars_.size());
+
+  const auto & coeffs = coeffsSaver_.at(dx.validTime());
+  for (size_t v = 0; v < updateVars_.size(); ++v) {
+    dxViews.emplace_back(atlas::array::make_view<double, 2>(dxFSet[updateVars_[v].name()]));
+    coeffsViews.emplace_back(atlas::array::make_view<const double, 3>(
+                             coeffs[updateVars_[v].name()]));
+  }
+
   util::for_each_index(owned_range,
   [&](atlas::idx_t idx) {
     const atlas::idx_t i = owned_[idx];
@@ -328,21 +353,17 @@ void HybridLinearModelCoeffs<MODEL>::updateIncAD(Increment_ & dx) const {
     updateValsView.assign(0.0);
     // Adjoint of "Update column"
     for (size_t v = 0; v < updateVars_.size(); v++) {
-      auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v].name()]);
       for (auto k = 0; k < nLevels_; k++) {
-        updateValsView[k + v * nLevels_] += dxArray(i, k);
+        updateValsView[k + v * nLevels_] += dxViews[v](i, k);
       }
     }
     // Adjoint of "Calculate update values"
     for (size_t v = 0; v < updateVars_.size(); v++) {
-      auto coeffsView = atlas::array::make_view<double, 3>(
-           coeffsSaver_.at(dx.validTime())[updateVars_[v].name()]);
       for (auto k = 0; k < nLevels_; k++) {
         for (size_t v2 = 0; v2 < updateVars_.size(); v2++) {
-          auto dxArray = atlas::array::make_view<double, 2>(dxFSet[updateVars_[v2].name()]);
           for (auto s = 0; s < influenceSize_; s++) {
-            dxArray(i, updateStencilArray(k, s))
-              += coeffsView(i, k, v2 * influenceSize_ + s) * updateValsView(k + v * nLevels_);
+            dxViews[v2](i, updateStencilArray(k, s))
+              += coeffsViews[v](i, k, v2 * influenceSize_ + s) * updateValsView(k + v * nLevels_);
           }
         }
       }
