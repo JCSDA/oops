@@ -48,6 +48,19 @@ FieldSet4D::FieldSet4D(const std::vector<util::DateTime> & times,
 
 // -----------------------------------------------------------------------------
 
+FieldSet4D::FieldSet4D(const std::vector<util::DateTime> & times,
+                       const eckit::mpi::Comm & commTime,
+                       const eckit::mpi::Comm & commGeom,
+                       const atlas::FunctionSpace & fspace,
+                       const oops::Variables & vars)
+  : FieldSet4D(times, commTime, commGeom) {
+  for (size_t jj = 0; jj < this->local_time_size(); ++jj) {
+    (*this)[jj].init(fspace, vars);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 FieldSet4D::FieldSet4D(const FieldSet3D & fset3d)
   : FieldSets({fset3d.validTime()}, oops::mpi::myself(), {0}, oops::mpi::myself())
 {
@@ -62,6 +75,13 @@ void FieldSet4D::deepCopy(const FieldSets & other, const size_t iens) {
   }
 }
 
+// -----------------------------------------------------------------------------
+
+void FieldSet4D::deepCopy(const FieldSet4D & other) {
+  for (size_t itime = 0; itime < this->size(); ++itime) {
+    (*this)[itime].deepCopy(other[itime]);
+  }
+}
 // -----------------------------------------------------------------------------
 
 void FieldSet4D::zero() {
@@ -143,6 +163,14 @@ double FieldSet4D::dot_product_with(const FieldSets & other, const size_t iens,
 double FieldSet4D::norm() const {
   double zz = this->dot_product_with(*this, this->variables());
   return std::sqrt(zz);
+}
+
+// -----------------------------------------------------------------------------
+
+void FieldSet4D::removeFields(const Variables & vars) {
+  for (size_t jj = 0; jj < this->size(); ++jj) {
+    (*this)[jj].removeFields(vars);
+  }
 }
 
 // -----------------------------------------------------------------------------

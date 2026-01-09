@@ -26,6 +26,14 @@ class FieldSet4D : public FieldSets {
   FieldSet4D(const std::vector<util::DateTime> & times,
              const eckit::mpi::Comm & commTime,
              const eckit::mpi::Comm & commGeom);
+  /// @brief Creates a FieldSet4D for specified times with specified time
+  ///        and geometry communicators and variables. Fields and fieldsets are
+  ///        created in the ctor.
+  FieldSet4D(const std::vector<util::DateTime> & times,
+             const eckit::mpi::Comm & commTime,
+             const eckit::mpi::Comm & commGeom,
+             const atlas::FunctionSpace &,
+             const oops::Variables &);
   /// @brief Creates a FieldSet4D with a single 3D fieldset in it.
   explicit FieldSet4D(const FieldSet3D &);
   /// @brief Creates a FieldSet4D from the State4D. On creation fieldsets are
@@ -38,6 +46,7 @@ class FieldSet4D : public FieldSets {
   /// @brief Initialize with a deep copy of \p iens ensemble member of \p other,
   ///        consistency check for valid time
   void deepCopy(const FieldSets & other, const size_t iens);
+  void deepCopy(const FieldSet4D & other);
 
   void zero();
   FieldSet4D & operator+=(const FieldSet4D & other);
@@ -53,6 +62,7 @@ class FieldSet4D : public FieldSets {
   double dot_product_with(const FieldSets & other, const size_t iens,
                           const Variables & vars) const;
   double norm() const;
+  void removeFields(const Variables & vars);
 
  private:
   std::string classname() const {return "FieldSet4D";}
