@@ -46,7 +46,7 @@ namespace oops {
 
   // -----------------------------------------------------------------------------
 
-Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(), timer_() {
+Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_() {
   // Initialize MPI and LibOOPS variables that require eckit::Main
 #ifdef ENABLE_GPTL
   int do_profile = getEnv("OOPS_PROFILE", 0);  // Default is profiling disabled
@@ -149,11 +149,12 @@ int Run::execute(const Application & app, const eckit::mpi::Comm & comm) {
   int status = 1;
   try {
     // Start measuring performance
+    const eckit::LocalConfiguration runConf = config_->getSubConfiguration("runtime");
     util::TimerHelper::setComm(comm);
-    util::TimerHelper::start();
+    util::TimerHelper::start("oops::Run", "execute", runConf);
     util::ObjectCountHelper::start();
     util::printRunStats("Run start", true, comm);
-    if (config_->getBool("ecflow", false)) util::use_ecflow();
+    if (runConf.getBool("ecflow", false)) util::use_ecflow();
     // Run application
     Log::info() << "Run: Starting " << app << std::endl;
     status = app.execute(*config_);

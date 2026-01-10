@@ -13,7 +13,7 @@
 #include <string>
 
 namespace eckit {
-  class LocalConfiguration;
+  class Configuration;
 }
 
 namespace oops {
@@ -24,7 +24,7 @@ class TestReference {
   using IntT = int64_t;
 
   void finalise(const std::string &testStr);
-  void initialise(const eckit::LocalConfiguration &conf);
+  void initialise(const eckit::Configuration &conf);
 
   static void compare(const std::string &, const std::string &,
                       FloatT, FloatT, IntT);

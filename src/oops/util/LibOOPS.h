@@ -44,7 +44,7 @@ class LibOOPS : public eckit::system::Library {
   eckit::Channel& testChannel() const;
 
   void initialise();
-  void testReferenceInitialise(const eckit::LocalConfiguration &);
+  void testReferenceInitialise(const eckit::Configuration &);
   void teeOutput(const std::string &);
   void finalise(bool finaliseMPI = true);
   bool validateParameters() const {return validate_parameters_;}

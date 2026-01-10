@@ -150,7 +150,7 @@ void LibOOPS::teeOutput(const std::string & fileprefix) {
   eckit::Log::addFile(teefile);
 }
 
-void LibOOPS::testReferenceInitialise(const eckit::LocalConfiguration &testConf) {
+void LibOOPS::testReferenceInitialise(const eckit::Configuration & testConf) {
   // testStream_ is used by TestReference for comparing test output
   // with a reference file
   if ( rank_ == 0 ) {

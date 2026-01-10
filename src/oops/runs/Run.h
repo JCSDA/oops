@@ -18,7 +18,6 @@
 #include "eckit/mpi/Comm.h"
 #include "eckit/runtime/Main.h"
 #include "oops/mpi/mpi.h"
-#include "oops/util/Timer.h"
 
 namespace oops {
   class Application;
@@ -41,7 +40,6 @@ class Run : public eckit::Main {
  private:
   bool is_print_help_only_ = false;
   std::unique_ptr<const eckit::YAMLConfiguration> config_;
-  std::unique_ptr<util::Timer> timer_;
 };
 
 // -----------------------------------------------------------------------------

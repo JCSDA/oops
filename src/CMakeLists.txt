@@ -453,6 +453,8 @@ list(
   oops/util/Timer.h
   oops/util/TimerHelper.cc
   oops/util/TimerHelper.h
+  oops/util/TimerTree.cc
+  oops/util/TimerTree.h
   oops/util/TimeWindow.cc
   oops/util/TimeWindow.h
   oops/util/TypeTraits.h

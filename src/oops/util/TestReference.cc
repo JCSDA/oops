@@ -29,7 +29,7 @@
 #define REGEX_NAMESPACE std
 #endif
 
-#include "eckit/config/LocalConfiguration.h"
+#include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/mpi/mpi.h"
@@ -99,7 +99,7 @@ namespace {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 
-void TestReference::initialise(const eckit::LocalConfiguration &conf)
+void TestReference::initialise(const eckit::Configuration &conf)
 {
   initCheck_ = true;
   std::string mpi_pattern, mpi_size;

@@ -29,6 +29,7 @@ Timer::Timer(const std::string & class_name, const std::string & method_name)
 {
   ++nested_timers;
   start_ = ClockT::now();
+  TimerHelper::init(name_);
 }
 
 // -----------------------------------------------------------------------------
