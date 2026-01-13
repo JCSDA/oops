@@ -109,6 +109,7 @@ list(
   oops/atlas/Interpolator.h
 
   oops/base/Accumulator.h
+  oops/base/AnalyticInit.h
   oops/base/DataSetBase.h
   oops/base/Departures.h
   oops/base/DeparturesEnsemble.h
@@ -237,6 +238,7 @@ list(
   oops/coupled/UtilsCoupled.h
   oops/coupled/VariableChangeCoupled.h
 
+  oops/generic/AnalyticInitBase.h
   oops/generic/AtlasInterpolator.cc
   oops/generic/AtlasInterpolator.h
   oops/generic/Diffusion.cc
@@ -275,6 +277,7 @@ list(
   oops/generic/UnstructuredInterpolator.cc
   oops/generic/VerticalLocEV.h
 
+  oops/interface/AnalyticInitBase.h
   oops/interface/ErrorCovariance.h
   oops/interface/Geometry.h
   oops/interface/GeometryIterator.h

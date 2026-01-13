@@ -26,6 +26,7 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 
+#include "oops/base/AnalyticInit.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/GetValues.h"
 #include "oops/base/State.h"
@@ -150,8 +151,12 @@ template <typename MODEL, typename OBS> void testGetValuesConstructor() {
 ///    GetValues is of high accuracy.
 ///
 /// These two GeoVaLs are then checked to match within a specified tolerance.
+///
+/// \note This test requires that the model State has a constructor accepting an "analytic init"
+///       config, and a matching AnalyticInit class to fill in the expected GeoVaLs.
 template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   typedef GetValuesFixture<MODEL, OBS>    Test_;
+  typedef oops::AnalyticInit<OBS>         AnalyticInit_;
   typedef oops::VariableChange<MODEL>     VariableChange_;
   typedef oops::State<MODEL>              State_;
   typedef oops::GeoVaLs<OBS>              GeoVaLs_;
@@ -185,8 +190,10 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   EXPECT(gval.rms() > 0.0);
 
   // Fill GeoVaLs with exact values
+  GeoVaLs_ ref(gval);
   const eckit::LocalConfiguration analyticConf(confgen, "analytic init");
-  GeoVaLs_ ref(Test_::locations(), Test_::variables(), Test_::varsizes(), analyticConf);
+  AnalyticInit_ init(analyticConf);
+  init.fillGeoVaLs(Test_::sampledLocations(), ref);
 
   EXPECT(ref.rms() > 0.0);
 
@@ -194,17 +201,8 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   // and check to see if the errors are within specified tolerance
   const double tol = TestEnvironment::config().getDouble("tolerance interpolation");
   gval -= ref;
-  std::vector<std::string> testvars;
-  if (TestEnvironment::config().has("test variables")) {
-    testvars = TestEnvironment::config().getStringVector("test variables");
-  } else {
-    testvars = Test_::variables().variables();
-  }
-  for (const std::string & var : testvars) {
-    const double rmsd = gval.normalizedrms(ref, var);
-    oops::Log::info() << "Normalized rms of the difference(" << var << "): " << rmsd << std::endl;
-    EXPECT(rmsd < tol);
-  }
+  oops::Log::info() << "Normalized rms of the difference: " << gval.normalizedrms(ref) << std::endl;
+  EXPECT(gval.normalizedrms(ref) < tol);
 }
 
 // -------------------------------------------------------------------------------------------------
