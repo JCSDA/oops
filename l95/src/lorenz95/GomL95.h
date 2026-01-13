@@ -53,13 +53,14 @@ class GomL95 : public util::Printable,
   static const std::string classname() {return "lorenz95::GomL95";}
 
   GomL95(const oops::Locations<L95ObsTraits> & locs,
-         const oops::Variables & vars, const std::vector<size_t> & sizes);
+         const oops::Variables & vars, const std::vector<size_t> & sizes,
+         const eckit::Configuration &);
   GomL95(const eckit::Configuration &, const ObsTable &, const oops::Variables &);
 
   void zero();
   void random();
   double rms() const;
-  double normalizedrms(const GomL95 &) const;
+  double normalizedrms(const GomL95 &, const std::string & dummy = "") const;
   GomL95 & operator*=(const double &);
   GomL95 & operator+=(const GomL95 &);
   GomL95 & operator-=(const GomL95 &);

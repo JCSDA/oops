@@ -1,6 +1,4 @@
 set( _l95_srcs
-        AnalyticInit.cc
-        AnalyticInit.h
         ErrorCovarianceL95.cc
         ErrorCovarianceL95.h
         FieldL95.cc
