@@ -73,7 +73,8 @@ class GeoVaLs : public util::Printable,
   /// \param sizes
   ///   Vector whose ith element indicates how many values per interpolation path will be stored
   ///   in the GeoVaL corresponding to the ith variable in `vars`.
-  GeoVaLs(const Locations_ & locations, const Variables & vars, const std::vector<size_t> & sizes);
+  GeoVaLs(const Locations_ & locations, const Variables & vars, const std::vector<size_t> & sizes,
+          const eckit::Configuration & conf = eckit::LocalConfiguration());
 
   /// \brief Load values of specified geophysical variables from a file.
   ///
@@ -97,7 +98,7 @@ class GeoVaLs : public util::Printable,
   void zero();
   void random();
   double rms() const;
-  double normalizedrms(const GeoVaLs &) const;
+  double normalizedrms(const GeoVaLs &, const std::string & var = "") const;
   GeoVaLs & operator=(const GeoVaLs &);
   GeoVaLs & operator*=(const double &);
   GeoVaLs & operator+=(const GeoVaLs &);
@@ -135,10 +136,12 @@ class GeoVaLs : public util::Printable,
 
 template <typename OBS>
 GeoVaLs<OBS>::GeoVaLs(const Locations_ & locations, const Variables & vars,
-                      const std::vector<size_t> & sizes) : gvals_() {
+                      const std::vector<size_t> & sizes, const eckit::Configuration & conf)
+  : gvals_()
+{
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(locations, vars, sizes));
+  gvals_.reset(new GeoVaLs_(locations, vars, sizes, conf));
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs done" << std::endl;
 }
 
@@ -254,10 +257,10 @@ double GeoVaLs<OBS>::rms() const {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-double GeoVaLs<OBS>::normalizedrms(const GeoVaLs & rhs) const {
+double GeoVaLs<OBS>::normalizedrms(const GeoVaLs & rhs, const std::string & var) const {
   Log::trace() << "GeoVaLs<OBS>::normalizedrms starting" << std::endl;
   util::Timer timer(classname(), "normalizedrms");
-  double zz = gvals_->normalizedrms(*rhs.gvals_);
+  double zz = gvals_->normalizedrms(*rhs.gvals_, var);
   Log::trace() << "GeoVaLs<OBS>::normalizedrms done" << std::endl;
   return zz;
 }

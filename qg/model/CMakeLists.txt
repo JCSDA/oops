@@ -1,6 +1,4 @@
 list( APPEND oops_qg_src_files
-AnalyticInit.cc
-AnalyticInit.h
 ChangeVarQG.cc
 ChangeVarQG.h
 ChangeVarTLADQG.cc

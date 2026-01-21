@@ -35,9 +35,22 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 GomL95::GomL95(const oops::Locations<L95ObsTraits> & locs,
-               const oops::Variables &, const std::vector<size_t> &)
+               const oops::Variables &, const std::vector<size_t> &,
+               const eckit::Configuration & initConf)
   : size_(locs.samplingMethod(oops::Variable("x")).sampledLocations().size()), locval_(size_, 0.0)
 {
+  oops::Log::trace() << "GomL95::GomL95 start" << std::endl;
+  if (!initConf.empty()) {
+    const double mean = initConf.getDouble("mean", 0.0);
+    for (size_t jj = 0; jj < size_; ++jj) locval_[jj] = mean;
+
+    if (initConf.has("sinus")) {
+      const LocsL95 & locs95 = locs.samplingMethod(oops::Variable("x")).sampledLocations();
+      const double zz = initConf.getDouble("sinus");
+      for (size_t jj = 0; jj < size_; ++jj)
+        locval_[jj] += zz * std::sin(2.0*M_PI*locs95[jj]);
+    }
+  }
   oops::Log::trace() << "GomL95::GomL95 done" << std::endl;
 }
 // -----------------------------------------------------------------------------
@@ -81,7 +94,7 @@ double GomL95::rms() const {
   return sqrt(xnorm/static_cast<double>(size_));
 }
 // -----------------------------------------------------------------------------
-double GomL95::normalizedrms(const GomL95 & rhs) const {
+double GomL95::normalizedrms(const GomL95 & rhs, const std::string & dummy) const {
   GomL95 temp_gv(*this);
   for (size_t jj = 0; jj < size_; ++jj) temp_gv.locval_[jj] /= rhs.locval_[jj];
   return temp_gv.rms();

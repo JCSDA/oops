@@ -26,7 +26,7 @@ namespace qg {
 
 // -----------------------------------------------------------------------------
 GomQG::GomQG(const Locations_ & locs, const oops::Variables & vars,
-             const std::vector<size_t> & sizes):
+             const std::vector<size_t> & sizes, const eckit::Configuration & conf):
   vars_(vars)
 {
 // The QG model cannot handle locations sampled with more than one method yet.
@@ -36,6 +36,9 @@ GomQG::GomQG(const Locations_ & locs, const oops::Variables & vars,
   for (size_t jj = 1; jj < sizes.size(); ++jj) ASSERT(sizes[jj] == sizes[0]);
   const int levs = sizes[0];
   qg_gom_setup_f90(keyGom_, locs.samplingMethod(0).sampledLocations().size(), vars_, levs);
+
+  if (!conf.empty())
+    qg_gom_analytic_init_f90(keyGom_, locs.samplingMethod(0).sampledLocations(), conf);
 }
 // -----------------------------------------------------------------------------
 /*! QG GeoVaLs Constructor with Config */
@@ -66,7 +69,8 @@ double GomQG::rms() const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-double GomQG::normalizedrms(const GomQG & rhs) const {
+double GomQG::normalizedrms(const GomQG & rhs, const std::string & var) const {
+  ASSERT(var == "x");  // Could implement use of var fully if needed
   GomQG temp_GomQG(*this);
   qg_gom_divide_f90(temp_GomQG.keyGom_, rhs.keyGom_);
   return temp_GomQG.rms();
