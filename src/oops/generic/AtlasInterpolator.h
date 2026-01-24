@@ -90,7 +90,7 @@ class AtlasInterpolator : public atlasbase::Interpolator,
   const atlas::Interpolation& getInterp(const std::vector<bool>& mask) const;
 
  private:
-  virtual void print(std::ostream& os) const;
+  void print(std::ostream& os) const override;
 
   // Get the total number of elements to write to the target vector.
   size_t getTotalElements(const Variables& variables,
