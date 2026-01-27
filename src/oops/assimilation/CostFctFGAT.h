@@ -284,24 +284,11 @@ void CostFctFGAT<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
   // update for jo, must update jo before other cost terms
   this->getNonConstJo()->applyContDaUpdate(cdaConfig);
   if (cdaConfig.has("time window")) {
-  //  throw eckit::NotImplemented("oops::CostFctFGAT: continuous DA, "
-  //                  "window shift not implemented for FGAT. ", Here());
     util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
     timeWindow_ = newWindow;
   }
 
-  // for VarBC, update for jb needs to be called even if window is not shifted
-  // note if timeWindow is not changed times remains unchanged
-  if (fgat_) {
-    std::vector<util::DateTime> startTime(1);
-    startTime[0] = timeWindow_.start();
-    this->getNonConstJb()->applyContDaUpdate(cdaConfig, startTime);
-  } else {
-    std::vector<util::DateTime> midPoint(1);
-    midPoint[0] = timeWindow_.midpoint();
-    this->getNonConstJb()->applyContDaUpdate(cdaConfig, midPoint);
-  }
-
+  const CtrlVar_ * p_xx = nullptr;
   if (timeWindow_.start() != xx.state().validTime() ||
                                         timeWindow_.midpoint() != xx.state().validTime()) {
     PostProcessor<State_> post;
@@ -312,9 +299,20 @@ void CostFctFGAT<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
       model_.forecast(xx.state(), xx.modVar(), timeWindow_.midpoint() -
       xx.state().validTime() , post);
     }
-    this->getNonConstJb()->updateBG(xx);
+    p_xx = &xx;
     fgat_ = true;
   }
+
+  // for VarBC, update for jb needs to be called even if window is not shifted
+  // note if timeWindow is not changed times remains unchanged
+  std::vector<util::DateTime> jbTimes(1);
+  if (fgat_) {
+    jbTimes[0] = timeWindow_.start();
+  } else {
+    jbTimes[0] = timeWindow_.midpoint();
+  }
+  this->getNonConstJb()->applyContDaUpdate(cdaConfig, jbTimes, p_xx);
+
   // update for Jc terms
   // currently no Jc terms work with FGAT
   Log::trace() << "CostFctFGAT::applyContDaUpdate done" << std::endl;

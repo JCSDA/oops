@@ -110,10 +110,8 @@ template<typename MODEL, typename OBS> class CostJbTotal {
   const util::DateTime windowEnd()   const {return timeWindow_.end();}
 
 /// continuous DA update
-  void applyContDaUpdate(const eckit::Configuration &, std::vector<util::DateTime> &);
-
-/// update background for continuous DA
-  void updateBG(const CtrlVar_ &);
+  void applyContDaUpdate(const eckit::Configuration &, std::vector<util::DateTime> &,
+                         const CtrlVar_ * = nullptr);
 
  private:
   double evaluate(const CtrlInc_ &) const;
@@ -401,23 +399,20 @@ void CostJbTotal<MODEL, OBS>::randomize(CtrlInc_ & dx) const {
 
 template<typename MODEL, typename OBS>
 void CostJbTotal<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cdaConfig,
-                                               std::vector<util::DateTime> & newtimes) {
+                                               std::vector<util::DateTime> & newtimes,
+                                               const CtrlVar_ * xx) {
   Log::trace() << "CostJbTotal::applyContDaUpdate start" << std::endl;
   if (cdaConfig.has("time window")) {
     util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
     timeWindow_ = newWindow;
-    jb_->updateTimes(newtimes);
   }
+  jb_->applyContDaUpdate(cdaConfig, newtimes, xx);
   jbObsBias_.reset(new JbObsAux_(odb_, conf_.getSubConfiguration("observations.observers")));
-  Log::trace() << "CostJbTotal::applyContDaUpdate done" << std::endl;
-}
 
-template<typename MODEL, typename OBS>
-void CostJbTotal<MODEL, OBS>::updateBG(const CtrlVar_ & xx) {
-  Log::trace() << "CostJbTotal::updateBG start" << std::endl;
-  xb_.state() = xx.state();
-  jb_->updateBgState(xb_);
-  Log::trace() << "CostJbTotal::updateBG done" << std::endl;
+  if (xx) {
+    xb_.state() = xx->state();
+  }
+  Log::trace() << "CostJbTotal::applyContDaUpdate done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

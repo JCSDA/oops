@@ -87,11 +87,10 @@ template<typename MODEL, typename OBS> class CostJbJq : public CostJbState<MODEL
 /// Randomize
   void randomize(CtrlInc_ &) const override;
 
-/// Update time_ for continuous DA changing window
-  void updateTimes(const std::vector<util::DateTime> &)  override;
-
-/// Update background for continuous DA changing window
-  void updateBgState(const CtrlVar_ & xb) override;
+  std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> & getB() override {return B_;}
+  std::shared_ptr<State_> & getBackground() override {return bg_;}
+  eckit::LocalConfiguration & getConf() override {return conf_;}
+  void updateTimes(const std::vector<util::DateTime> & newtimes) override {times_ = newtimes;}
 
 /// Accessors to data for constructing a new increment.
   const Geometry_ & geometry() const override {return *resol_;}
@@ -105,7 +104,7 @@ template<typename MODEL, typename OBS> class CostJbJq : public CostJbState<MODEL
   std::shared_ptr<State_> bg_;
   const Variables ctlvars_;
   const Geometry_ * resol_;
-  const eckit::LocalConfiguration conf_;
+  eckit::LocalConfiguration conf_;
   const eckit::mpi::Comm & commTime_;
   std::shared_ptr<JqTerm_> jq_;
   std::vector<util::DateTime> times_;
@@ -283,24 +282,6 @@ void CostJbJq<MODEL, OBS>::randomize(CtrlInc_ & dx) const {
   Log::trace() << "CostJbJq::randomize start" << std::endl;
   B_->randomize(dx.states());
   Log::trace() << "CostJbJq::randomize done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL, typename OBS>
-void CostJbJq<MODEL, OBS>::updateTimes(const std::vector<util::DateTime> & newtimes) {
-  Log::trace() << "CostJbJq::updateTimes start" << std::endl;
-  times_ = newtimes;
-  Log::trace() << "CostJbJq::updateTimes done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL, typename OBS>
-void CostJbJq<MODEL, OBS>::updateBgState(const CtrlVar_ & xb) {
-  Log::trace() << "CostJbJq::updateBGState start" << std::endl;
-  bg_.reset(new State_(xb.states().geometry(), xb.states()));
-  Log::trace() << "CostJbJq::updateBGState done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

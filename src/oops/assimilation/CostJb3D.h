@@ -88,11 +88,11 @@ template<typename MODEL, typename OBS> class CostJb3D : public CostJbState<MODEL
 /// Randomize
   void randomize(CtrlInc_ &) const override;
 
-/// Update time_ for continuous DA changing window
-  void updateTimes(const std::vector<util::DateTime> &)  override;
-
-/// Update background for continuous DA changing window
-  void updateBgState(const CtrlVar_ & xb) override;
+/// Update time_ and B config for continuous DA changing window
+  std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> & getB() override {return B_;}
+  std::shared_ptr<State_> & getBackground() override {return bg_;}
+  eckit::LocalConfiguration & getConf() override {return conf_;}
+  void updateTimes(const std::vector<util::DateTime> & newtimes) override {time_[0] = newtimes[0];}
 
 /// Accessors to data for constructing a new increment.
   const Geometry_ & geometry() const override {return *resol_;}
@@ -107,7 +107,7 @@ template<typename MODEL, typename OBS> class CostJb3D : public CostJbState<MODEL
   const Variables ctlvars_;
   const Geometry_ * resol_;
   std::vector<util::DateTime> time_;
-  const eckit::LocalConfiguration conf_;
+  eckit::LocalConfiguration conf_;
 };
 
 // -----------------------------------------------------------------------------
@@ -183,20 +183,6 @@ void CostJb3D<MODEL, OBS>::Bminv(const CtrlInc_ & dxin, CtrlInc_ & dxout) const 
 template<typename MODEL, typename OBS>
 void CostJb3D<MODEL, OBS>::randomize(CtrlInc_ & dx) const {
   B_->randomize(dx.states());
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL, typename OBS>
-void CostJb3D<MODEL, OBS>::updateTimes(const std::vector<util::DateTime> & newtimes) {
-  time_[0] = newtimes[0];
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL, typename OBS>
-void CostJb3D<MODEL, OBS>::updateBgState(const CtrlVar_ & xb) {
-  bg_.reset(new State_(xb.states().geometry(), xb.states()));
 }
 
 // -----------------------------------------------------------------------------

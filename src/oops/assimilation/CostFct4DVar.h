@@ -244,12 +244,6 @@ void CostFct4DVar<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
     timeWindow_ = newWindow;
   }
 
-  // for VarBC, update for jb needs to be called even if window is not shifted
-  // note if timeWindow is not changed times remains unchanged
-  std::vector<util::DateTime> startTime(1);
-  startTime[0] = timeWindow_.start();
-  this->getNonConstJb()->applyContDaUpdate(cdaConfig, startTime);
-
   std::vector<std::shared_ptr<CostBase_>> & jterms = this->getJTerms();
   // update for constraint terms
   if (jterms.size() > 1) {
@@ -257,13 +251,22 @@ void CostFct4DVar<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
       jterms[jj]->applyContDaUpdate(cdaConfig);
     }
   }
+
   // advance state shifting window forwad
+  const CtrlVar_ * p_xx = nullptr;
   if (timeWindow_.start() != xx.state().validTime()) {
-  PostProcessor<State_> post;
-  ASSERT(xx.states().is_3d());
-  model_.forecast(xx.state(), xx.modVar(), timeWindow_.start() - xx.state().validTime() , post);
-  this->getNonConstJb()->updateBG(xx);
+    PostProcessor<State_> post;
+    ASSERT(xx.states().is_3d());
+    model_.forecast(xx.state(), xx.modVar(), timeWindow_.start() - xx.state().validTime() , post);
+    p_xx = &xx;
   }
+
+  // for VarBC, update for jb needs to be called even if window is not shifted
+  // note if timeWindow is not changed times remains unchanged
+  std::vector<util::DateTime> startTime(1);
+  startTime[0] = timeWindow_.start();
+  this->getNonConstJb()->applyContDaUpdate(cdaConfig, startTime, p_xx);
+
   Log::trace() << "CostFct4DVar::applyContDaUpdate done" << std::endl;
 }
 

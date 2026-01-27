@@ -375,19 +375,11 @@ void CostFctWeak<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
   if (cdaConfig.has("time window")) {
     ASSERT(cdaConfig.getSubConfiguration("time window").has("subwindow"));
     throw eckit::NotImplemented("oops::CostFctWeak: continuous DA"
-                    "window shift not implemented for weak constraint. ", Here());
+                    "window shift not fully implemented for weak constraint. ", Here());
     util::TimeWindow newWindow(cdaConfig.getSubConfiguration("time window"));
     timeWindow_ = newWindow;
     ASSERT(timeWindow_.length().toSeconds() == subWinLength_.toSeconds()*(int64_t)nsubwin_);
   }
-
-  // for VarBC, update for jb needs to be called even if window is not shifted
-  // note if timeWindow is not changed times remains unchanged
-  std::vector<util::DateTime> times;
-  for (util::DateTime jj = timeWindow_.start(); jj <= timeWindow_.end(); jj += subWinLength_) {
-    times.push_back(jj);
-  }
-  this->getNonConstJb()->applyContDaUpdate(cdaConfig, times);
 
   std::vector<std::shared_ptr<CostBase_>> & jterms = this->getJTerms();
   // update for constraint terms
@@ -397,13 +389,25 @@ void CostFctWeak<MODEL, OBS>::applyContDaUpdate(CtrlVar_ & xx,
     }
   }
   // advance window if shifting
-  PostProcessor<State_> post;
-  ASSERT(xx.states().is_4d());
-  util::Duration subWinShift(timeWindow_.start()-xx.state(0).validTime());
-  for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
-    model_->forecast(xx.state(jsub), xx.modVar(), subWinShift, post);
+  const CtrlVar_ * p_xx = nullptr;
+  if (timeWindow_.start() != xx.state().validTime()) {
+    PostProcessor<State_> post;
+    ASSERT(xx.states().is_4d());
+    util::Duration subWinShift(timeWindow_.start()-xx.state(0).validTime());
+    for (size_t jsub = 0; jsub < nsublocal_; ++jsub) {
+      model_->forecast(xx.state(jsub), xx.modVar(), subWinShift, post);
+    }
+    p_xx = &xx;
   }
-  this->getNonConstJb()->updateBG(xx);
+
+  // for VarBC, update for jb needs to be called even if window is not shifted
+  // note if timeWindow is not changed times remains unchanged
+  std::vector<util::DateTime> times;
+  for (util::DateTime jj = timeWindow_.start(); jj <= timeWindow_.end(); jj += subWinLength_) {
+    times.push_back(jj);
+  }
+  this->getNonConstJb()->applyContDaUpdate(cdaConfig, times, p_xx);
+
   Log::trace() << "CostFctWeak::applyContDaUpdate done" << std::endl;
 }
 

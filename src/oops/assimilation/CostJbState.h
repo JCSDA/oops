@@ -22,6 +22,7 @@ namespace oops {
   template<typename MODEL> class Geometry;
   template<typename MODEL> class JqTerm;
   template<typename MODEL> class JqTermTLAD;
+  template<typename MODEL> class ModelSpaceCovarianceBase;
   template<typename MODEL> class PostProcessor;
   template<typename MODEL> class State;
   template<typename MODEL> class State4D;
@@ -81,11 +82,15 @@ template<typename MODEL, typename OBS> class CostJbState : private boost::noncop
 /// Randomize
   virtual void randomize(CtrlInc_ &) const = 0;
 
-/// CDA update for jb state terms
-  virtual void updateTimes(const std::vector<util::DateTime> &) = 0;
+/// CDA update for jb state terms, including updating B config if present
+  virtual void applyContDaUpdate(const eckit::Configuration &,
+                                 const std::vector<util::DateTime> &,
+                                 const CtrlVar_ * = nullptr);
 
-/// CDA update for jb backgrounds
-  virtual void updateBgState(const CtrlVar_ & xb) = 0;
+  virtual std::unique_ptr<ModelSpaceCovarianceBase<MODEL>> & getB() = 0;
+  virtual std::shared_ptr<State_> & getBackground() = 0;
+  virtual eckit::LocalConfiguration & getConf() = 0;
+  virtual void updateTimes(const std::vector<util::DateTime> &) = 0;
 
 /// Accessors to data for constructing a new increment.
   virtual const Geometry_ & geometry() const = 0;
@@ -96,6 +101,23 @@ template<typename MODEL, typename OBS> class CostJbState : private boost::noncop
 };
 
 // -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+template<typename MODEL, typename OBS>
+void CostJbState<MODEL, OBS>::applyContDaUpdate(const eckit::Configuration & cdaConfig,
+                                             const std::vector<util::DateTime> & newtimes,
+                                             const CtrlVar_ * xx) {
+  Log::trace() << "CostJbState::applyContDaUpdate start" << std::endl;
+  updateTimes(newtimes);
+  if (cdaConfig.has("background error")) {
+    getConf() = cdaConfig.getSubConfiguration("background error");
+    getB().reset();
+  }
+  if (xx) {
+    getBackground().reset(new State_(geometry(), xx->states()));
+  }
+  Log::trace() << "CostJbState::applyContDaUpdate done" << std::endl;
+}
 
 }  // namespace oops
 
