@@ -222,6 +222,7 @@ list(
 
   oops/coupled/AuxCoupledModel.h
   oops/coupled/BlockDiagonalCovarianceCoupled.h
+  oops/coupled/DataSetCoupled.h
   oops/coupled/ErrorCovarianceCoupled.h
   oops/coupled/GeometryCoupled.h
   oops/coupled/GetValuesCoupled.h

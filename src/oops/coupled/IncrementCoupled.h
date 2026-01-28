@@ -52,6 +52,10 @@ class IncrementCoupled : public util::Printable {
   const Increment<MODEL1> & increment1() const {ASSERT(dx1_); return *dx1_;}
   const Increment<MODEL2> & increment2() const {ASSERT(dx2_); return *dx2_;}
 
+  // Specialized access for ownership sharing with Increment4D
+  const std::shared_ptr<Increment<MODEL1>>& getIncrementPtr1() const { return dx1_; }
+  const std::shared_ptr<Increment<MODEL2>>& getIncrementPtr2() const { return dx2_; }
+
   /// ATLAS
   void toFieldSet(atlas::FieldSet &) const {throw eckit::NotImplemented(Here());}
   void fromFieldSet(const atlas::FieldSet &) {throw eckit::NotImplemented(Here());}
@@ -104,8 +108,8 @@ class IncrementCoupled : public util::Printable {
   static std::string name2() {return MODEL2::name();}
   void print(std::ostream &) const;
   std::shared_ptr<const GeometryCoupled_> geom_;
-  std::unique_ptr<Increment<MODEL1>> dx1_;
-  std::unique_ptr<Increment<MODEL2>> dx2_;
+  std::shared_ptr<Increment<MODEL1>> dx1_;
+  std::shared_ptr<Increment<MODEL2>> dx2_;
   bool parallel_;
   Variables vars_;
 };
@@ -121,16 +125,16 @@ IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const GeometryCoupled_ & reso
   std::vector<Variables> splitvars = splitVariables(vars, resol.variables());
   if (parallel_) {
     if (resol.modelNumber() == 1) {
-      dx1_ = std::make_unique<Increment<MODEL1>>(resol.geometry1(), splitvars[0], time);
+      dx1_ = std::make_shared<Increment<MODEL1>>(resol.geometry1(), splitvars[0], time);
       vars_ = dx1_->variables();
     }
     if (resol.modelNumber() == 2) {
-      dx2_ = std::make_unique<Increment<MODEL2>>(resol.geometry2(), splitvars[1], time);
+      dx2_ = std::make_shared<Increment<MODEL2>>(resol.geometry2(), splitvars[1], time);
       vars_ = dx2_->variables();
     }
   } else {
-    dx1_ = std::make_unique<Increment<MODEL1>>(resol.geometry1(), splitvars[0], time);
-    dx2_ = std::make_unique<Increment<MODEL2>>(resol.geometry2(), splitvars[1], time);
+    dx1_ = std::make_shared<Increment<MODEL1>>(resol.geometry1(), splitvars[0], time);
+    dx2_ = std::make_shared<Increment<MODEL2>>(resol.geometry2(), splitvars[1], time);
     vars_ = dx1_->variables();
     vars_ += dx2_->variables();
   }
@@ -147,8 +151,8 @@ IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const GeometryCoupled_ & reso
     vars_(other.vars_) {
   Log::trace() << "IncrementCoupled::IncrementCoupled interpolated starting" << std::endl;
   ASSERT(parallel_ == other.parallel_);
-  if (other.dx1_) dx1_ = std::make_unique<Increment<MODEL1>>(resol.geometry1(), *other.dx1_, ad);
-  if (other.dx2_) dx2_ = std::make_unique<Increment<MODEL2>>(resol.geometry2(), *other.dx2_, ad);
+  if (other.dx1_) dx1_ = std::make_shared<Increment<MODEL1>>(resol.geometry1(), *other.dx1_, ad);
+  if (other.dx2_) dx2_ = std::make_shared<Increment<MODEL2>>(resol.geometry2(), *other.dx2_, ad);
   Log::trace() << "IncrementCoupled::IncrementCoupled interpolated done" << std::endl;
 }
 
@@ -158,8 +162,8 @@ template<typename MODEL1, typename MODEL2>
 IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const IncrementCoupled & other, const bool copy)
   : geom_(other.geom_), dx1_(), dx2_(), parallel_(other.parallel_), vars_(other.vars_) {
   Log::trace() << "IncrementCoupled::IncrementCoupled copy starting" << std::endl;
-  if (other.dx1_) dx1_ = std::make_unique<Increment<MODEL1>>(*other.dx1_, copy);
-  if (other.dx2_) dx2_ = std::make_unique<Increment<MODEL2>>(*other.dx2_, copy);
+  if (other.dx1_) dx1_ = std::make_shared<Increment<MODEL1>>(*other.dx1_, copy);
+  if (other.dx2_) dx2_ = std::make_shared<Increment<MODEL2>>(*other.dx2_, copy);
   Log::trace() << "IncrementCoupled::IncrementCoupled copy done" << std::endl;
 }
 

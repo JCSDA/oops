@@ -77,6 +77,9 @@ class DataSetBase : public util::Printable {
  protected:
   DataSetBase(const std::vector<util::DateTime> &, const eckit::mpi::Comm &,
               const std::vector<int> &, const eckit::mpi::Comm &);
+  DataSetBase(const std::vector<util::DateTime> &, const eckit::mpi::Comm &,
+              const std::vector<int> &, const eckit::mpi::Comm &,
+              const std::vector<std::shared_ptr<DATA>> &);
   DataSetBase(const eckit::mpi::Comm &, const eckit::mpi::Comm &);
   DataSetBase(const DataSetBase &);
   std::vector<eckit::LocalConfiguration> configure(const eckit::Configuration &);
@@ -85,8 +88,8 @@ class DataSetBase : public util::Printable {
   void check_consistency() const;
   void check_consistency(const DataSetBase &, const bool strict_members = true) const;
 
-  std::vector<std::unique_ptr<DATA>> & dataset() {return dataset_;}
-  const std::vector<std::unique_ptr<DATA>> & dataset() const {return dataset_;}
+  std::vector<std::shared_ptr<DATA>> & dataset() {return dataset_;}
+  const std::vector<std::shared_ptr<DATA>> & dataset() const {return dataset_;}
 
  private:
   DATA & data(const size_t it, const size_t im) {return *dataset_.at(im * localtimes_ + it);}
@@ -105,7 +108,7 @@ class DataSetBase : public util::Printable {
   const eckit::mpi::Comm & commEns_;
   std::vector<size_t> mymembers_;
 
-  std::vector<std::unique_ptr<DATA>> dataset_;
+  std::vector<std::shared_ptr<DATA>> dataset_;
 
   void print(std::ostream &) const;
   virtual std::string classname() const = 0;
@@ -137,6 +140,22 @@ DataSetBase<DATA, GEOM>::DataSetBase(const std::vector<util::DateTime> & times,
       ASSERT(alltimes_[jt] - alltimes_[jt-1] == subWinLength_);
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename DATA, typename GEOM>
+DataSetBase<DATA, GEOM>::DataSetBase(const std::vector<util::DateTime> & times,
+                                     const eckit::mpi::Comm & commTime,
+                                     const std::vector<int> & members,
+                                     const eckit::mpi::Comm & commEns,
+                                     const std::vector<std::shared_ptr<DATA>> & data)
+  : DataSetBase<DATA, GEOM>(times, commTime, members, commEns)
+{
+  for (const auto & d : data) {
+    dataset_.emplace_back(d);
+  }
+  this->check_consistency();
 }
 
 // -----------------------------------------------------------------------------

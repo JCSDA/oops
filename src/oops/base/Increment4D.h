@@ -11,6 +11,7 @@
 #ifndef OOPS_BASE_INCREMENT4D_H_
 #define OOPS_BASE_INCREMENT4D_H_
 
+#include <memory>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -37,6 +38,9 @@ template<typename MODEL> class Increment4D : public IncrementSet<MODEL> {
               const eckit::mpi::Comm & commTime = oops::mpi::myself());
   Increment4D(const Increment4D &, const bool copy = true);
   Increment4D(const Geometry_ &, const Increment4D &);
+  Increment4D(const std::vector<util::DateTime> &, const eckit::mpi::Comm &,
+              const std::vector<int> &, const eckit::mpi::Comm &,
+              const std::vector<std::shared_ptr<Increment_>> &);
 
   void ones();
   void dirac(const eckit::Configuration &);
@@ -75,6 +79,17 @@ Increment4D<MODEL>::Increment4D(const Geometry_ & resol, const Increment4D & oth
 {
   ASSERT(this->is_4d());
   Log::trace() << "Increment4D:Increment4D created resol." << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+template<typename MODEL>
+Increment4D<MODEL>::Increment4D(const std::vector<util::DateTime> & times,
+                                const eckit::mpi::Comm & commTime,
+                                const std::vector<int> & members, const eckit::mpi::Comm & commEns,
+                                const std::vector<std::shared_ptr<Increment_>> & dataset)
+  : IncrementSet<MODEL>(times, commTime, members, commEns, dataset) {
+  ASSERT(this->is_4d());
+  Log::trace() << "Increment4D:Increment4D from dataset created." << std::endl;
 }
 
 // -----------------------------------------------------------------------------

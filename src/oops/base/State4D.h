@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -40,6 +41,10 @@ template<typename MODEL> class State4D : public StateSet<MODEL> {
           const std::vector<util::DateTime> &,
           const eckit::mpi::Comm & commTime = oops::mpi::myself());
   State4D(const Geometry_ &, const State4D &);
+  State4D(const std::vector<util::DateTime> & times,
+          const eckit::mpi::Comm & commTime,
+          const std::vector<int> & members, const eckit::mpi::Comm & commEns,
+          const std::vector<std::shared_ptr<State_>> & dataset);
 
   /// Accumulator
   void zero();
@@ -82,6 +87,18 @@ State4D<MODEL>::State4D(const Geometry_ & resol, const State4D & other)
 {
   ASSERT(this->is_4d());
   Log::trace() << "State4D constructed." << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+State4D<MODEL>::State4D(const std::vector<util::DateTime> & times,
+                        const eckit::mpi::Comm & commTime,
+                        const std::vector<int> & members, const eckit::mpi::Comm & commEns,
+                        const std::vector<std::shared_ptr<State_>> & dataset)
+  : StateSet<MODEL>(times, commTime, members, commEns, dataset) {
+  ASSERT(this->is_4d());
+  Log::trace() << "State4D constructed from dataset." << std::endl;
 }
 
 // -----------------------------------------------------------------------------

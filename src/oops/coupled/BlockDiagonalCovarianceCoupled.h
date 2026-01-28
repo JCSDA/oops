@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "oops/base/ModelSpaceCovarianceBase.h"
+#include "oops/coupled/DataSetCoupled.h"
 #include "oops/coupled/GeometryCoupled.h"
 #include "oops/coupled/IncrementCoupled.h"
 #include "oops/coupled/StateCoupled.h"
@@ -39,11 +40,7 @@ class BlockDiagonalCovarianceCoupled :
   typedef TraitCoupled<MODEL1, MODEL2> COUPLED;
   typedef Geometry<COUPLED>                Geometry_;
   typedef Increment4D<COUPLED>             Increment4D_;
-  typedef Increment4D<MODEL1>              Increment4D_1_;
-  typedef Increment4D<MODEL2>              Increment4D_2_;
   typedef State4D<COUPLED>                 State4D_;
-  typedef State4D<MODEL1>                  State4D_1_;
-  typedef State4D<MODEL2>                  State4D_2_;
   typedef ModelSpaceCovarianceBase<MODEL1> ErrorCovariance1_;
   typedef ModelSpaceCovarianceBase<MODEL2> ErrorCovariance2_;
  public:
@@ -78,29 +75,11 @@ BlockDiagonalCovarianceCoupled<MODEL1, MODEL2>::BlockDiagonalCovarianceCoupled(
   const eckit::LocalConfiguration conf2(config, MODEL2::name());
   const std::vector<Variables> splitvars = splitVariables(vars, geom.geometry().variables());
 
-  // Create proper State4D objects for each component model
-  State4D_1_ xb1(xb.geometry().geometry().geometry1(),
-                 xb[0].state().state1().variables(), xb.validTimes(), xb.commTime());
-  State4D_2_ xb2(xb.geometry().geometry().geometry2(),
-                 xb[0].state().state2().variables(), xb.validTimes(), xb.commTime());
-
-  // Create proper FG State4D objects for each component model
-  State4D_1_ fg1(fg.geometry().geometry().geometry1(),
-                 fg[0].state().state1().variables(), fg.validTimes(), fg.commTime());
-  State4D_2_ fg2(fg.geometry().geometry().geometry2(),
-                 fg[0].state().state2().variables(), fg.validTimes(), fg.commTime());
-
-  // Copy data from coupled State4D objects to component State4D objects
-  for (size_t jt = 0; jt < xb.size(); ++jt) {
-    // Get the state for this time
-    const auto& xbState = xb[jt];
-    const auto& fgState = fg[jt];
-    // Copy component model states
-    xb1[jt] = xbState.state().state1();
-    xb2[jt] = xbState.state().state2();
-    fg1[jt] = fgState.state().state1();
-    fg2[jt] = fgState.state().state2();
-  }
+  // Create component State4D objects using specialized constructors (zero-copy)
+  State4D<MODEL1> xb1 = share_state1(xb);
+  State4D<MODEL2> xb2 = share_state2(xb);
+  State4D<MODEL1> fg1 = share_state1(fg);
+  State4D<MODEL2> fg2 = share_state2(fg);
   cov1_ = std::unique_ptr<ErrorCovariance1_>(CovarianceFactory<MODEL1>::create(
                geom.geometry().geometry1(), splitvars[0], conf1, xb1, fg1));
   cov2_ = std::unique_ptr<ErrorCovariance2_>(CovarianceFactory<MODEL2>::create(
@@ -113,37 +92,13 @@ template<typename MODEL1, typename MODEL2>
 void BlockDiagonalCovarianceCoupled<MODEL1, MODEL2>::doMultiply(
     const Increment4D_ & dx, Increment4D_ & dy) const {
   Log::trace() << "BlockDiagonalCovarianceCoupled::doMultiply starting" << std::endl;
-  Increment4D_1_ dx1(dx[0].geometry().geometry().geometry1(),
-            dx[0].increment().increment1().variables(), dx.validTimes(), dx.commTime());
-  Increment4D_1_ dy1(dy[0].geometry().geometry().geometry1(),
-            dy[0].increment().increment1().variables(), dx.validTimes(), dx.commTime());
-  // Copy data from coupled increment to component increment for all timesteps
-  for (size_t jt = 0; jt < dx.size(); ++jt) {
-    dx1[jt] = dx[jt].increment().increment1();
-    dy1[jt] = dy[jt].increment().increment1();
-  }
-  // Apply the covariance to all timesteps at once
+  // Create component increments using specialized constructors (no copies made)
+  Increment4D<MODEL1> dx1 = share_increment1(dx);
+  Increment4D<MODEL2> dx2 = share_increment2(dx);
+  Increment4D<MODEL1> dy1 = share_increment1(dy);
+  Increment4D<MODEL2> dy2 = share_increment2(dy);
   cov1_->multiply(dx1, dy1);
-  // Copy results back to coupled increments
-  for (size_t jt = 0; jt < dx.size(); ++jt) {
-    dy[jt].increment().increment1() = dy1[jt];
-  }
-  Increment4D_2_ dx2(dx[0].geometry().geometry().geometry2(),
-         dx[0].increment().increment2().variables(), dx.validTimes(), dx.commTime());
-  Increment4D_2_ dy2(dy[0].geometry().geometry().geometry2(),
-         dy[0].increment().increment2().variables(), dx.validTimes(), dx.commTime());
-  // Copy data from coupled increment to component increment for all timesteps
-  for (size_t jt = 0; jt < dx.size(); ++jt) {
-    dx2[jt] = dx[jt].increment().increment2();
-    dy2[jt] = dy[jt].increment().increment2();
-  }
-
-  // Apply the covariance to all timesteps at once
   cov2_->multiply(dx2, dy2);
-  // Copy results back to coupled increments
-  for (size_t jt = 0; jt < dx.size(); ++jt) {
-    dy[jt].increment().increment2() = dy2[jt];
-  }
   Log::trace() << "BlockDiagonalCovarianceCoupled::doMultiply done" << std::endl;
 }
 
@@ -152,35 +107,13 @@ template<typename MODEL1, typename MODEL2>
 void BlockDiagonalCovarianceCoupled<MODEL1, MODEL2>::doInverseMultiply(
     const Increment4D_ & dx, Increment4D_ & dy) const {
   Log::trace() << "BlockDiagonalCovarianceCoupled::doInverseMultiply starting" << std::endl;
-
-  Increment4D_1_ dx1(dx[0].geometry().geometry().geometry1(),
-          dx[0].increment().increment1().variables(), dx.validTimes(), dx.commTime());
-  Increment4D_1_ dy1(dy[0].geometry().geometry().geometry1(),
-          dy[0].increment().increment1().variables(), dx.validTimes(), dx.commTime());
-  // Copy data from coupled increment to component increment for all timesteps
-  for (size_t jt = 0; jt < dx.size(); ++jt) {
-    dx1[jt] = dx[jt].increment().increment1();
-  }
-  // Apply the inverse covariance to all timesteps at once
+  // Create component increments using specialized constructors (no copies made)
+  Increment4D<MODEL1> dx1 = share_increment1(dx);
+  Increment4D<MODEL2> dx2 = share_increment2(dx);
+  Increment4D<MODEL1> dy1 = share_increment1(dy);
+  Increment4D<MODEL2> dy2 = share_increment2(dy);
   cov1_->inverseMultiply(dx1, dy1);
-  // Copy results back to coupled increments
-  for (size_t jt = 0; jt < dx.size(); ++jt) {
-    dy[jt].increment().increment1() = dy1[jt];
-  }
-  Increment4D_2_ dx2(dx[0].geometry().geometry().geometry2(),
-            dx[0].increment().increment2().variables(), dx.validTimes(), dx.commTime());
-  Increment4D_2_ dy2(dy[0].geometry().geometry().geometry2(),
-            dy[0].increment().increment2().variables(), dx.validTimes(), dx.commTime());
-  // Copy data from coupled increment to component increment for all timesteps
-  for (size_t jt = 0; jt < dx.size(); ++jt) {
-    dx2[jt] = dx[jt].increment().increment2();
-  }
-  // Apply the inverse covariance to all timesteps at once
   cov2_->inverseMultiply(dx2, dy2);
-  // Copy results back to coupled increments
-  for (size_t jt = 0; jt < dx.size(); ++jt) {
-    dy[jt].increment().increment2() = dy2[jt];
-  }
   Log::trace() << "BlockDiagonalCovarianceCoupled::doInverseMultiply done" << std::endl;
 }
 
@@ -188,22 +121,11 @@ void BlockDiagonalCovarianceCoupled<MODEL1, MODEL2>::doInverseMultiply(
 template<typename MODEL1, typename MODEL2>
 void BlockDiagonalCovarianceCoupled<MODEL1, MODEL2>::doRandomize(Increment4D_ & dx) const {
   Log::trace() << "BlockDiagonalCovarianceCoupled::doRandomize starting" << std::endl;
-  Increment4D_1_ dx1(dx[0].geometry().geometry().geometry1(),
-        dx[0].increment().increment1().variables(), dx.validTimes(), dx.commTime());
-  // Randomize the entire component increment at once
+  // Create component increments using specialized constructors (no copies made)
+  Increment4D<MODEL1> dx1 = share_increment1(dx);
+  Increment4D<MODEL2> dx2 = share_increment2(dx);
   cov1_->randomize(dx1);
-  // Copy results back to coupled increments
-  for (size_t jt = 0; jt < dx.size(); ++jt) {
-    dx[jt].increment().increment1() = dx1[jt];
-  }
-  Increment4D_2_ dx2(dx[0].geometry().geometry().geometry2(),
-        dx[0].increment().increment2().variables(), dx.validTimes(), dx.commTime());
-  // Randomize the entire component increment at once
   cov2_->randomize(dx2);
-  // Copy results back to coupled increments
-  for (size_t jt = 0; jt < dx.size(); ++jt) {
-    dx[jt].increment().increment2() = dx2[jt];
-  }
   Log::trace() << "BlockDiagonalCovarianceCoupled::doRandomize done" << std::endl;
 }
 

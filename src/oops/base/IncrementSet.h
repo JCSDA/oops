@@ -53,6 +53,10 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
   IncrementSet(const Geometry_ &, const Variables &, States_ &, const bool clearStates = false);
   IncrementSet(const StateEnsemble4D_ &, const States_ &, const Variables &,
                const std::vector<int> &);
+  IncrementSet(const std::vector<util::DateTime> &, const eckit::mpi::Comm &,
+               const std::vector<int> &, const eckit::mpi::Comm &,
+               const std::vector<std::shared_ptr<Increment_>> &);
+
   virtual ~IncrementSet() = default;
 
   void zero();
@@ -229,6 +233,18 @@ IncrementSet<MODEL>::IncrementSet(const StateEnsemble4D_ &ens, const States_ &me
             (*this)(itime, iens).diff(ens[iens][itime], mean[itime]);
         }
     }
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+IncrementSet<MODEL>::IncrementSet(const std::vector<util::DateTime> & times,
+                                  const eckit::mpi::Comm & commTime,
+                                  const std::vector<int> & members,
+                                  const eckit::mpi::Comm & commEns,
+                                  const std::vector<std::shared_ptr<Increment_>> & dataset)
+  : DataSetBase<Increment_, Geometry_>(times, commTime, members, commEns, dataset) {
+  Log::trace() << "IncrementSet:IncrementSet from dataset created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -48,6 +48,9 @@ class StateCoupled : public util::Printable {
   State<MODEL2> & state2() {ASSERT(xx2_); return *xx2_;}
   const State<MODEL1> & state1() const {ASSERT(xx1_); return *xx1_;}
   const State<MODEL2> & state2() const {ASSERT(xx2_); return *xx2_;}
+  // Specialized access for ownership sharing with State4D
+  const std::shared_ptr<State<MODEL1>>& getStatePtr1() const { return xx1_; }
+  const std::shared_ptr<State<MODEL2>>& getStatePtr2() const { return xx2_; }
 
   /// ATLAS
   void toFieldSet(atlas::FieldSet &) const {ABORT("toFieldSet not implemented");}
@@ -77,8 +80,8 @@ class StateCoupled : public util::Printable {
  private:
   void print(std::ostream &) const;
   std::shared_ptr<const GeometryCoupled_> geom_;
-  std::unique_ptr<State<MODEL1>> xx1_;
-  std::unique_ptr<State<MODEL2>> xx2_;
+  std::shared_ptr<State<MODEL1>> xx1_;
+  std::shared_ptr<State<MODEL2>> xx2_;
   bool parallel_;
   Variables vars_;  // Add 'updateVars' method when implementing coupled variable change
 };
@@ -94,16 +97,16 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
   std::vector<Variables> splitvars = splitVariables(vars, resol.variables());
   if (parallel_) {
     if (resol.modelNumber() == 1) {
-      xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), splitvars[0], time);
+      xx1_ = std::make_shared<State<MODEL1>>(resol.geometry1(), splitvars[0], time);
       vars_ = xx1_->variables();
     }
     if (resol.modelNumber() == 2) {
-      xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), splitvars[1], time);
+      xx2_ = std::make_shared<State<MODEL2>>(resol.geometry2(), splitvars[1], time);
       vars_ = xx2_->variables();
     }
   } else {
-    xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), splitvars[0], time);
-    xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), splitvars[1], time);
+    xx1_ = std::make_shared<State<MODEL1>>(resol.geometry1(), splitvars[0], time);
+    xx2_ = std::make_shared<State<MODEL2>>(resol.geometry2(), splitvars[1], time);
     vars_ = xx1_->variables();
     vars_ += xx2_->variables();
   }
@@ -122,16 +125,16 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
   const eckit::LocalConfiguration conf2(config, MODEL2::name());
   if (parallel_) {
     if (resol.modelNumber() == 1) {
-      xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), conf1);
+      xx1_ = std::make_shared<State<MODEL1>>(resol.geometry1(), conf1);
       vars_ = xx1_->variables();
     }
     if (resol.modelNumber() == 2) {
-      xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), conf2);
+      xx2_ = std::make_shared<State<MODEL2>>(resol.geometry2(), conf2);
       vars_ = xx2_->variables();
     }
   } else {
-    xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), conf1);
-    xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), conf2);
+    xx1_ = std::make_shared<State<MODEL1>>(resol.geometry1(), conf1);
+    xx2_ = std::make_shared<State<MODEL2>>(resol.geometry2(), conf2);
     vars_ = xx1_->variables();
     vars_ += xx2_->variables();
   }
@@ -147,8 +150,8 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
     vars_(other.vars_) {
   Log::trace() << "StateCoupled::StateCoupled interpolated starting" << std::endl;
   ASSERT(parallel_ == other.parallel_);
-  if (other.xx1_) xx1_ = std::make_unique<State<MODEL1>>(resol.geometry1(), *other.xx1_);
-  if (other.xx2_) xx2_ = std::make_unique<State<MODEL2>>(resol.geometry2(), *other.xx2_);
+  if (other.xx1_) xx1_ = std::make_shared<State<MODEL1>>(resol.geometry1(), *other.xx1_);
+  if (other.xx2_) xx2_ = std::make_shared<State<MODEL2>>(resol.geometry2(), *other.xx2_);
   Log::trace() << "StateCoupled::StateCoupled interpolated done" << std::endl;
 }
 
@@ -167,8 +170,8 @@ template<typename MODEL1, typename MODEL2>
 StateCoupled<MODEL1, MODEL2>::StateCoupled(const StateCoupled & other)
   : geom_(other.geom_), xx1_(), xx2_(), parallel_(other.parallel_), vars_(other.vars_) {
   Log::trace() << "StateCoupled::StateCoupled starting copy" << std::endl;
-  if (other.xx1_) xx1_ = std::make_unique<State<MODEL1>>(*other.xx1_);
-  if (other.xx2_) xx2_ = std::make_unique<State<MODEL2>>(*other.xx2_);
+  if (other.xx1_) xx1_ = std::make_shared<State<MODEL1>>(*other.xx1_);
+  if (other.xx2_) xx2_ = std::make_shared<State<MODEL2>>(*other.xx2_);
   Log::trace() << "StateCoupled::StateCoupled copy done" << std::endl;
 }
 
