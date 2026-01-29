@@ -150,6 +150,12 @@ template <typename MODEL, typename OBS> void testGetValuesConstructor() {
 ///    GetValues is of high accuracy.
 ///
 /// These two GeoVaLs are then checked to match within a specified tolerance.
+///
+/// \note In its design, this test carries the requirement that the State and the
+///       GeoVals can be initialized to the same analytic formula. Furthermore,
+///       in the current structure of the test, the model-interface State constructor
+///       must accept the analytic formula from a `state.analytic init` key, with
+///       the `analytic init` key being shared with the obs-interface GeoVaLs constructor.
 template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   typedef GetValuesFixture<MODEL, OBS>    Test_;
   typedef oops::VariableChange<MODEL>     VariableChange_;
@@ -186,7 +192,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
 
   // Fill GeoVaLs with exact values
   const eckit::LocalConfiguration analyticConf(confgen, "analytic init");
-  GeoVaLs_ ref(Test_::locations(), Test_::variables(), Test_::varsizes(), analyticConf);
+  GeoVaLs_ ref(Test_::locations(), gval, analyticConf);
 
   EXPECT(ref.rms() > 0.0);
 
@@ -194,17 +200,8 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   // and check to see if the errors are within specified tolerance
   const double tol = TestEnvironment::config().getDouble("tolerance interpolation");
   gval -= ref;
-  std::vector<std::string> testvars;
-  if (TestEnvironment::config().has("test variables")) {
-    testvars = TestEnvironment::config().getStringVector("test variables");
-  } else {
-    testvars = Test_::variables().variables();
-  }
-  for (const std::string & var : testvars) {
-    const double rmsd = gval.normalizedrms(ref, var);
-    oops::Log::info() << "Normalized rms of the difference(" << var << "): " << rmsd << std::endl;
-    EXPECT(rmsd < tol);
-  }
+  oops::Log::info() << "Normalized rms of the difference: " << gval.normalizedrms(ref) << std::endl;
+  EXPECT(gval.normalizedrms(ref) < tol);
 }
 
 // -------------------------------------------------------------------------------------------------

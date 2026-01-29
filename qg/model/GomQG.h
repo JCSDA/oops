@@ -53,8 +53,8 @@ class GomQG : public util::Printable,
 
   static const std::string classname() {return "qg::GomQG";}
 
-  GomQG(const Locations_ &, const oops::Variables &, const std::vector<size_t> &,
-        const eckit::Configuration &);
+  GomQG(const Locations_ &, const oops::Variables &, const std::vector<size_t> &);
+  GomQG(const Locations_ &, const GomQG &, const eckit::Configuration &);
   GomQG(const eckit::Configuration &, const ObsSpaceQG &, const oops::Variables &);
   explicit GomQG(const GomQG &);
 
@@ -66,7 +66,7 @@ class GomQG : public util::Printable,
   void zero();
   void random();
   double rms() const;
-  double normalizedrms(const GomQG &, const std::string & var = "") const;
+  double normalizedrms(const GomQG &) const;
   GomQG & operator=(const GomQG &);
   GomQG & operator*=(const double &);
   GomQG & operator+=(const GomQG &);

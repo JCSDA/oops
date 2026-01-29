@@ -73,8 +73,21 @@ class GeoVaLs : public util::Printable,
   /// \param sizes
   ///   Vector whose ith element indicates how many values per interpolation path will be stored
   ///   in the GeoVaL corresponding to the ith variable in `vars`.
-  GeoVaLs(const Locations_ & locations, const Variables & vars, const std::vector<size_t> & sizes,
-          const eckit::Configuration & conf = eckit::LocalConfiguration());
+  GeoVaLs(const Locations_ & locations, const Variables & vars, const std::vector<size_t> & sizes);
+
+  /// \brief Initialize GeoVaLs from an analytic function identified by the configuration.
+  ///
+  /// \param locations
+  ///   Coordinates (horizontal) at which to evaluate the analytic function
+  /// \param other
+  ///   A previously-initialized GeoVaLs. This provides the variables to populate
+  ///   from the analytic function, the number of model levels for these variables,
+  ///   and can also provide a model vertical coordinate (like pressure) if needed
+  ///   to evaluate a 3D analytic function
+  /// \param initConf
+  ///   Identifies the analytic function used to populate the GeoVaLs
+  GeoVaLs(const Locations_ & locations, const GeoVaLs & other,
+          const eckit::Configuration & initConf);
 
   /// \brief Load values of specified geophysical variables from a file.
   ///
@@ -86,6 +99,7 @@ class GeoVaLs : public util::Printable,
   /// \brief vars
   ///   Names of the variables whose values should be loaded.
   GeoVaLs(const eckit::Configuration &, const ObsSpace_ & obspace, const Variables & vars);
+
   GeoVaLs(const GeoVaLs &);
 
   ~GeoVaLs();
@@ -98,7 +112,7 @@ class GeoVaLs : public util::Printable,
   void zero();
   void random();
   double rms() const;
-  double normalizedrms(const GeoVaLs &, const std::string & var = "") const;
+  double normalizedrms(const GeoVaLs &) const;
   GeoVaLs & operator=(const GeoVaLs &);
   GeoVaLs & operator*=(const double &);
   GeoVaLs & operator+=(const GeoVaLs &);
@@ -136,13 +150,22 @@ class GeoVaLs : public util::Printable,
 
 template <typename OBS>
 GeoVaLs<OBS>::GeoVaLs(const Locations_ & locations, const Variables & vars,
-                      const std::vector<size_t> & sizes, const eckit::Configuration & conf)
-  : gvals_()
-{
+                      const std::vector<size_t> & sizes) : gvals_() {
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs starting" << std::endl;
   util::Timer timer(classname(), "GeoVaLs");
-  gvals_.reset(new GeoVaLs_(locations, vars, sizes, conf));
+  gvals_.reset(new GeoVaLs_(locations, vars, sizes));
   Log::trace() << "GeoVaLs<OBS>::GeoVaLs done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+GeoVaLs<OBS>::GeoVaLs(const Locations_ & locations, const GeoVaLs & gvals,
+                      const eckit::Configuration & initConf) : gvals_() {
+  Log::trace() << "GeoVaLs<OBS>::GeoVaLs analytic init starting" << std::endl;
+  util::Timer timer(classname(), "GeoVaLs");
+  gvals_.reset(new GeoVaLs_(locations, gvals.geovals(), initConf));
+  Log::trace() << "GeoVaLs<OBS>::GeoVaLs analytic init done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -183,7 +206,7 @@ template <typename OBS>
 double GeoVaLs<OBS>::dot_product_with(const GeoVaLs & other) const {
   Log::trace() << "GeoVaLs<OBS>::dot_product_with starting" << std::endl;
   util::Timer timer(classname(), "dot_product_with");
-  double zz = gvals_->dot_product_with(*other.gvals_);
+  const double zz = gvals_->dot_product_with(*other.gvals_);
   Log::trace() << "GeoVaLs<OBS>::dot_product_with done" << std::endl;
   return zz;
 }
@@ -249,7 +272,7 @@ template <typename OBS>
 double GeoVaLs<OBS>::rms() const {
   Log::trace() << "GeoVaLs<OBS>::rms starting" << std::endl;
   util::Timer timer(classname(), "rms");
-  double zz = gvals_->rms();
+  const double zz = gvals_->rms();
   Log::trace() << "GeoVaLs<OBS>::rms done" << std::endl;
   return zz;
 }
@@ -257,10 +280,10 @@ double GeoVaLs<OBS>::rms() const {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
-double GeoVaLs<OBS>::normalizedrms(const GeoVaLs & rhs, const std::string & var) const {
+double GeoVaLs<OBS>::normalizedrms(const GeoVaLs & rhs) const {
   Log::trace() << "GeoVaLs<OBS>::normalizedrms starting" << std::endl;
   util::Timer timer(classname(), "normalizedrms");
-  double zz = gvals_->normalizedrms(*rhs.gvals_, var);
+  const double zz = gvals_->normalizedrms(*rhs.gvals_);
   Log::trace() << "GeoVaLs<OBS>::normalizedrms done" << std::endl;
   return zz;
 }
