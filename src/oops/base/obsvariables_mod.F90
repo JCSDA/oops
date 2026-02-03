@@ -10,7 +10,7 @@ module obs_variables_mod
 use iso_c_binding, only: c_ptr
 implicit none
 
-public :: obs_variables
+public :: obs_variables, ctor_from_ptr
 integer, parameter, private :: MAXVARLEN = 100
 
 type obs_variables
