@@ -102,11 +102,6 @@ ecbuild_add_executable( TARGET  qg_ensemble_inflation.x
                         LIBS    qg
                       )
 
-ecbuild_add_executable( TARGET  qg_linearization_error.x
-                        SOURCES qgLinearizationError.cc
-                        LIBS    qg
-                      )
-
 ecbuild_add_executable( TARGET  qg_templated_eda.x
                         SOURCES qgTemplatedEDA.cc
                         LIBS    qg
