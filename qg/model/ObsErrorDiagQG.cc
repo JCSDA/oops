@@ -5,7 +5,11 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <vector>
+
 #include "model/ObsErrorDiagQG.h"
+
+#include "oops/util/missingValues.h"
 
 namespace qg {
 
@@ -55,6 +59,44 @@ std::unique_ptr<ObsVecQG> ObsErrorDiagQG::getObsErrors() const {
 
 std::unique_ptr<ObsVecQG> ObsErrorDiagQG::getInverseVariance() const {
   return std::make_unique<ObsVecQG>(inverseVariance_);
+}
+
+void ObsErrorDiagQG::localize(ObsVecQG & locvector) const {
+  oops::Log::trace() << "qg::ObsErrorDiagQG::localize start" << std::endl;
+
+  const double missing = util::missingValue<double>();
+
+  assert(locvector.size() == inverseVariance_.size());
+  std::vector<double> localinvvar;
+  std::vector<double> locvectorstd, stddev_std;
+  locvector.serialize(locvectorstd);
+  stddev_.serialize(stddev_std);
+  for (size_t jj = 0; jj < locvector.size(); ++jj) {
+    if (locvectorstd[jj] != missing && locvectorstd[jj] <= 0) {
+      throw eckit::BadValue("Localization weights must be positive. Use "
+                            "oops::util::missingValue<double>() to indicate "
+                            "an observation with a weight of zero.");
+    }
+    if (locvectorstd[jj] != missing && stddev_std[jj] != missing) {
+      localinvvar.push_back(locvectorstd[jj] * std::pow(stddev_std[jj], -2.0));
+    }
+  }
+  local_inverseVariance_ =
+      Eigen::Map<Eigen::VectorXd>(localinvvar.data(), localinvvar.size());
+}
+
+Eigen::MatrixXf ObsErrorDiagQG::localInverseMultiply(const Eigen::MatrixXf & zz) const {
+  oops::Log::trace() << "qg::ObsErrorDiagQG::localInverseMultiply start" << std::endl;
+  Eigen::MatrixXf zzRinv(zz.rows(), zz.cols());
+  for (int ii = 0; ii < zz.rows(); ++ii) {
+    zzRinv(ii, Eigen::all) = zz(ii, Eigen::all)
+        .cwiseProduct(local_inverseVariance_.cast<float>().transpose());
+  }
+  return zzRinv;
+}
+
+int ObsErrorDiagQG::localDim() const {
+  return local_inverseVariance_.size();
 }
 
 void ObsErrorDiagQG::print(std::ostream & os) const {

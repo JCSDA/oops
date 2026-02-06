@@ -7,10 +7,12 @@
 
 #include <cmath>
 #include <sstream>
+#include <vector>
 
 #include "lorenz95/ObsErrorDiagonal95.h"
 
 #include "oops/util/Logger.h"
+#include "oops/util/missingValues.h"
 
 namespace lorenz95 {
 
@@ -69,6 +71,40 @@ std::unique_ptr<ObsVec1D> ObsErrorDiagonal95::getObsErrors() const {
 
 std::unique_ptr<ObsVec1D> ObsErrorDiagonal95::getInverseVariance() const {
   return std::make_unique<ObsVec1D>(inverseVariance_);
+}
+
+void ObsErrorDiagonal95::localize(ObsVec1D & locvector) const {
+  oops::Log::trace() << "lorenz95::ObsErrorDiagonal95::localize start" << std::endl;
+
+  const double missing = util::missingValue<double>();
+
+  assert(locvector.size() == inverseVariance_.size());
+  std::vector<double> localinvvar;
+  for (size_t jj = 0; jj < locvector.size(); ++jj) {
+    if (locvector[jj] != missing && locvector[jj] <= 0) {
+      throw eckit::BadValue("Localization weights must be positive. Use "
+                            "oops::util::missingValue<double>() to indicate "
+                            "an observation with a weight of zero.");
+    }
+    if (locvector[jj] != missing && stddev_[jj] != missing) {
+      localinvvar.push_back(locvector[jj] * std::pow(stddev_[jj], -2.0));
+    }
+  }
+  local_inverseVariance_ =
+      Eigen::Map<Eigen::VectorXd>(localinvvar.data(), localinvvar.size());
+}
+
+Eigen::MatrixXf ObsErrorDiagonal95::localInverseMultiply(const Eigen::MatrixXf & zz) const {
+  Eigen::MatrixXf zzRinv(zz.rows(), zz.cols());
+  for (int ii = 0; ii < zz.rows(); ++ii) {
+    zzRinv(ii, Eigen::all) = zz(ii, Eigen::all)
+        .cwiseProduct(local_inverseVariance_.cast<float>().transpose());
+  }
+  return zzRinv;
+}
+
+int ObsErrorDiagonal95::localDim() const {
+  return local_inverseVariance_.size();
 }
 
 void ObsErrorDiagonal95::print(std::ostream & os) const {

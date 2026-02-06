@@ -32,6 +32,7 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   typedef Geometry<MODEL>             Geometry_;
   typedef GeometryIterator<MODEL>     GeometryIterator_;
   typedef Observations<OBS>           Observations_;
+  typedef ObsErrors<OBS>              ObsErrors_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
   typedef StateSet<MODEL>             StateSet_;
   typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
@@ -48,7 +49,7 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
 
   /// entire KF update (computeWeights+applyWeights) for a grid point GeometryIterator_
   void measurementUpdate(const Eigen::VectorXd &,
-                         const Eigen::VectorXd &,
+                         const ObsErrors_ &,
                          const Departures_ &,
                          const IncrementSet_ &,
                          const GeometryIterator_ &,
@@ -64,7 +65,7 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   void computeWeights(const Eigen::VectorXd & omb,
                       const Eigen::MatrixXf & OmbPert_f,
                       const Eigen::MatrixXf & HZb_f,
-                      const Eigen::VectorXd & invVarR) override;
+                      const ObsErrors_ & R) override;
 
   /// Computes weights for ensemble update with local observations
   /// \param[in] omb                 Observation minus ensemble hofx mean (nlocalobs)
@@ -95,8 +96,7 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   ///                                (nens*neig, nens*neig)
   const std::tuple<Eigen::MatrixXf, Eigen::MatrixXf> computeYbRinvMatrices(const Departures_ &
                                                                            locvector,
-                                                                           const Eigen::VectorXf &
-                                                                           local_invVarR_vec);
+                                                                           const ObsErrors_ & R);
 
   /// Applies weights and adds posterior inflation
   void applyWeights(const IncrementSet_ &,
@@ -175,13 +175,13 @@ template <typename MODEL, typename OBS>
 void StochasticGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
                                                  const Eigen::MatrixXf & YbOrig,
                                                  const Eigen::MatrixXf & Yb,
-                                                 const Eigen::VectorXd & invVarR) {
+                                                 const ObsErrors_ & R) {
   // compute transformation matrix, save in Wa_
   util::Timer timer(classname(), "computeWeights");
   const float infl = this->inflopt_.getFloat("mult", 1.0);
 
-  oops::stoETKF_computeWeights(dy.cast<float>(), Yb, YbOrig,
-                               invVarR.cast<float>(), infl, useSVD_, this->Wa_);
+oops::stoETKF_computeWeights(dy.cast<float>(), Yb, YbOrig,
+                               R, infl, useSVD_, this->Wa_);
 }
 
 // -----------------------------------------------------------------------------
@@ -207,16 +207,16 @@ void StochasticGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
 template <typename MODEL, typename OBS>
 const std::tuple<Eigen::MatrixXf, Eigen::MatrixXf>
 StochasticGETKF<MODEL, OBS>::computeYbRinvMatrices(const Departures_ & locvector,
-                                                   const Eigen::VectorXf & local_invVarR_vec) {
+                                                   const ObsErrors_ & R) {
   // Pre-calculate YbRinv and YbRinvYbpI
   const Eigen::MatrixXf local_HZb_mat_f = (this->HZb_)->packEigen(locvector);
   const float infl = this->inflopt_.getFloat("mult", 1.0);
   const float scale = (this->nens_ - 1) / infl;
 
-  const Eigen::MatrixXf YbRinv = oops::ETKF_YbRinv(local_HZb_mat_f, local_invVarR_vec);
-  const Eigen::MatrixXf YbRinvYbpI = oops::ETKF_YbRinvYbpI(local_HZb_mat_f, YbRinv, scale);
+    const Eigen::MatrixXf YbRinv = oops::ETKF_YbRinv(local_HZb_mat_f, R);
+    const Eigen::MatrixXf YbRinvYbpI = oops::ETKF_YbRinvYbpI(local_HZb_mat_f, YbRinv, scale);
 
-  return std::make_tuple(YbRinv, YbRinvYbpI);
+    return std::make_tuple(YbRinv, YbRinvYbpI);
 }
 
 // -----------------------------------------------------------------------------
@@ -238,19 +238,19 @@ void StochasticGETKF<MODEL, OBS>::applyWeights(const IncrementSet_ & bkg_pert,
 
 template <typename MODEL, typename OBS>
 void StochasticGETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & local_omb_vec,
-                                                    const Eigen::VectorXd & local_invVarR_vec,
-                                                    const Departures_ & locvector,
-                                                    const IncrementSet_ & bkg_pert,
-                                                    const GeometryIterator_ & i,
-                                                    IncrementSet_ & ana_pert) {
-  const Eigen::MatrixXf local_OmbPert_mat_f = (this->Yb_)->packEigen(locvector);
-  if (this->doCrossValidation) {
-    this->Wa_.setZero();
-    const std::tuple<Eigen::MatrixXf, Eigen::MatrixXf>
-    ETKFCoreMatrices = this->computeYbRinvMatrices(locvector, local_invVarR_vec.cast<float>());
-    const Eigen::MatrixXf & YbRinv = std::get<0>(ETKFCoreMatrices);
-    const Eigen::MatrixXf & YbRinvYbpI = std::get<1>(ETKFCoreMatrices);
-    const bool modulated = true;
+                                                const ObsErrors_ & R,
+                                                const Departures_ & locvector,
+                                                const IncrementSet_ & bkg_pert,
+                                                const GeometryIterator_ & i,
+                                                IncrementSet_ & ana_pert) {
+    const Eigen::MatrixXf local_OmbPert_mat_f = (this->Yb_)->packEigen(locvector);
+    if (this->doCrossValidation) {
+        this->Wa_.setZero();
+        const std::tuple<Eigen::MatrixXf, Eigen::MatrixXf>
+            ETKFCoreMatrices = this->computeYbRinvMatrices(locvector, R);
+        const Eigen::MatrixXf & YbRinv = std::get<0>(ETKFCoreMatrices);
+        const Eigen::MatrixXf & YbRinvYbpI = std::get<1>(ETKFCoreMatrices);
+        const bool modulated = true;
 
     for (size_t isubens = 0; isubens < (this->nsubens_); ++isubens) {
       const std::tuple<Eigen::SparseMatrix<float>, Eigen::SparseMatrix<float>, std::vector<size_t>>
@@ -262,7 +262,7 @@ void StochasticGETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & loca
     }
   } else {
     const Eigen::MatrixXf local_HZb_mat_f = (this->HZb_)->packEigen(locvector);
-    this->computeWeights(local_omb_vec, local_OmbPert_mat_f, local_HZb_mat_f, local_invVarR_vec);
+    this->computeWeights(local_omb_vec, local_OmbPert_mat_f, local_HZb_mat_f, R);
   }
   this->applyWeights(bkg_pert, ana_pert, i);
 }

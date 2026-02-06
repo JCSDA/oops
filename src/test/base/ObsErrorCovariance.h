@@ -18,10 +18,12 @@
 
 #define ECKIT_TESTING_SELF_REGISTER_CASES 0
 
+#include "eckit/exception/Exceptions.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/ObsVector.h"
 #include "oops/interface/ObsError.h"
 #include "oops/runs/Test.h"
+#include "oops/util/missingValues.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
@@ -67,7 +69,7 @@ template <typename OBS> void testReader() {
     }
     const eckit::LocalConfiguration testConf(conf[jj], "obs error test");
 
-      if (testConf.getBool("test reader")) {
+      if (testConf.getBool("test reader", false)) {
         const eckit::LocalConfiguration rconf(conf[jj], "obs error");
         Covar_ R(rconf, Test_::obspace()[jj]);
 
@@ -174,6 +176,57 @@ template <typename OBS> void testAccessors() {
 }
 
 // -----------------------------------------------------------------------------
+/// Test localization of R.
+template <typename OBS> void testLocalize() {
+  typedef ObsTestsFixture<OBS>                 Test_;
+  typedef oops::ObsError<OBS>                  Covar_;
+  typedef oops::ObsVector<OBS>                 ObsVector_;
+
+  std::vector<eckit::LocalConfiguration> conf;
+  TestEnvironment::config().get("observations", conf);
+
+  bool testLocalize;
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    if (conf[jj].has("obs error test")) {
+      const eckit::LocalConfiguration testConf(conf[jj], "obs error test");
+      testLocalize = testConf.getBool("test localization", true);
+    } else {
+      testLocalize = true;
+    }
+    const eckit::LocalConfiguration rconf(conf[jj], "obs error");
+    Covar_ R(rconf, Test_::obspace()[jj]);
+
+    ObsVector_ maskmissing(Test_::obspace()[jj]);
+    maskmissing.ones();
+    maskmissing *= util::missingValue<double>();
+    if (testLocalize) {
+      R.localize(maskmissing);
+      EXPECT(R.localDim() == 0);
+    } else {
+      EXPECT_THROWS(R.localize(maskmissing));
+    }
+
+    ObsVector_ maskones(Test_::obspace()[jj]);
+    maskones.ones();
+    if (testLocalize) {
+      R.localize(maskones);
+    } else {
+      EXPECT_THROWS(R.localize(maskones));
+    }
+
+    ObsVector_ masknegative(Test_::obspace()[jj]);
+    masknegative.ones();
+    masknegative *= -1;
+    if (testLocalize) {
+        EXPECT_THROWS_AS(R.localize(masknegative), eckit::BadValue);
+    } else {
+        EXPECT_THROWS(R.localize(masknegative));
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
 
 template <typename OBS>
 class ObsErrorCovariance : public oops::Test {
@@ -197,6 +250,8 @@ class ObsErrorCovariance : public oops::Test {
       { testAccessors<OBS>(); });
     ts.emplace_back(CASE("interface/ObsErrorCovariance/testReader")
       { testReader<OBS>(); });
+    ts.emplace_back(CASE("interface/ObsErrorCovariance/testLocalize")
+      { testLocalize<OBS>(); });
   }
 
   void clear() const override {

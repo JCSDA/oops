@@ -63,6 +63,7 @@ class LocalEnsembleSolver {
   typedef ObsAuxIncrements<OBS>       ObsAuxInc_;
   typedef ObsDataVector<OBS, int>     ObsDataInt_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
+  typedef ObsError<OBS>               ObsError_;
   typedef ObsErrors<OBS>              ObsErrors_;
   typedef Observations<OBS>           Observations_;
   typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
@@ -102,7 +103,7 @@ class LocalEnsembleSolver {
 
   /// update background ensemble \p bg to analysis ensemble \p an at a grid point location \p i
   virtual void measurementUpdate(const Eigen::VectorXd &,
-                                 const Eigen::VectorXd &,
+                                 const ObsErrors_ &,
                                  const Departures_ &,
                                  const IncrementSet_ &,
                                  const GeometryIterator_ &,
@@ -276,8 +277,8 @@ void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
     this->applyAssimilatedMask(locvector);
     const Eigen::VectorXd local_omb_vec = this->omb_.packEigen(locvector);
     const Eigen::VectorXd localization = locvector.packEigen(locvector);
-    const Eigen::VectorXd local_invVarR_vec =
-      this->invVarR_->packEigen(locvector).array() * localization.array();
+    R_->localize(locvector);
+
     if (local_omb_vec.size() == 0) {
       // no obs. so no need to update Wa_ and wa_
       // ana_pert[i] = bkg_pert[i]
@@ -286,7 +287,7 @@ void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
                                ana_pert);
     } else {
       this->measurementUpdate(local_omb_vec,
-                              local_invVarR_vec,
+                              *R_,
                               locvector,
                               bkg_pert,
                               i,

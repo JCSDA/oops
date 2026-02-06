@@ -28,8 +28,12 @@ namespace oops {
   ///   invVarR: Inverse observation error covariance matrix.
   /// Output:
   ///   Yb * invVarR.
-  Eigen::MatrixXf ETKF_YbRinv(const Eigen::MatrixXf &,
-                              const Eigen::VectorXf &);
+  template <typename OBSERROR>
+  Eigen::MatrixXf ETKF_YbRinv(const Eigen::MatrixXf & Yb,
+                              const OBSERROR & R) {
+    Eigen::MatrixXd YbRinv =  R.localInverseMultiply(Yb);
+    return YbRinv.cast<float>();
+  }
 
   /// \brief Compute Yb * R^{-1} * Yb^T + (nens - 1) * I / infl.
   /// \details
@@ -50,7 +54,7 @@ namespace oops {
   ///   A: self-adjoint matrix to be decomposed.
   /// Output:
   ///   {eival, eivec}: tuple of real Eigenvalues and Eigenvectors.
-  std::tuple<Eigen::VectorXd, Eigen::MatrixXd> Eigendecomposition(const Eigen::MatrixXd &);
+  std::tuple<Eigen::VectorXf, Eigen::MatrixXf> Eigendecomposition(const Eigen::MatrixXf &);
 
   /// \brief Perform full singular value decomposition using Bidiagonal
   /// Divide and Conquer.
@@ -103,16 +107,47 @@ namespace oops {
   ///   eivec: Eigenvectors of Yb * R^{-1} * Yb^T + (nens - 1) * I / infl.
   ///   Yb: Modulated ensemble perturbations in observation space.
   ///   YbOrig: Original ensemble perturbations in observation space.
-  ///   invVarR: Inverse observation error covariance matrix.
+  ///   R: Observation error covariance matrix.
   ///   infl: a user-defined inflation parameter.
   /// Output:
   ///   GETKF weights (see code for formula).
-  Eigen::MatrixXf GETKF_pertWeights(const Eigen::VectorXf &,
-                                    const Eigen::MatrixXf &,
-                                    const Eigen::MatrixXf &,
-                                    const Eigen::MatrixXf &,
-                                    const Eigen::VectorXf &,
-                                    const float);
+  template <typename OBSERROR>
+  Eigen::MatrixXf GETKF_pertWeights(const Eigen::VectorXf & eival,
+                                    const Eigen::MatrixXf & eivec,
+                                    const Eigen::MatrixXf & Yb,
+                                    const Eigen::MatrixXf & YbOrig,
+                                    const OBSERROR & R,
+                                    const float infl) {
+    // Normalisation
+    const int nens = YbOrig.rows();
+    const float norm = 1.0 / (nens - 1.0);
+
+    // Identity
+    const int nana = Yb.rows();
+    const Eigen::VectorXf I = Eigen::VectorXf::Constant(nana, 1.0);
+
+    // Account for division by zero than occurs when an eigenvalue
+    // is exactly equal to 1 / (infl * norm).
+    const Eigen::VectorXf eivalmI = (eival - I / (infl * norm)).cwiseAbs();
+    const Eigen::VectorXf epsilon = Eigen::VectorXf::Constant(nana, 1.0e-6);
+    const Eigen::VectorXf eivalmIsafe =
+      (eivalmI.array() < epsilon.array()).select(epsilon, eivalmI);
+
+    // (I - Gamma^{-1/2} / (nens - 1)) * (Gamma - (nens - 1) I / rho)
+    const Eigen::VectorXf diag = (I - (norm * eival).cwiseInverse().cwiseAbs().cwiseSqrt()).
+      cwiseProduct(eivalmIsafe.cwiseInverse());
+
+    // C ((I - Gamma^{-1/2} / (nens - 1)) * (Gamma - (nens - 1) I / rho)) C^T
+    const Eigen::MatrixXf scaledCCT = eivec * diag.asDiagonal() * eivec.transpose();
+
+    // Yb R^-1
+    const Eigen::MatrixXf YbRinv = oops::ETKF_YbRinv(Yb, R);
+
+    // Yb R^-1 YbOrig^T
+    const Eigen::MatrixXf YbRinvYbOrig = YbRinv * YbOrig.transpose();
+
+    return -scaledCCT * YbRinvYbOrig;
+  }
 
   /// \brief Compute GETKF weights applied to a model perturbation field
   ///        for a given set of projection matrices.
@@ -121,7 +156,7 @@ namespace oops {
   ///   YbRinvYbpI: Matrix equal to Yb * R^{-1} * Yb^T + (nens - 1) * I / infl.
   ///   Yb: Modulated ensemble perturbations in observation space.
   ///   YbOrig: Original ensemble perturbations in observation space.
-  ///   invVarR: Inverse observation error covariance matrix.
+  ///   R: Observation error covariance matrix.
   ///   excludedProjection: Projection matrix for the excluded
   ///                       subensemble members for cross validation.
   ///   includedProjection: Projection matrix for the included
@@ -130,36 +165,117 @@ namespace oops {
   /// Output:
   ///   GETKF weights (see code for formula).
   ///   timings: Vector of timings of internal routines.
-  Eigen::MatrixXf GETKF_pertWeights(const Eigen::MatrixXf &,
-                                    const Eigen::MatrixXf &,
-                                    const Eigen::MatrixXf &,
-                                    const Eigen::VectorXf &,
-                                    const Eigen::SparseMatrix<float> &,
-                                    const Eigen::SparseMatrix<float> &,
-                                    const float,
+  template <typename OBSERROR>
+  Eigen::MatrixXf GETKF_pertWeights(const Eigen::MatrixXf & YbRinvYbpI,
+                                    const Eigen::MatrixXf & Yb,
+                                    const Eigen::MatrixXf & YbOrig,
+                                    const OBSERROR & R,
+                                    const Eigen::SparseMatrix<float> & excludedProjection,
+                                    const Eigen::SparseMatrix<float> & includedProjection,
+                                    const float infl,
                                     std::vector<std::chrono::time_point
-                                    <std::chrono::system_clock>> &);
+                                            <std::chrono::system_clock>> & timings) {
+    const auto tE0 = std::chrono::system_clock::now();
+
+    // Projecting the excluded members out of the A matrix
+    const Eigen::MatrixXf YbRinvYbpIproj = excludedProjection.transpose()
+                                             * YbRinvYbpI * excludedProjection;
+
+    const auto tE1 = std::chrono::system_clock::now();
+
+    // Eigenvalues and eigenvectors of the projected A matrix
+    const auto[eival, eivec] = oops::Eigendecomposition(YbRinvYbpIproj);
+
+    const auto tE2 = std::chrono::system_clock::now();
+
+    // Normalisation
+    const int nhat = excludedProjection.cols();
+    const float norm = 1.0 / (nhat - 1.0);
+
+    // Identity
+    const Eigen::VectorXf I = Eigen::VectorXf::Constant(nhat, 1.0);
+
+    // Account for division by zero than occurs when an eigenvalue
+    // is exactly equal to 1 / (infl * norm).
+    const Eigen::VectorXf eivalmI = (eival - I / (infl * norm)).cwiseAbs();
+    const Eigen::VectorXf epsilon = Eigen::VectorXf::Constant(nhat, 1.0e-6);
+    const Eigen::VectorXf eivalmIsafe =
+        (eivalmI.array() < epsilon.array()).select(epsilon, eivalmI);
+
+    // (I - Gamma^{-1/2} / (nens - 1)) * (Gamma - (nens - 1) I / rho)
+    const Eigen::VectorXf diag = (I - (norm * eival).cwiseInverse().cwiseAbs().cwiseSqrt()).
+                                cwiseProduct(eivalmIsafe.cwiseInverse());
+
+    // C ((I - Gamma^{-1/2} / (nens - 1)) * (Gamma - (nens - 1) I / rho)) C^T
+    const Eigen::MatrixXf scaledCCT = eivec * diag.asDiagonal() * eivec.transpose();
+
+    // Yb R^-1
+    const Eigen::MatrixXf YbRinv = oops::ETKF_YbRinv(Yb, R);
+
+    // Yb R^-1 YbOrig^T
+    const Eigen::MatrixXf YbRinvYbOrig = YbRinv * YbOrig.transpose();
+
+    timings = {tE0, tE1, tE2};
+
+    return -excludedProjection * scaledCCT * excludedProjection.transpose()
+            * YbRinvYbOrig * includedProjection;
+  }
 
   /// \brief Compute state and perturbation weights for determinstic LETKF.
   /// \details
   /// Input:
   ///   dy: Observation departures.
   ///   Yb: Ensemble perturbations in observation space.
-  ///   invVarR: Inverse observation error covariance matrix.
+  ///   R: Observation error covariance matrix.
   ///   scale: (nens - 1) / infl, where nens is the number of ensemble members
   ///          and infl is a user-defined inflation parameter.
   /// Output:
   ///    wa [passed by reference]: state weights calculated using ETKF_stateWeights.
   ///    Wa [passed by reference]: perturbation weights calculated using LETKF_pertWeights.
   ///    A vector of times that can be used to profile the performance of this routine.
+  template <typename OBSERROR>
   std::vector<std::chrono::time_point<std::chrono::system_clock>>
-  detLETKF_computeWeights(const Eigen::VectorXf &,
-                          const Eigen::MatrixXf &,
-                          const Eigen::VectorXf &,
-                          const float,
-                          const bool,
-                          Eigen::VectorXf &,
-                          Eigen::MatrixXf &);
+  detLETKF_computeWeights(const Eigen::VectorXf & dy,
+                          const Eigen::MatrixXf & Yb,
+                          const OBSERROR & R,
+                          const float scale,
+                          const bool svd,
+                          Eigen::VectorXf & wa,
+                          Eigen::MatrixXf & Wa) {
+    oops::Log::info() << "!! oops::detLETKF_computeWeights" << std::endl;
+    const auto tE0 = std::chrono::system_clock::now();
+
+    // Yb R^-1
+    oops::Log::info() << "Calling ETKF_YbRinv" << std::endl;
+    const Eigen::MatrixXf YbRinv = oops::ETKF_YbRinv(Yb, R);
+
+    // YbRinvYbp = Y^T R^-1 Y + (nens-1)/infl I
+    const Eigen::MatrixXf YbRinvYbpI = oops::ETKF_YbRinvYbpI(Yb, YbRinv, scale);
+
+    const auto tE1 = std::chrono::system_clock::now();
+
+    // Eigenvalues and eigenvectors of the above matrix, optionally computed with
+    // SVD (matrix should be real symmetric positive definite so these are equivalent).
+    const auto[eival, eivec] =
+        svd ? oops::SingularValueDecomposition(YbRinvYbpI) : oops::Eigendecomposition(YbRinvYbpI);
+
+    const auto tE2 = std::chrono::system_clock::now();
+
+    // Pa = [Yb R^-1 Yb^T + (nens - 1)/infl I]^-1
+    const Eigen::MatrixXf Pa = oops::ETKF_Pa(eival, eivec);
+
+    const auto tE3 = std::chrono::system_clock::now();
+
+    // wa = Pa Yb R^-1 dy
+    wa = oops::ETKF_stateWeights<Eigen::VectorXf>(Pa, YbRinv, dy);
+
+    // Wa = sqrt(nens - 1) * eivec * eival^{1/2} * eivec^T
+    Wa = oops::LETKF_pertWeights(eival, eivec);
+
+    const auto tE4 = std::chrono::system_clock::now();
+
+    return {tE0, tE1, tE2, tE3, tE4};
+  }
 
   /// \brief Compute state and perturbation weights for determinstic GETKF.
   /// \details
@@ -167,22 +283,65 @@ namespace oops {
   ///   dy: Observation departures.
   ///   Yb: Modulated ensemble perturbations in observation space.
   ///   YbOrig: Original ensemble perturbations in observation space.
-  ///   invVarR: Inverse observation error covariance matrix.
+  ///   R: Observation error covariance matrix.
   ///   infl: a user-defined inflation parameter.
   /// Output:
   ///    wa [passed by reference]: state weights calculated using ETKF_stateWeights.
   ///    Wa [passed by reference]: perturbation weights calculated using GETKF_pertWeights.
   ///    A vector of times that can be used to profile the performance of this routine.
+  template <typename OBSERROR>
   std::vector<std::chrono::time_point<std::chrono::system_clock>>
-  detGETKF_computeWeights(const Eigen::VectorXf &,
-                          const Eigen::MatrixXf &,
-                          const Eigen::MatrixXf &,
-                          const Eigen::VectorXf &,
-                          const float,
-                          const bool,
-                          Eigen::VectorXf &,
-                          Eigen::MatrixXf &);
+  detGETKF_computeWeights(const Eigen::VectorXf & dy,
+                          const Eigen::MatrixXf & Yb,
+                          const Eigen::MatrixXf & YbOrig,
+                          const OBSERROR & R,
+                          const float infl,
+                          const bool svd,
+                          Eigen::VectorXf & wa,
+                          Eigen::MatrixXf & Wa) {
+    const int nens = YbOrig.rows();
 
+    const auto tE0 = std::chrono::system_clock::now();
+
+    // Yb R^-1
+    const Eigen::MatrixXf YbRinv = oops::ETKF_YbRinv(Yb, R);
+
+    const auto tE1 = std::chrono::system_clock::now();
+
+    const float scale = (nens - 1) / infl;
+
+    // Yb R^-1 Yb^T + (nens - 1) I / infl
+    const Eigen::MatrixXf YbRinvYbpI = oops::ETKF_YbRinvYbpI(Yb, YbRinv, scale);
+
+    const auto tE2 = std::chrono::system_clock::now();
+
+    // Eigenvalues and eigenvectors of the above matrix, optionally computed with
+    // SVD (matrix should be real symmetric positive definite so these are equivalent).
+    const auto[eival, eivec] =
+        svd ? oops::SingularValueDecomposition(YbRinvYbpI) : oops::Eigendecomposition(YbRinvYbpI);
+
+    const auto tE3 = std::chrono::system_clock::now();
+
+    // Pa = [Yb R^-1 Yb^T + (nens - 1)/infl I]^-1
+    const Eigen::MatrixXf Pa = oops::ETKF_Pa(eival, eivec);
+
+    const auto tE4 = std::chrono::system_clock::now();
+
+    // wa = Pa Yb R^-1 dy
+    wa = oops::ETKF_stateWeights<Eigen::VectorXf>(Pa, YbRinv, dy);
+
+    const auto tE5 = std::chrono::system_clock::now();
+
+    // Wa = eivec ((I - eival^{-1/2} / (nens - 1)) * (eival - (nens - 1) I / rho)) eivec^T
+    //      * Yb R^-1 YbOrig^T
+    Wa = oops::GETKF_pertWeights(eival, eivec,
+                                 Yb, YbOrig,
+                                 R, infl);
+
+    const auto tE6 = std::chrono::system_clock::now();
+
+    return {tE0, tE1, tE2, tE3, tE4, tE5, tE6};
+  }
   /// \brief Computes state and perturbation weights for determinstic ETKF
   ///        for a given set of projection matrices.
   /// \details
@@ -192,7 +351,7 @@ namespace oops {
   ///   YbRinvYbpI:                Matrix equal to Y^T R^-1 Y + (nens-1)/infl I
   ///   YbRinv:                    Matrix equal to Y^T R^-1
   ///   YbOrig:                    Original ensemble perturbations in observation space.
-  ///   invVarR:                   Inverse observation error covariance matrix.
+  ///   R:                         Observation error covariance matrix.
   ///   infl:                      User-defined inflation parameter.
   ///   excludedProjection:        Projection matrix for the excluded
   ///                              subensemble members for cross validation.
@@ -203,19 +362,52 @@ namespace oops {
   ///    wa [passed by reference]: State weights calculated using ETKF_stateWeights.
   ///    Wa [passed by reference]: Perturbation weights calculated using GETKF_pertWeights.
   ///    A vector of times that can be used to profile the performance of this routine.
+  template <typename OBSERROR>
   std::vector<std::chrono::time_point<std::chrono::system_clock>>
-  detGETKF_computeWeights(const Eigen::VectorXf &,
-                          const Eigen::MatrixXf &,
-                          const Eigen::MatrixXf &,
-                          const Eigen::MatrixXf &,
-                          const Eigen::MatrixXf &,
-                          const Eigen::VectorXf &,
-                          const float,
-                          const Eigen::SparseMatrix<float> &,
-                          const Eigen::SparseMatrix<float> &,
-                          const bool,
-                          Eigen::VectorXf &,
-                          Eigen::MatrixXf &);
+  detGETKF_computeWeights(const Eigen::VectorXf & dy,
+                          const Eigen::MatrixXf & Yb,
+                          const Eigen::MatrixXf & YbRinvYbpI,
+                          const Eigen::MatrixXf & YbRinv,
+                          const Eigen::MatrixXf & YbOrig,
+                          const OBSERROR & R,
+                          const float infl,
+                          const Eigen::SparseMatrix<float> & excludedProjection,
+                          const Eigen::SparseMatrix<float> & includedProjection,
+                          const bool computeMeanWeights,
+                          Eigen::VectorXf & wa,
+                          Eigen::MatrixXf & Wa) {
+      const auto tE0 = std::chrono::system_clock::now();
+
+      if (computeMeanWeights) {
+          // Eigenvalues and eigenvectors of the A matrix
+          const auto[eival, eivec] = oops::Eigendecomposition(YbRinvYbpI);
+
+          // Pa = [Yb R^-1 Yb^T + (nhat - 1)/infl I]^-1
+          const Eigen::MatrixXf Pa = oops::ETKF_Pa(eival, eivec);
+
+          // wa = Pa Yb R^-1 dy
+          wa = oops::ETKF_stateWeights<Eigen::VectorXf>(Pa, YbRinv, dy);
+      }
+
+      // Wa = eivec ((I - eival^{-1/2} / (nens - 1)) * (eival - (nens - 1) I / rho)) eivec^T
+      //      * Yb R^-1 YbOrig^T
+      std::vector<std::chrono::time_point<std::chrono::system_clock>> timings;
+      Wa += oops::GETKF_pertWeights(YbRinvYbpI,
+                                    Yb, YbOrig,
+                                    R,
+                                    excludedProjection, includedProjection,
+                                    infl,
+                                    timings);
+
+      const auto tE4 = std::chrono::system_clock::now();
+
+      // Unpacking timings
+      const auto tE1 = timings[0];
+      const auto tE2 = timings[1];
+      const auto tE3 = timings[2];
+
+      return {tE0, tE1, tE2, tE3, tE4};
+  }
 
   /// \brief Compute state and perturbation weights for stochastic ETKF.
   /// \details
@@ -223,20 +415,44 @@ namespace oops {
   ///   dy: Observation departures.
   ///   Yb: Modulated ensemble perturbations in observation space.
   ///   YbOrig: Original ensemble perturbations in observation space.
-  ///   invVarR: Inverse observation error covariance matrix.
+  ///   R: Observation error covariance matrix.
   ///   infl: a user-defined inflation parameter.
   ///   svd: if true, perform eigendecomposition of inverse analysis error
   ///   covariance with singular value decomposition algorithm, otherwise use
   ///   eigendecomposition.
   /// Output:
   ///    Wa [passed by reference]: perturbation weights calculated using ETKF_stateWeights.
-  void stoETKF_computeWeights(const Eigen::VectorXf &,
-                              const Eigen::MatrixXf &,
-                              const Eigen::MatrixXf &,
-                              const Eigen::VectorXf &,
-                              const float,
-                              const bool,
-                              Eigen::MatrixXf &);
+  template <typename OBSERROR>
+  void stoETKF_computeWeights(const Eigen::VectorXf & dy,
+                              const Eigen::MatrixXf & Yb,
+                              const Eigen::MatrixXf & YbOrig,
+                              const OBSERROR & R,
+                              const float infl,
+                              const bool svd,
+                              Eigen::MatrixXf & Wa) {
+      const int nens = YbOrig.rows();
+      const float scale = (nens - 1) / infl;
+
+      // Yb R^-1
+      const Eigen::MatrixXf YbRinv = oops::ETKF_YbRinv(Yb, R);
+
+      // YbRinvYbp = Y^T R^-1 Y + (nens-1)/infl I
+      const Eigen::MatrixXf YbRinvYbpI = oops::ETKF_YbRinvYbpI(Yb, YbRinv, scale);
+
+      // Eigenvalues and eigenvectors of the above matrix, optionally computed with
+      // SVD (matrix should be real symmetric positive definite so these are equivalent).
+      const auto[eival, eivec] =
+          svd ? oops::SingularValueDecomposition(YbRinvYbpI) : oops::Eigendecomposition(YbRinvYbpI);
+
+      // Pa  = [ Yb^T R^-1 Yb + (nens-1)/infl I ] ^-1
+      const Eigen::MatrixXf Pa = oops::ETKF_Pa(eival, eivec);
+
+      // Wa = Pa Yb^T R^-1 (dyPert)
+      // dyPert = (y_mean + y_pert) - (yb_mean + yb_pert)
+      Wa = oops::ETKF_stateWeights<Eigen::MatrixXf>(Pa,
+                                                    YbRinv,
+                                                    YbOrig.transpose().colwise()+dy);
+  }
 
   /// \brief Computes state and perturbation weights for stochastic ETKF
   ///        for a given set of projection matrices.
@@ -429,6 +645,7 @@ namespace oops {
       ana_pert.setEigen(Xa, geomIter, itime);
     }
   }
+
 }  // namespace oops
 
 #endif  // OOPS_ASSIMILATION_ETKFLINEARALGEBRA_H_

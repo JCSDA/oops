@@ -67,6 +67,7 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
   typedef ObsAuxIncrements<OBS>       ObsAuxInc_;
   typedef ObsDataVector<OBS, int>     ObsDataInt_;
   typedef ObsEnsemble<OBS>            ObsEnsemble_;
+  typedef ObsError<OBS>               ObsError_;
   typedef ObsErrors<OBS>              ObsErrors_;
   typedef Observations<OBS>           Observations_;
   typedef Observers<MODEL, OBS>       Observers_;
@@ -96,7 +97,7 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
 
   /// entire KF update (computeWeights+applyWeights) for a grid point GeometryIterator_
   void measurementUpdate(const Eigen::VectorXd &,
-                         const Eigen::VectorXd &,
+                         const ObsErrors_ &,
                          const Departures_ &,
                          const IncrementSet_ &,
                          const GeometryIterator_ &,
@@ -125,7 +126,7 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
   virtual void computeWeights(const Eigen::VectorXd & omb,
                               const Eigen::MatrixXf & Yb,
                               const Eigen::MatrixXf & YbOrig,
-                              const Eigen::VectorXd & invVarR);
+                              const ObsErrors_ & R);
 
   /// Applies weights and adds posterior inflation
   virtual void applyWeights(const IncrementSet_ &,
@@ -360,7 +361,7 @@ template <typename MODEL, typename OBS>
 void DeterministicGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
                                                     const Eigen::MatrixXf & Yb,
                                                     const Eigen::MatrixXf & YbOrig,
-                                                    const Eigen::VectorXd & invVarR) {
+                                                    const ObsErrors_ & R) {
   // compute transformation matrix, save in Wa_, wa_
   // Yb(nobs,neig*nens), YbOrig(nobs,nens)
   util::Timer timer(classname(), "computeWeights");
@@ -369,6 +370,7 @@ void DeterministicGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   if (fortranETKF_) {
     // cast eigen<double> to eigen<float>
     const Eigen::VectorXf dy_f = dy.cast<float>();
+    const Eigen::VectorXd invVarR = R.local_invVarR();
     const Eigen::VectorXf invVarR_f = invVarR.cast<float>();
 
     // call into GSI interface to compute Wa and wa
@@ -382,9 +384,10 @@ void DeterministicGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
                    getkf_inflation, denkf, getkf, infl);
   } else {
     oops::detGETKF_computeWeights(dy.cast<float>(), Yb, YbOrig,
-                                  invVarR.cast<float>(), infl, useSVD_, wa_, Wa_);
+                                  R, infl, useSVD_, wa_, Wa_);
   }
 }
+
 
 // -----------------------------------------------------------------------------
 
@@ -407,21 +410,24 @@ void DeterministicGETKF<MODEL, OBS>::applyWeights(const IncrementSet_ & bkg_pert
 
 template <typename MODEL, typename OBS>
 void DeterministicGETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & local_omb_vec,
-                                                       const Eigen::VectorXd & local_invVarR_vec,
+                                                       const ObsErrors_ & R,
                                                        const Departures_ & locvector,
                                                        const IncrementSet_ & bkg_pert,
                                                        const GeometryIterator_ & i,
                                                        IncrementSet_ & ana_pert) {
+  /*
   if (this->doCrossValidation) {
     throw eckit::NotImplemented(
           "Cross validation for deterministic GETKF not yet implemented",
           Here());
   }
+  */
   const Eigen::MatrixXf local_Yb_mat_f = (this->Yb_)->packEigen(locvector);
   const Eigen::MatrixXf local_HZ_mat_f = (this->HZb_)->packEigen(locvector);
-  this->computeWeights(local_omb_vec, local_HZ_mat_f, local_Yb_mat_f, local_invVarR_vec);
+  this->computeWeights(local_omb_vec, local_HZ_mat_f, local_Yb_mat_f, R);
   this->applyWeights(bkg_pert, ana_pert, i);
 }
+
 
 }  // namespace oops
 #endif  // OOPS_ASSIMILATION_GETKFSOLVER_H_

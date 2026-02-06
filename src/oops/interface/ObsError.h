@@ -12,7 +12,6 @@
 #include <memory>
 #include <string>
 
-#include "oops/base/ObsVector.h"
 #include "oops/interface/ObsSpace.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
@@ -104,6 +103,31 @@ class ObsError : public util::Printable,
     Log::trace() << "ObsError<OBS>::inverseVariance starting" << std::endl;
     util::Timer timer(classname(), "inverseVariance");
     return oops::ObsVector<OBS>(error_->getInverseVariance(), timeComm_);
+  }
+
+  void localize(oops::ObsVector<OBS> &locvector) const {
+    Log::trace() << "ObsError<OBS>::localize starting" << std::endl;
+    util::Timer timer(classname(), "localize");
+    error_->localize(locvector.obsvector());
+    Log::trace() << "ObsError<OBS>::localize done" << std::endl;
+  }
+
+  int localDim() const {
+    Log::trace() << "ObsError<OBS>::localDim starting" << std::endl;
+    util::Timer timer(classname(), "localDim");
+    return error_->localDim();
+  }
+
+  Eigen::MatrixXf localInverseMultiply(const Eigen::MatrixXf &zz) const {
+    Log::trace() << "ObsError<OBS>::localInverseMultiply starting" << std::endl;
+    util::Timer timer(classname(), "localInverseMultiply");
+    return error_->localInverseMultiply(zz);
+  }
+
+  Eigen::VectorXd local_invVarR() const {
+    Log::trace() << "ObsError<OBS>::local_invVarR starting" << std::endl;
+    util::Timer timer(classname(), "local_invVarR");
+    return error_->local_invVarR();
   }
 
  private:

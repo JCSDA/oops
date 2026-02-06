@@ -8,6 +8,7 @@
 #ifndef LORENZ95_OBSERRORDIAGONAL95_H_
 #define LORENZ95_OBSERRORDIAGONAL95_H_
 
+#include <Eigen/Dense>
 #include <memory>
 #include <string>
 
@@ -17,6 +18,7 @@
 
 #include "lorenz95/ObsTable.h"
 #include "lorenz95/ObsVec1D.h"
+#include "oops/base/ObsVector.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -52,6 +54,14 @@ class ObsErrorDiagonal95 : public util::Printable,
 
   std::unique_ptr<ObsVec1D> getInverseVariance() const;
 
+  void localize(ObsVec1D &) const;
+
+  int localDim() const;
+
+  Eigen::MatrixXf localInverseMultiply(const Eigen::MatrixXf &zz) const;
+
+  Eigen::VectorXd local_invVarR() const {return local_inverseVariance_;}
+
  private:
   void print(std::ostream &) const override;
 
@@ -61,6 +71,7 @@ class ObsErrorDiagonal95 : public util::Printable,
 
   ObsVec1D stddev_;
   ObsVec1D inverseVariance_;
+  mutable Eigen::VectorXd local_inverseVariance_;
 
   double pert_;
   int member_;

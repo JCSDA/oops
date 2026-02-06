@@ -8,6 +8,7 @@
 #ifndef QG_MODEL_OBSERRORDIAGQG_H_
 #define QG_MODEL_OBSERRORDIAGQG_H_
 
+#include <Eigen/Dense>
 #include <memory>
 #include <string>
 
@@ -51,11 +52,20 @@ class ObsErrorDiagQG : public util::Printable,
 
   std::unique_ptr<ObsVecQG> getInverseVariance() const;
 
+  void localize(ObsVecQG &) const;
+
+  int localDim() const;
+
+  Eigen::MatrixXf localInverseMultiply(const Eigen::MatrixXf &zz) const;
+
+  Eigen::VectorXd local_invVarR() const {return local_inverseVariance_;}
+
  private:
   void print(std::ostream &) const override;
 
   ObsVecQG stddev_;
   ObsVecQG inverseVariance_;
+  mutable Eigen::VectorXd local_inverseVariance_;
   double pert_;
 };
 

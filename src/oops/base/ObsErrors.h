@@ -50,7 +50,12 @@ class ObsErrors : public util::Printable,
 /// Multiply a Departure by \f$R^{-1}\f$
   void inverseMultiply(Departures_ &) const;
 
-/// Generate random perturbation
+  Eigen::MatrixXd localInverseMultiply(const Eigen::MatrixXf &) const;
+
+/// Create local R matrix
+  void localize(Departures_ &) const;
+
+  /// Generate random perturbation
   void randomize(Departures_ &) const;
 
 /// Save obs errors
@@ -58,6 +63,8 @@ class ObsErrors : public util::Printable,
 
   /// returns inverse of observation error variance
   Departures_ inverseVariance() const;
+
+  Eigen::VectorXd local_invVarR() const;
 
  private:
   void print(std::ostream &) const override;
@@ -119,6 +126,35 @@ void ObsErrors<OBS>::inverseMultiply(Departures_ & dy) const {
 // -----------------------------------------------------------------------------
 
 template <typename OBS>
+Eigen::MatrixXd ObsErrors<OBS>::localInverseMultiply(const Eigen::MatrixXf & zz) const {
+  size_t i_obs = 0;
+  Eigen::MatrixXf zz_jj;
+  Eigen::MatrixXf zzRinv(zz.rows(), zz.cols());
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
+    // get components of zz from this obs space.
+    // Assumption is that ordering of obs spaces is consistent between
+    // zz and this object.
+    zz_jj = zz.block(0, i_obs, zz.rows(), err_[jj].localDim());
+    zzRinv.block(0, i_obs, zz.rows(), err_[jj].localDim()) =
+        err_[jj].localInverseMultiply(zz_jj);
+    i_obs += err_[jj].localDim();
+  }
+
+  return zzRinv.cast<double>();
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsErrors<OBS>::localize(Departures_ & locvector) const {
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
+    err_[jj].localize(locvector[jj]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
 void ObsErrors<OBS>::randomize(Departures_ & dy) const {
   for (size_t jj = 0; jj < err_.size(); ++jj) {
     err_[jj].randomize(dy[jj]);
@@ -143,6 +179,24 @@ Departures<OBS> ObsErrors<OBS>::inverseVariance() const {
     invvar[jj] = err_[jj].inverseVariance();
   }
   return invvar;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+Eigen::VectorXd ObsErrors<OBS>::local_invVarR() const {
+  size_t size = 0;
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
+    size += err_[jj].local_invVarR().size();
+  }
+  Eigen::VectorXd local_invVar(size);
+  size_t offset = 0;
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
+    size_t size_jj = err_[jj].local_invVarR().size();
+    local_invVar.middleRows(offset, size_jj) = err_[jj].local_invVarR();
+    offset += size_jj;
+  }
+  return local_invVar;
 }
 
 // -----------------------------------------------------------------------------

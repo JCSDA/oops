@@ -31,6 +31,25 @@ namespace test {
     return std::chrono::duration_cast<std::chrono::milliseconds>(tB - tA).count();
   };
 
+  class ObsErrorBogus {
+    // Acts like a diagonal obs error matrix with variances sequentially increasing from 1 up to
+    // nobs. Only public facing function is localInverseMultiply as that is all the linear
+    // algebra tests use.
+   public:
+    explicit ObsErrorBogus(const int& nobs)
+      : invVarR(Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs)) {}
+    Eigen::MatrixXd localInverseMultiply(const Eigen::MatrixXf & zz) const {
+      Eigen::MatrixXf zzRinv(zz.rows(), zz.cols());
+      for (int ii = 0; ii < zz.rows(); ++ii) {
+        zzRinv(ii, Eigen::all) = zz(ii, Eigen::all)
+        .cwiseProduct(invVarR.cast<float>().transpose());
+      }
+      return zzRinv.cast<double>();
+    }
+   private:
+    const Eigen::VectorXd invVarR;
+  };
+
   void compareWeights(const Eigen::VectorXf & wa, const Eigen::VectorXf & wa_f,
                       const Eigen::MatrixXf & Wa, const Eigen::MatrixXf & Wa_f) {
     const float wa_tol = 1.0e-6;
@@ -52,13 +71,14 @@ namespace test {
     const Eigen::VectorXd dy = Eigen::VectorXd::Random(nobs);
     const Eigen::MatrixXf Yb = Eigen::MatrixXf::Random(nens, nobs);
     const Eigen::VectorXd invVarR = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
+    const ObsErrorBogus R(nobs);
     Eigen::VectorXf wa(nens);
     Eigen::MatrixXf Wa(nens, nens);
 
     // Eigen implementation
 
     const auto times = oops::detLETKF_computeWeights(
-        dy.cast<float>(), Yb, invVarR.cast<float>(), (nens - 1) / 1.0,
+        dy.cast<float>(), Yb, R, (nens - 1) / 1.0,
         singularValueDecomposition, wa, Wa);
 
     // LAPACK implementation
@@ -125,11 +145,12 @@ namespace test {
     // modulated ensemble
     const Eigen::MatrixXf Yb = Eigen::MatrixXf::Random(nana, nobs);
     const Eigen::VectorXd invVarR = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
+    const ObsErrorBogus R(nobs);
     Eigen::VectorXf wa(nana);
     Eigen::MatrixXf Wa(nana, nens);
 
     const auto times = oops::detGETKF_computeWeights(
-        dy.cast<float>(), Yb, YbOrig, invVarR.cast<float>(), infl, svd, wa, Wa);
+        dy.cast<float>(), Yb, YbOrig, R, infl, svd, wa, Wa);
 
     // LAPACK implementation
 
@@ -200,6 +221,7 @@ namespace test {
     const Eigen::MatrixXf YbOrig_Gevd = Eigen::MatrixXf::Random(nens, nobs);
     const Eigen::MatrixXf Yb_Gevd = Eigen::MatrixXf::Random(nana, nobs);
     const Eigen::VectorXd invVarR_Gevd = Eigen::VectorXd::LinSpaced(nobs, 1.0, nobs);
+    const ObsErrorBogus R(nobs);
     Eigen::VectorXf wa_Gevd(nana);
     Eigen::MatrixXf Wa_Gevd(nana, nens);
     const auto dy_Gsvd = dy_Gevd;
@@ -211,11 +233,11 @@ namespace test {
 
     bool svd = false;
     const auto GETKF_times_EigenValue = oops::detGETKF_computeWeights(
-        dy_Gevd.cast<float>(), Yb_Gevd, YbOrig_Gevd, invVarR_Gevd.cast<float>(),
+        dy_Gevd.cast<float>(), Yb_Gevd, YbOrig_Gevd, R,
         infl, svd, wa_Gevd, Wa_Gevd);
     svd = true;
     const auto GETKF_times_SingularValue = oops::detGETKF_computeWeights(
-        dy_Gsvd.cast<float>(), Yb_Gsvd, YbOrig_Gsvd, invVarR_Gsvd.cast<float>(),
+        dy_Gsvd.cast<float>(), Yb_Gsvd, YbOrig_Gsvd, R,
         infl, svd, wa_Gsvd, Wa_Gsvd);
 
     // LETKF - deterministic
@@ -231,12 +253,12 @@ namespace test {
     Eigen::MatrixXf Wa_Lsvd(nens, nens);
     svd = false;
     const auto LETKF_times_EigenValue = oops::detLETKF_computeWeights(
-        dy_Levd.cast<float>(), Yb_Levd, invVarR_Levd.cast<float>(),
+        dy_Levd.cast<float>(), Yb_Levd, R,
         (nens - 1) / 1.0, svd, wa_Levd, Wa_Levd);
 
     svd = true;
     const auto LETKF_times_SingularValue = oops::detLETKF_computeWeights(
-        dy_Lsvd.cast<float>(), Yb_Lsvd, invVarR_Lsvd.cast<float>(),
+        dy_Lsvd.cast<float>(), Yb_Lsvd, R,
         (nens - 1) / 1.0, svd, wa_Lsvd, Wa_Lsvd);
 
     // Timing information
