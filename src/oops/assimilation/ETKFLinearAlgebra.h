@@ -242,11 +242,9 @@ namespace oops {
                           const bool svd,
                           Eigen::VectorXf & wa,
                           Eigen::MatrixXf & Wa) {
-    oops::Log::info() << "!! oops::detLETKF_computeWeights" << std::endl;
     const auto tE0 = std::chrono::system_clock::now();
 
     // Yb R^-1
-    oops::Log::info() << "Calling ETKF_YbRinv" << std::endl;
     const Eigen::MatrixXf YbRinv = oops::ETKF_YbRinv(Yb, R);
 
     // YbRinvYbp = Y^T R^-1 Y + (nens-1)/infl I

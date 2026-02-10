@@ -231,7 +231,6 @@ void DeterministicLETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
                    invVarR_f.data(), this->nens_, neigv,
                    getkf_inflation, denkf, getkf, infl);
   } else {
-    oops::Log::info() << "Calling detLETKF_computeWeights" << std::endl;
     oops::detLETKF_computeWeights(dy.cast<float>(), Yb, R, (nens_ - 1) / infl, useSVD_, wa_, Wa_);
   }
 }
