@@ -91,7 +91,7 @@ class IncrementCoupled : public util::Printable {
   /// Returns this increment's geometry
   std::shared_ptr<const GeometryCoupled_> geometry() const {return geom_;}
   /// Returns this increment variables
-  const Variables & variables() const {return vars_;}
+  const Variables & variables() const;
 
   // For accumulator
   void zero();
@@ -111,7 +111,7 @@ class IncrementCoupled : public util::Printable {
   std::shared_ptr<Increment<MODEL1>> dx1_;
   std::shared_ptr<Increment<MODEL2>> dx2_;
   bool parallel_;
-  Variables vars_;
+  mutable Variables vars_;
 };
 
 // -----------------------------------------------------------------------------
@@ -147,8 +147,7 @@ template<typename MODEL1, typename MODEL2>
 IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const GeometryCoupled_ & resol,
                                                    const IncrementCoupled & other,
                                                    const bool ad)
-  : geom_(new GeometryCoupled_(resol)), dx1_(), dx2_(), parallel_(resol.isParallel()),
-    vars_(other.vars_) {
+  : geom_(new GeometryCoupled_(resol)), dx1_(), dx2_(), parallel_(resol.isParallel()) {
   Log::trace() << "IncrementCoupled::IncrementCoupled interpolated starting" << std::endl;
   ASSERT(parallel_ == other.parallel_);
   if (other.dx1_) dx1_ = std::make_shared<Increment<MODEL1>>(resol.geometry1(), *other.dx1_, ad);
@@ -160,7 +159,7 @@ IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const GeometryCoupled_ & reso
 
 template<typename MODEL1, typename MODEL2>
 IncrementCoupled<MODEL1, MODEL2>::IncrementCoupled(const IncrementCoupled & other, const bool copy)
-  : geom_(other.geom_), dx1_(), dx2_(), parallel_(other.parallel_), vars_(other.vars_) {
+  : geom_(other.geom_), dx1_(), dx2_(), parallel_(other.parallel_) {
   Log::trace() << "IncrementCoupled::IncrementCoupled copy starting" << std::endl;
   if (other.dx1_) dx1_ = std::make_shared<Increment<MODEL1>>(*other.dx1_, copy);
   if (other.dx2_) dx2_ = std::make_shared<Increment<MODEL2>>(*other.dx2_, copy);
@@ -175,6 +174,23 @@ IncrementCoupled<MODEL1, MODEL2>::~IncrementCoupled() {
   dx1_.reset();
   dx2_.reset();
   Log::trace() << "IncrementCoupled::~IncrementCoupled done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+template<typename MODEL1, typename MODEL2>
+const Variables & IncrementCoupled<MODEL1, MODEL2>::variables() const {
+  if (parallel_) {
+    if (geom_->modelNumber() == 1) {
+      vars_ = dx1_->variables();
+    }
+    if (geom_->modelNumber() == 2) {
+      vars_ = dx2_->variables();
+    }
+  } else {
+    vars_ = dx1_->variables();
+    vars_ += dx2_->variables();
+  }
+  return vars_;
 }
 
 // -----------------------------------------------------------------------------

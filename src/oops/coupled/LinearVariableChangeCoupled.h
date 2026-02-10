@@ -62,8 +62,10 @@ LinearVariableChangeCoupled<MODEL1, MODEL2>::LinearVariableChangeCoupled(
   : chvar1_(), chvar2_(), availableVars_(resol.variables()) {
   Log::trace() << "LinearVariableChangeCoupled::LinearVariableChangeCoupled starting" << std::endl;
   util::Timer timer(classname(), "LinearVariableChangeCoupled");
-  chvar1_.reset(new LinearVariableChange<MODEL1>(resol.geometry1(), conf));
-  chvar2_.reset(new LinearVariableChange<MODEL2>(resol.geometry2(), conf));
+  const eckit::LocalConfiguration conf1 = conf.getSubConfiguration(MODEL1::name());;
+  const eckit::LocalConfiguration conf2 = conf.getSubConfiguration(MODEL2::name());;
+  chvar1_.reset(new LinearVariableChange<MODEL1>(resol.geometry1(), conf1));
+  chvar2_.reset(new LinearVariableChange<MODEL2>(resol.geometry2(), conf2));
   Log::trace() << "LinearVariableChangeCoupled::LinearVariableChangeCoupled done" << std::endl;
 }
 
@@ -110,9 +112,6 @@ void LinearVariableChangeCoupled<MODEL1, MODEL2>::changeVarAD(
   Log::trace() << "LinearVariableChangeCoupled::changeVarAD starting" << std::endl;
   util::Timer timer(classname(), "changeVarAD");
   std::vector<Variables> splitvars = splitVariables(vars, availableVars_);
-  oops::Log::info() << "LinearVariableChangeCoupled::changeVarAD: "
-                          << "splitvars[0]: " << splitvars[0] << ", "
-                          << "splitvars[1]: " << splitvars[1] << std::endl;
   chvar1_->changeVarAD(dx.increment1(), splitvars[0]);
   chvar2_->changeVarAD(dx.increment2(), splitvars[1]);
   Log::trace() << "LinearVariableChangeCoupled::changeVarAD done" << std::endl;
