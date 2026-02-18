@@ -27,7 +27,7 @@ void printRunStats(const std::string & name, const bool alltasks,
   double rss = static_cast<double>(rssbyte);
 
   double factor = 1.0e+6;
-  std::string unit = " Mb";
+  std::string unit = " MB";
 
   if (alltasks) {
     size_t ntasks = comm.size();
@@ -43,19 +43,19 @@ void printRunStats(const std::string & name, const bool alltasks,
         if (zss[jj] > rssmax) rssmax = zss[jj];
         rsstot += zss[jj];
       }
-      if (rsstot >= 1.0e+9) {factor = 1.0e+9; unit = " Gb";}
+      if (rsstot >= 1.0e+9) {factor = 1.0e+9; unit = " GB";}
       oops::Log::stats() << std::left << std::setw(40) << name << " - Runtime: "
                          << std::fixed << std::right << std::setprecision(2)
                          << std::setw(9) << timeStamp() << " sec,  Memory: total: "
                          << std::setw(8) << rsstot / factor << unit;
-      if (rssmin >= 1.0e+9) {factor = 1.0e+9; unit = " Gb";} else {factor = 1.0e+6; unit = " Mb";}
+      if (rssmin >= 1.0e+9) {factor = 1.0e+9; unit = " GB";} else {factor = 1.0e+6; unit = " MB";}
       oops::Log::stats() << ", per task: min = "
                          << std::right << std::setprecision(2) << std::fixed
                          << std::setw(8) << rssmin / factor << unit << ", max = "
                          << std::setw(8) << rssmax / factor << unit << std::endl;
     }
   } else {
-    if (rss >= 1.0e+9) {factor = 1.0e+9; unit = " Gb";}
+    if (rss >= 1.0e+9) {factor = 1.0e+9; unit = " GB";}
     oops::Log::stats() << std::left << std::setw(40) << name << " - Runtime: "
                        << std::fixed << std::right << std::setprecision(2)
                        << std::setw(8) << timeStamp() << " sec,  Local Memory: "
