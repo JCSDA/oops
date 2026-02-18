@@ -48,6 +48,8 @@ class LinearObsOperatorTestParameters : public oops::Parameters {
 
   oops::Parameter<double> coefTL{"coef TL", 0.1, this};
   oops::Parameter<int> iterationsTL{"iterations TL", 1, this};
+
+  oops::OptionalParameter<std::string> QCFlagsGroupName{"QCFlagsGroupName", this};
 };
 
 // -----------------------------------------------------------------------------
@@ -194,10 +196,18 @@ template <typename OBS> void testLinearity() {
     // other init)
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linearObsOperatorParameters(obsTypeParams));
 
+    // initialize qc flags ObsDataVector
     oops::ObsDataVector<OBS, int> qc_flags(
       Test_::obspace()[jj],
-      Test_::obspace()[jj].obsvariables());
+      Test_::obspace()[jj].obsvariables(),
+      std::string());
 
+    // Check if LinearObsOperatorTestParameters contain QCFlagsGroupName option
+    // Read the group_name and from obs space read the values
+    if (obsTypeParams.linearObsOperatorTest.value() != boost::none &&
+        obsTypeParams.linearObsOperatorTest.value()->QCFlagsGroupName.value() != boost::none) {
+      qc_flags.read(*obsTypeParams.linearObsOperatorTest.value()->QCFlagsGroupName.value());
+    }
     // initialize obs bias
     const eckit::LocalConfiguration bconf = oconf.getSubConfiguration("obs bias");
     const ObsAuxCtrl_ ybias(Test_::obspace()[jj], bconf);
@@ -276,10 +286,6 @@ template <typename OBS> void testAdjoint() {
         obsTypeParams.expectSimulateObsADToThrow.value() != boost::none)
       continue;
 
-    oops::ObsDataVector<OBS, int> qc_flags(
-      Test_::obspace()[jj],
-      Test_::obspace()[jj].obsvariables(),
-      std::string());
     const eckit::LocalConfiguration oconf = obsTypeParams.toConfiguration();
     const eckit::LocalConfiguration oopconf(oconf, "obs operator");
     // initialize observation operator (set variables requested from the model,
@@ -288,6 +294,19 @@ template <typename OBS> void testAdjoint() {
     // initialize TL/AD observation operator (set model variables for Jacobian),
     // other init)
     LinearObsOperator_ hoptl(Test_::obspace()[jj], linearObsOperatorParameters(obsTypeParams));
+
+    // initialize qc flags ObsDataVector
+    oops::ObsDataVector<OBS, int> qc_flags(
+      Test_::obspace()[jj],
+      Test_::obspace()[jj].obsvariables(),
+      std::string());
+
+    // Check if LinearObsOperatorTestParameters contain QCFlagsGroupName option
+    // Read the group_name and from obs space read the values
+    if (obsTypeParams.linearObsOperatorTest.value() != boost::none &&
+        obsTypeParams.linearObsOperatorTest.value()->QCFlagsGroupName.value() != boost::none) {
+      qc_flags.read(*obsTypeParams.linearObsOperatorTest.value()->QCFlagsGroupName.value());
+    }
 
     const double tol = obsTypeParams.linearObsOperatorTest.value()->toleranceAD;
     // initialize bias correction
@@ -408,10 +427,18 @@ template <typename OBS> void testTangentLinear() {
     ObsVector_ y3(Test_::obspace()[jj]);
     ObsVector_ bias(Test_::obspace()[jj]);
 
+    // initialize qc flags ObsDataVector
     oops::ObsDataVector<OBS, int> qc_flags(
       Test_::obspace()[jj],
       Test_::obspace()[jj].obsvariables(),
       std::string());
+
+    // Check if LinearObsOperatorTestParameters contain QCFlagsGroupName option
+    // Read the group_name and from obs space read the values
+    if (obsTypeParams.linearObsOperatorTest.value() != boost::none &&
+        obsTypeParams.linearObsOperatorTest.value()->QCFlagsGroupName.value() != boost::none) {
+      qc_flags.read(*obsTypeParams.linearObsOperatorTest.value()->QCFlagsGroupName.value());
+    }
 
     // set TL trajectory to the geovals and the bias coeff. from the files
     hoptl.setTrajectory(x0, ybias0, qc_flags);
@@ -484,11 +511,6 @@ template <typename OBS> void testException() {
     if (obsTypeParams.expectConstructorToThrow.value() != boost::none)
       continue;
 
-    oops::ObsDataVector<OBS, int> qc_flags(
-      Test_::obspace()[jj],
-      Test_::obspace()[jj].obsvariables(),
-      std::string());
-
     // Set up objects prior to throwing exceptions.
     const eckit::LocalConfiguration oconf = obsTypeParams.toConfiguration();
     const eckit::LocalConfiguration oopconf(oconf, "obs operator");
@@ -506,6 +528,19 @@ template <typename OBS> void testException() {
     oops::ObsVariables diagvars;
     diagvars += ybias.requiredHdiagnostics();
     const oops::Variables hoptlvars = hoptl.requiredVars();
+
+    // initialize qc flags ObsDataVector
+    oops::ObsDataVector<OBS, int> qc_flags(
+      Test_::obspace()[jj],
+      Test_::obspace()[jj].obsvariables(),
+      std::string());
+
+    // Check if LinearObsOperatorTestParameters contain QCFlagsGroupName option
+    // Read the group_name and from obs space read the values
+    if (obsTypeParams.linearObsOperatorTest.value() != boost::none &&
+        obsTypeParams.linearObsOperatorTest.value()->QCFlagsGroupName.value() != boost::none) {
+      qc_flags.read(*obsTypeParams.linearObsOperatorTest.value()->QCFlagsGroupName.value());
+    }
 
     if (obsTypeParams.expectSetTrajectoryToThrow.value() != boost::none) {
       // The setTrajectory method is expected to throw an exception
