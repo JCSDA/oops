@@ -132,7 +132,7 @@ namespace oops {
     const double eps = DBL_EPSILON;
     const double rtpsInflMin = 1.0;
     const double rtpsInflMax = 1e30;
-    if (rtps > 0.0 && rtps <= 1.0) {
+    if (rtps > 0.0) {
       // posterior spread
       Eigen::ArrayXd asprd = Xa.array().square().rowwise().sum()/(nens - 1);
       asprd = asprd.sqrt();

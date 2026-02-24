@@ -248,14 +248,14 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
       Log::info() << "RTPP inflation will be applied with rtppCoeff=" <<
                     rtpp << std::endl;
   } else {
-      Log::info() << "RTPP inflation is not applied rtppCoeff is out of bounds (0,1], rtppCoeff="
+      Log::info() << "RTPP not applied: rtppCoeff is out of bounds (0,1], rtppCoeff="
                   << rtpp << std::endl;
   }
-  if (rtps > 0.0 && rtps <= 1.0) {
+  if (rtps > 0.0) {
     Log::info() << "RTPS inflation will be applied with rtpsCoeff=" <<
                     rtps << std::endl;
   } else {
-    Log::info() << "RTPS inflation is not applied rtpsCoeff is out of bounds (0,1], rtpsCoeff="
+    Log::info() << "RTPS not applied: rtpsCoeff is <=0, rtpsCoeff="
                 << rtps << std::endl;
   }
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
