@@ -98,18 +98,23 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     if (finalConfig.has("increment")) {
       const eckit::LocalConfiguration incConfig(finalConfig, "increment");
       ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
-      ControlIncrement<MODEL, OBS> dx(J->jb());
-      dx.diff(xx, x_b);
-
       const eckit::LocalConfiguration incOutConfig(incConfig, "output");
+      // if geometry is specified, compute difference between analysis and
+      // background on that geometry (for example, background geometry).
       if (incConfig.has("geometry")) {
         const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
         Geometry<MODEL> incGeom(incGeomConfig,
                                 xx.states().geometry().getComm(),
                                 xx.states().commTime());
-        ControlIncrement<MODEL, OBS> dx_geom_resolution(incGeom, dx);
-        dx_geom_resolution.write(incOutConfig);
+        ControlIncrement<MODEL, OBS> dx_tmp(J->jb());
+        ControlIncrement<MODEL, OBS> dx(incGeom, dx_tmp);
+        dx.diff(xx, x_b);
+        dx.write(incOutConfig);
+      // otherwise, compute difference on the background geometry
       } else {
+        ControlIncrement<MODEL, OBS> dx_tmp(J->jb());
+        ControlIncrement<MODEL, OBS> dx(xx.state().geometry(), dx_tmp);
+        dx.diff(xx, x_b);
         dx.write(incOutConfig);
       }
     }
