@@ -210,6 +210,69 @@ class NormalDistribution : public Random<datatype> {
   datatype sdev_;
 };
 
+// ------------------------------------------------------------------------------
+/*! Class for generating Inverse-Gamma-distributed random numbers
+ *
+ * \details *util::InverseGammaDistribution* creates a vector of pseudo-random numbers
+ * with an inverse gamma distribution.
+ *
+ * \param[in] N The size of the desired array (default 1)
+ * \param[in] mean The mean of the distribution (default 1)
+ * \param[in] relvar The relative variance of the destribution (default 1):
+              relvar = variance / mean **2
+ * \param[in] seed The seed to use for the random number generator upon first
+ *            instantiation of the class (optional).  If omitted, a seed
+ *            will be generated based on the calendar time.  This parameter is
+ *            only used on the first instantiation of this class for a
+ *            particular data type and/or if the **reset** flag is set to true.
+ * \param[in] reset If this is set to **true** then this forces the generator
+ *            to re-initialize itself with the specified seed.  Otherwise, the
+ *            seed is only used on first instantiation (this is the default
+ *            behavior).
+ *
+ * \example Example usage:
+ * util::InverseGammaDistribution<double> x(N,3.0,2.0)
+ * std::cout << x[i] << std::endl;  // access one element
+ * std::cout << x << std::endl;  // print full array
+ *
+ * \warning Only implemented for floating point data types
+ * \warning Distribution depends on shape parameter, alpha, and scale parameter, beta;
+            alpha = 2 + 1.0/relvar and beta = (alpha - 1) * mean.
+ * \warning Inverse Gamma distribution is computed from Gamma distribution, 
+            inverted, and then multiplied by beta. 
+ */
+template <typename datatype>
+class InverseGammaDistribution : public Random<datatype> {
+ public:
+  InverseGammaDistribution(std::size_t N = 1, datatype mean = 1, datatype relvar = 1,
+                     unsigned int seed = static_cast<std::uint32_t>(std::time(nullptr)),
+                     bool reset = false): Random<datatype>(N), mean_(mean), relvar_(relvar) {
+    if (!std::is_floating_point<datatype>::value) {
+      throw eckit::BadCast("InverseGammaDistribution only implemented for floating "
+                            "point data types");
+    }
+    static boost::random::mt19937 generator(seed);
+    if (relvar <= 0.0) {
+      ABORT("Relative variance should be greater than zero");
+    }
+    const double alpha = 2.0 + 1.0/relvar_;
+    oops::Log::info() << "InverseGamma alpha value: " <<  alpha << std::endl;
+    if (reset) generator.seed(seed);
+    boost::gamma_distribution<datatype> distribution(alpha);
+    const double beta = (alpha - 1.0)*mean_;
+    this->data_.reserve(this->N_);
+    for (size_t jj=0; jj < this->N_; ++jj) {
+         this->data_.push_back((alpha - 1.0)/distribution(generator));
+    }
+  }
+
+  virtual ~InverseGammaDistribution() {}
+
+ private:
+  datatype mean_;
+  datatype relvar_;
+};
+
 // -----------------------------------------------------------------------------
 /*! \brief Shuffle (reorder randomly) a range of elements.
  *
