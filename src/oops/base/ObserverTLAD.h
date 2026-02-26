@@ -80,7 +80,6 @@ class ObserverTLAD {
   std::unique_ptr<Locations_> locations_;
   util::TimeWindow timeWindow_;
   const ObsAuxCtrl_ *           ybias_;
-  ObsDataInt_ qc_flags_;       // QC flags (should not be a pointer)
   bool init_;
   eckit::LocalConfiguration gvConf_;
 };
@@ -91,7 +90,7 @@ ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const eckit::Con
   : obspace_(obsdb), hopVars_(), hopVarSizes_(),
     hop_(obspace_, eckit::LocalConfiguration(conf, "obs operator")),
     hoptlad_(), getvals_(), timeWindow_(obsdb.timeWindow()),
-    ybias_(nullptr), qc_flags_(obsdb, obsdb.obsvariables()), init_(false),
+    ybias_(nullptr), init_(false),
     gvConf_(conf.getSubConfiguration("get values"))
 {
   Log::trace() << "ObserverTLAD::ObserverTLAD" << std::endl;
@@ -148,15 +147,12 @@ void ObserverTLAD<MODEL, OBS>::finalizeTraj(const ObsDataInt_ & qcflags) {
   // Fill geovals
   GeoVaLs_ geovals = makeAndFillGeoVaLs(*locations_, hopVars_, hopVarSizes_, getvals_);
 
-  // Copy qc flags to private variable
-  qc_flags_ = qcflags;
-
   // Compute the reduced representation of the GeoVaLs for which it's been requested
   oops::Variables reducedVars = ybias_->requiredVars();
   hop_.computeReducedVars(reducedVars, geovals);
 
   /// Set linearization trajectory for H(x)
-  hoptlad_->setTrajectory(geovals, *ybias_, qc_flags_);
+  hoptlad_->setTrajectory(geovals, *ybias_, qcflags);
 
   init_ = false;
   Log::trace() << "ObserverTLAD::finalizeTraj done" << std::endl;
@@ -171,7 +167,7 @@ void ObserverTLAD<MODEL, OBS>::finalizeTL(const ObsAuxIncr_ & ybiastl, ObsVector
                                         hoptladVarSizes_, getvals_);
 
   // Compute linear H(x)
-  hoptlad_->simulateObsTL(geovals, ydeptl, ybiastl, qc_flags_);
+  hoptlad_->simulateObsTL(geovals, ydeptl, ybiastl);
 
   Log::trace() << "ObserverTLAD::finalizeTL done" << std::endl;
 }
@@ -183,7 +179,7 @@ void ObserverTLAD<MODEL, OBS>::initializeAD(const ObsVector_ & ydepad, ObsAuxInc
   GeoVaLs_ geovals(*locations_, hoptlad_->requiredVars(), hoptladVarSizes_);
 
   // Compute adjoint of H(x)
-  hoptlad_->simulateObsAD(geovals, ydepad, ybiasad, qc_flags_);
+  hoptlad_->simulateObsAD(geovals, ydepad, ybiasad);
   // GeoVaLs forcing to GetValues
 
   for (size_t m = 0; m < getvals_.size(); ++m) {

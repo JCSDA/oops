@@ -51,10 +51,8 @@ class ObsOperatorTLAD : public util::Printable,
 /// Obs Operator
   void setTrajectory(const GomQG &, const ObsBias &,
                      const QCFlags_ &);
-  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &,
-                     const QCFlags_ &) const;
-  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &,
-                     const QCFlags_ &) const;
+  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const;
+  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const;
 
 /// Other
   const oops::Variables & requiredVars() const;  // Required inputs requiredVars from Model

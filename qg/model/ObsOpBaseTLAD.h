@@ -39,10 +39,8 @@ class ObsOpBaseTLAD : public util::Printable,
 /// Obs Operator
   virtual void setTrajectory(const GomQG &, const ObsBias &,
                              const QCFlags_ &) = 0;
-  virtual void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &,
-                             const QCFlags_ &) const = 0;
-  virtual void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &,
-                             const QCFlags_ &) const = 0;
+  virtual void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const = 0;
+  virtual void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const = 0;
 
 /// Other
   virtual const oops::Variables & requiredVars() const = 0;  // Required from Model

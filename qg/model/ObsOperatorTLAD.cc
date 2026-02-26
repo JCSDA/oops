@@ -41,17 +41,15 @@ void ObsOperatorTLAD::setTrajectory(const GomQG & gvals, const ObsBias & bias,
 // -----------------------------------------------------------------------------
 
 void ObsOperatorTLAD::simulateObsTL(const GomQG & gvals, ObsVecQG & yy,
-                                    const ObsBiasIncrement & bias,
-                                    const QCFlags_ & qc_flags) const {
-  oper_->simulateObsTL(gvals, yy, bias, qc_flags);
+                                    const ObsBiasIncrement & bias) const {
+  oper_->simulateObsTL(gvals, yy, bias);
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsOperatorTLAD::simulateObsAD(GomQG & gvals, const ObsVecQG & yy,
-                                    ObsBiasIncrement & bias,
-                                    const QCFlags_& qc_flags) const {
-  oper_->simulateObsAD(gvals, yy, bias, qc_flags);
+                                    ObsBiasIncrement & bias) const {
+  oper_->simulateObsAD(gvals, yy, bias);
 }
 
 // -----------------------------------------------------------------------------

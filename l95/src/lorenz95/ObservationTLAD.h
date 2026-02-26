@@ -52,10 +52,8 @@ class ObservationTLAD : public util::Printable,
 // Obs Operators
   void setTrajectory(const GomL95 &, const ObsBias &,
                      const QCFlags_ &);
-  void simulateObsTL(const GomL95 &, ObsVec1D &, const ObsBiasCorrection &,
-                     const QCFlags_ &) const;
-  void simulateObsAD(GomL95 &, const ObsVec1D &, ObsBiasCorrection &,
-                     const QCFlags_ &) const;
+  void simulateObsTL(const GomL95 &, ObsVec1D &, const ObsBiasCorrection &) const;
+  void simulateObsAD(GomL95 &, const ObsVec1D &, ObsBiasCorrection &) const;
 
 // Other
   const oops::Variables & requiredVars() const {return inputs_;}

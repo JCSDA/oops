@@ -238,13 +238,13 @@ template <typename OBS> void testLinearity() {
     // test rms(H * (dx, ybinc)) = 0, when dx = 0
     dx.zero();
     ybinc.zero();
-    hoptl.simulateObsTL(dx, dy1, ybinc, qc_flags);
+    hoptl.simulateObsTL(dx, dy1, ybinc);
     EXPECT(dy1.rms() == zero);
 
     // test rms(H * (dx, ybinc)) > 0, when dx is random
     dx.random();
     Bobsbias.randomize(ybinc);
-    hoptl.simulateObsTL(dx, dy1, ybinc, qc_flags);
+    hoptl.simulateObsTL(dx, dy1, ybinc);
     EXPECT(dy1.rms() > zero);
 
     // test k * H * (dx, ybinc) ~ H * (k*dx, k*ybinc)
@@ -252,7 +252,7 @@ template <typename OBS> void testLinearity() {
     dx  *= coef;
     ybinc *= coef;
     ObsVector_ dy2(Test_::obspace()[jj]);
-    hoptl.simulateObsTL(dx, dy2, ybinc, qc_flags);
+    hoptl.simulateObsTL(dx, dy2, ybinc);
 
     dy2 -= dy1;
     EXPECT(dy2.rms() / dy1.rms() < tol);
@@ -340,7 +340,7 @@ template <typename OBS> void testAdjoint() {
     dx1.random();
     EXPECT(dot_product(dx1, dx1) > zero);  //  BOOST_REQUIRE
     Bobsbias.randomize(ybinc1);
-    hoptl.simulateObsTL(dx1, dy1, ybinc1, qc_flags);
+    hoptl.simulateObsTL(dx1, dy1, ybinc1);
     EXPECT(dot_product(dy1, dy1) > zero);
 
     // calculate (dx2, ybinc2) = HT dy2 (with random dy2)
@@ -348,7 +348,7 @@ template <typename OBS> void testAdjoint() {
     EXPECT(dot_product(dy2, dy2) > zero);  //  BOOST_REQUIRE
     dx2.zero();
     ybinc2.zero();
-    hoptl.simulateObsAD(dx2, dy2, ybinc2, qc_flags);
+    hoptl.simulateObsAD(dx2, dy2, ybinc2);
     EXPECT(dot_product(dx2, dx2) > zero);
 
     const double zz1 = dot_product(dx1, dx2) + dot_product(ybinc1, ybinc2);
@@ -478,7 +478,7 @@ template <typename OBS> void testTangentLinear() {
       hop.simulateObs(x, y2, ybias, qc_flags, bias, ydiag);
       y2 -= y1;
       // y3 = hoptl(alpha*dx, alpha*ybinc)
-      hoptl.simulateObsTL(dx, y3, ybinc, qc_flags);
+      hoptl.simulateObsTL(dx, y3, ybinc);
       y2 -= y3;
 
       double test_norm = y2.rms();
@@ -561,7 +561,7 @@ template <typename OBS> void testException() {
       // The simulateObsTL method is expected to throw an exception
       // containing the specified string.
       const std::string expectedMessage = *obsTypeParams.expectSimulateObsTLToThrow.value();
-      EXPECT_THROWS_MSG(hoptl.simulateObsTL(dx1, dy1, ybinc, qc_flags),
+      EXPECT_THROWS_MSG(hoptl.simulateObsTL(dx1, dy1, ybinc),
                         expectedMessage.c_str());
     }
 
@@ -576,7 +576,7 @@ template <typename OBS> void testException() {
       // The simulateObsAD method is expected to throw an exception
       // containing the specified string.
       const std::string expectedMessage = *obsTypeParams.expectSimulateObsADToThrow.value();
-      EXPECT_THROWS_MSG(hoptl.simulateObsAD(dx2, dy2, ybinc, qc_flags),
+      EXPECT_THROWS_MSG(hoptl.simulateObsAD(dx2, dy2, ybinc),
                         expectedMessage.c_str());
     }
   }

@@ -41,16 +41,14 @@ void ObsWindTLAD::setTrajectory(const GomQG &, const ObsBias &, const QCFlags_ &
 // -----------------------------------------------------------------------------
 
 void ObsWindTLAD::simulateObsTL(const GomQG & gom, ObsVecQG & ovec,
-                                const ObsBiasIncrement & bias,
-                                const QCFlags_ & qc_flags) const {
+                                const ObsBiasIncrement & bias) const {
   qg_wind_equiv_tl_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.wind());
 }
 
 // -----------------------------------------------------------------------------
 
 void ObsWindTLAD::simulateObsAD(GomQG & gom, const ObsVecQG & ovec,
-                                ObsBiasIncrement & bias,
-                                const QCFlags_ & qc_flags) const {
+                                ObsBiasIncrement & bias) const {
   qg_wind_equiv_ad_f90(obsdb_.toFortran(), gom.toFortran(), ovec.toFortran(), bias.wind());
 }
 

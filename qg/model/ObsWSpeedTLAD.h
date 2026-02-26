@@ -44,10 +44,8 @@ class ObsWSpeedTLAD : public ObsOpBaseTLAD,
 // Obs Operators
   void setTrajectory(const GomQG &, const ObsBias &,
                      const QCFlags_ &) override;
-  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &,
-                     const QCFlags_ &) const override;
-  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &,
-                     const QCFlags_ &) const override;
+  void simulateObsTL(const GomQG &, ObsVecQG &, const ObsBiasIncrement &) const override;
+  void simulateObsAD(GomQG &, const ObsVecQG &, ObsBiasIncrement &) const override;
 
 // Other
   const oops::Variables & requiredVars() const override {return varin_;}

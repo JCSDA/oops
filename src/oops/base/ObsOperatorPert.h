@@ -130,7 +130,7 @@ void ObsOperatorPert<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
   ObsAuxIncrement_ auxInc(auxcopy.obspace(), auxcopy.config());
   auxInc.diff(aux, auxcopy);    // In UFO implementation, auxInc does not include coefficients
                                 // for static BC predictors but only variational ones
-  linOper_.simulateObsTL(gvals, yy, auxInc, qc_flags);
+  linOper_.simulateObsTL(gvals, yy, auxInc);
   Log::trace() << "ObsOperatorPert<OBS>::simulateObs done" << std::endl;
 }
 
