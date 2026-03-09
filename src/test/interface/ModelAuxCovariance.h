@@ -58,6 +58,10 @@ template <typename MODEL> class ModelAuxCovarianceFixture : private boost::nonco
  public:
   static const eckit::LocalConfiguration & config() {return getInstance().config_;}
   static const Geometry_    & resol()  {return *getInstance().resol_;}
+  static void reset() {
+    getInstance().resol_.reset();
+    getInstance().config_ = eckit::LocalConfiguration{};
+  }
 
  private:
   static ModelAuxCovarianceFixture<MODEL>& getInstance() {
@@ -105,7 +109,9 @@ template <typename MODEL>
 class ModelAuxCovariance : public oops::Test {
  public:
   using oops::Test::Test;
-  virtual ~ModelAuxCovariance() {}
+  virtual ~ModelAuxCovariance() {
+    ModelAuxCovarianceFixture<MODEL>::reset();
+  }
  private:
   std::string testid() const override {return "test::ModelAuxCovariance<" + MODEL::name() + ">";}
 
