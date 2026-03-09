@@ -107,11 +107,10 @@ template <typename OBS> void testMultiplies() {
     const eckit::LocalConfiguration rconf(conf[jj], "obs error");
     Covar_ R(rconf, Test_::obspace()[jj]);
 
-    double RMSE_tolerance = rconf.getDouble("RMSE tolerance", 1.e-10);
+    double RMSE_tolerance = rconf.getDouble("Obs Error test tolerance", 1.e-10);
     // RMSE should be equal to the rms that was read from the file
     EXPECT(oops::is_close(R.getRMSE(), obserr.rms(), RMSE_tolerance));
 
-    double multiply_tolerance = rconf.getDouble("multiply tolerance", 1.e-10);
     // create random vector dy and its copies dy1, dy2
     ObsVector_ dy(Test_::obspace()[jj], "");
     R.randomize(dy);
@@ -129,9 +128,9 @@ template <typename OBS> void testMultiplies() {
     R.inverseMultiply(dy2);
     oops::Log::info() << "R^{-1}*dy: " << dy2 << std::endl;
     R.multiply(dy2);
-    // dy2 = R*R^P-1}*dy
+    // dy2 = R*R^{-1}*dy
     oops::Log::info() << "R*R^{-1}*dy: " << dy2 << std::endl;
-    EXPECT(oops::is_close(dy2.rms(), dy.rms(), multiply_tolerance));
+    EXPECT(oops::is_close(dy2.rms(), dy.rms(), RMSE_tolerance));
   }
 }
 
