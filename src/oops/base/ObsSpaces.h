@@ -85,7 +85,9 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
     auto tmp = std::make_shared<ObsSpace_>(obsconf, comm, timeWindow, time);
     spaces_.push_back(std::move(tmp));
   }
-  ASSERT(spaces_.size() >0);
+  if (spaces_.empty()) {
+    Log::warning() << "ObsSpaces<MODEL, OBS>::ObsSpaces: no obs spaces created" << std::endl;
+  }
   Log::trace() << "ObsSpaces<MODEL, OBS>::ObsSpaces done" << std::endl;
 }
 
