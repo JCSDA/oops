@@ -262,7 +262,7 @@ class InverseGammaDistribution : public Random<datatype> {
     const double beta = (alpha - 1.0)*mean_;
     this->data_.reserve(this->N_);
     for (size_t jj=0; jj < this->N_; ++jj) {
-         this->data_.push_back((alpha - 1.0)/distribution(generator));
+         this->data_.push_back(beta/distribution(generator));
     }
   }
 
