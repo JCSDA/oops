@@ -207,7 +207,6 @@ jobs:
             --env OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1 \
             --env REPO="${REPO}" \
             --workdir="${WORKDIR}" \
-            --entrypoint="${WORKDIR}/build-and-test.sh" \
             'ngmssboxjediacr.azurecr.io/jedibase:alma9'
 
       - name: Cleanup workspace
