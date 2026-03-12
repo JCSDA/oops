@@ -90,6 +90,29 @@ FieldSets::FieldSets(const atlas::FunctionSpace & fspace,
 
 // -----------------------------------------------------------------------------
 
+void FieldSets::emplace_back(const size_t & it,
+                             const size_t & im,
+                             const FieldSet3D & fset3d) {
+  Log::trace() << "FieldSets::emplace_back starting" << std::endl;
+
+  // Check current size
+  const size_t currentSize = it+im*this->local_time_size();
+  ASSERT(this->size() == currentSize);
+
+  // Add input fieldset
+  this->dataset().emplace_back(std::make_unique<FieldSet3D>(fset3d));
+
+  if (this->size() == this->local_ens_size()*this->local_time_size()) {
+    // Finalize
+    this->sync_times();
+    this->check_consistency();
+  }
+
+  Log::trace() << "FieldSets::emplace_back done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 FieldSets & FieldSets::operator*=(const oops::FieldSet3D & other) {
   for (size_t jj = 0; jj < this->size(); ++jj) {
     (*this)[jj] *= other;

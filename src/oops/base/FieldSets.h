@@ -48,7 +48,12 @@ class FieldSets : public DataSetBase<FieldSet3D, atlas::FunctionSpace> {
             const eckit::mpi::Comm & = oops::mpi::myself(),
             const eckit::mpi::Comm & = oops::mpi::myself());
 
-  /// @brief  Multiplies each FieldSet3D in this FieldSets with the \p other.
+  /// @brief Emplace back FieldSet3D in FieldSets
+  void emplace_back(const size_t &,
+                    const size_t &,
+                    const FieldSet3D &);
+
+  /// @brief Multiplies each FieldSet3D in this FieldSets with the \p other.
   FieldSets & operator*=(const oops::FieldSet3D & other);
   FieldSets & operator*=(const double zz);
 
