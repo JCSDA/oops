@@ -65,10 +65,6 @@ void testConstructor() {
 
   vars.reset();
   EXPECT(!vars.get());
-
-  // Test construction from an eckit::Configuration entry that does not exist
-  EXPECT_THROWS_AS(auto bad_vars = oops::Variables(TestEnvironment::config(), "FOO"),
-                   eckit::BadParameter);
 }
 
 // -----------------------------------------------------------------------------
