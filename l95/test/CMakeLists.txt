@@ -291,207 +291,207 @@ ecbuild_add_resources( TARGET   l95_test_scripts
 # truth and makeobs4d are required for interface tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_truth
+ecbuild_add_test( TARGET oops_l95_truth
                   COMMAND  l95_forecast.x
                   ARGS testinput/truth.yaml )
 
-ecbuild_add_test( TARGET test_l95_makeobs4d
+ecbuild_add_test( TARGET oops_l95_makeobs4d
                   COMMAND l95_hofx.x
                   ARGS testinput/makeobs4d.yaml
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
 
 #####################################################################
 # interface tests
 #####################################################################
-ecbuild_add_test( TARGET test_l95_departuresensemble
-                 SOURCES executables/TestDeparturesEnsemble.cc
-                 ARGS "testinput/departuresensemble.yaml"
+ecbuild_add_test( TARGET oops_l95_departuresensemble
+                  SOURCES executables/TestDeparturesEnsemble.cc
+                  ARGS "testinput/departuresensemble.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_geometry
+ecbuild_add_test( TARGET oops_l95_geometry
                   SOURCES executables/TestGeometry.cc
                   ARGS "testinput/geometry.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_geometry_iterator
+ecbuild_add_test( TARGET oops_l95_geometry_iterator
                   SOURCES executables/TestGeometryIterator.cc
                   ARGS "testinput/geometry_iterator.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_geovals
+ecbuild_add_test( TARGET oops_l95_geovals
                   SOURCES executables/TestGeoVaLs.cc
                   ARGS "testinput/geovals.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_state
+ecbuild_add_test( TARGET oops_l95_state
                   SOURCES executables/TestState.cc
                   ARGS "testinput/state.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_getvalues
+ecbuild_add_test( TARGET oops_l95_getvalues
                   SOURCES executables/TestGetValues.cc
                   ARGS "testinput/getvalues.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_modelauxcontrol
+ecbuild_add_test( TARGET oops_l95_modelauxcontrol
                   SOURCES executables/TestModelAuxControl.cc
                   ARGS "testinput/modelauxcontrol.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_model
+ecbuild_add_test( TARGET oops_l95_model
                   SOURCES executables/TestModel.cc
                   ARGS "testinput/model.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_pseudomodel
+ecbuild_add_test( TARGET oops_l95_pseudomodel
                   SOURCES executables/TestModel.cc
                   ARGS "testinput/pseudomodel.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_pseudomodel_state4d
+ecbuild_add_test( TARGET oops_l95_pseudomodel_state4d
                   SOURCES executables/TestPseudoModelState4D.cc
                   ARGS "testinput/pseudomodel_state4d.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_identitymodel
+ecbuild_add_test( TARGET oops_l95_identitymodel
                   SOURCES executables/TestModel.cc
                   ARGS "testinput/identitymodel.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_increment
+ecbuild_add_test( TARGET oops_l95_increment
                   SOURCES executables/TestIncrement.cc
                   ARGS "testinput/increment.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_errorcovariance
+ecbuild_add_test( TARGET oops_l95_errorcovariance
                   SOURCES executables/TestErrorCovariance.cc
                   ARGS "testinput/errorcovariance.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_modelauxincrement
+ecbuild_add_test( TARGET oops_l95_modelauxincrement
                   SOURCES executables/TestModelAuxIncrement.cc
                   ARGS "testinput/modelaux.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_modelauxcovariance
+ecbuild_add_test( TARGET oops_l95_modelauxcovariance
                   SOURCES executables/TestModelAuxCovariance.cc
                   ARGS "testinput/modelaux.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_linearmodel
+ecbuild_add_test( TARGET oops_l95_linearmodel
                   SOURCES executables/TestLinearModel.cc
                   ARGS "testinput/linearmodel.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obsspace
+ecbuild_add_test( TARGET oops_l95_obsspace
                   SOURCES executables/TestObsSpace.cc
                   ARGS "testinput/obsspace.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obs_iterator
+ecbuild_add_test( TARGET oops_l95_obs_iterator
                   SOURCES executables/TestObsIterator.cc
                   ARGS "testinput/obs_iterator.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obslocalization
+ecbuild_add_test( TARGET oops_l95_obslocalization
                   SOURCES executables/TestObsLocalization.cc
                   ARGS "testinput/obslocalization.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obslocalizations
+ecbuild_add_test( TARGET oops_l95_obslocalizations
                   SOURCES executables/TestObsLocalizations.cc
                   ARGS "testinput/obslocalizations.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obsvector
+ecbuild_add_test( TARGET oops_l95_obsvector
                   SOURCES executables/TestObsVector.cc
                   ARGS "testinput/obsvector.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obsdatavector
+ecbuild_add_test( TARGET oops_l95_obsdatavector
                   SOURCES executables/TestObsDataVector.cc
                   ARGS "testinput/obsspace.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obsoperator
+ecbuild_add_test( TARGET oops_l95_obsoperator
                   SOURCES executables/TestObsOperator.cc
                   ARGS "testinput/obsoperator.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_linobsoperator
+ecbuild_add_test( TARGET oops_l95_linobsoperator
                   SOURCES executables/TestLinearObsOperator.cc
                   ARGS "testinput/linobsoperator.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obserrorcovar
+ecbuild_add_test( TARGET oops_l95_obserrorcovar
                   SOURCES executables/TestObsErrorCovariance.cc
                   ARGS "testinput/obsspace.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obsaux
+ecbuild_add_test( TARGET oops_l95_obsaux
                   SOURCES executables/TestObsAuxControl.cc
                   ARGS "testinput/obsaux.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obsauxcovariance
+ecbuild_add_test( TARGET oops_l95_obsauxcovariance
                   SOURCES executables/TestObsAuxCovariance.cc
                   ARGS "testinput/obsspace.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_obsauxincrement
+ecbuild_add_test( TARGET oops_l95_obsauxincrement
                   SOURCES executables/TestObsAuxIncrement.cc
                   ARGS "testinput/obsspace.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_localization
+ecbuild_add_test( TARGET oops_l95_localization
                   SOURCES executables/TestLocalization.cc
                   ARGS "testinput/localization.yaml"
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
 #####################################################################
 # forecast-related tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_forecast
+ecbuild_add_test( TARGET oops_l95_forecast
                   COMMAND l95_forecast.x
                   ARGS testinput/forecast.yaml )
 
-ecbuild_add_test( TARGET test_l95_forecast_pseudomodel
+ecbuild_add_test( TARGET oops_l95_forecast_pseudomodel
                   COMMAND l95_forecast.x
                   ARGS testinput/forecast_pseudomodel.yaml
-                  TEST_DEPENDS test_l95_forecast )
+                  TEST_DEPENDS oops_l95_forecast )
 
-ecbuild_add_test( TARGET test_l95_forecast_identitymodel
+ecbuild_add_test( TARGET oops_l95_forecast_identitymodel
                   COMMAND l95_forecast.x
                   ARGS testinput/forecast_identitymodel.yaml )
 
@@ -499,57 +499,57 @@ ecbuild_add_test( TARGET test_l95_forecast_identitymodel
 # obs-related tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_makeobs3d
+ecbuild_add_test( TARGET oops_l95_makeobs3d
                   COMMAND l95_hofx.x
                   ARGS testinput/makeobs3d.yaml
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_makeobsbias
+ecbuild_add_test( TARGET oops_l95_makeobsbias
                   COMMAND l95_hofx.x
                   ARGS testinput/makeobsbias.yaml
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_makeobs4d12h
+ecbuild_add_test( TARGET oops_l95_makeobs4d12h
                   COMMAND l95_hofx.x
                   ARGS testinput/makeobs4d12h.yaml
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_makeobspert
+ecbuild_add_test( TARGET oops_l95_makeobspert
                   COMMAND l95_hofx.x
                   ARGS testinput/makeobspert.yaml
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )
 
-ecbuild_add_test( TARGET test_l95_hofx
+ecbuild_add_test( TARGET oops_l95_hofx
                   COMMAND l95_hofx.x
                   ARGS testinput/hofx.yaml
-                  TEST_DEPENDS test_l95_truth test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_truth oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_hofx_tinterp
+ecbuild_add_test( TARGET oops_l95_hofx_tinterp
                   COMMAND l95_hofx.x
                   ARGS testinput/hofx_tinterp.yaml
-                  TEST_DEPENDS test_l95_truth test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_truth oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_hofx3d
+ecbuild_add_test( TARGET oops_l95_hofx3d
                   COMMAND l95_hofx3d.x
                   ARGS testinput/hofx3d.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
 #####################################################################
 # ensemble-related tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_genenspert
+ecbuild_add_test( TARGET oops_l95_genenspert
                   COMMAND l95_genpert.x
                   ARGS testinput/genenspert.yaml )
 
-ecbuild_add_test( TARGET test_l95_enshofx
+ecbuild_add_test( TARGET oops_l95_enshofx
                   MPI 4
                   COMMAND l95_enshofx.x
                   ARGS testinput/enshofx.yaml
                   DEPENDS l95_enshofx.x
-                  TEST_DEPENDS test_l95_genenspert test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_genenspert oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_sqrtvertloc
+ecbuild_add_test( TARGET oops_l95_sqrtvertloc
                   COMMAND l95_sqrtofvertloc.x
                   ARGS testinput/sqrtvertloc.yaml )
 
@@ -557,443 +557,443 @@ ecbuild_add_test( TARGET test_l95_sqrtvertloc
 # 3d variational tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_3dvar
+ecbuild_add_test( TARGET oops_l95_3dvar
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dvar.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_3dvar_noobs
+ecbuild_add_test( TARGET oops_l95_3dvar_noobs
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dvar_noobs.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_3dvar_monitoring
+ecbuild_add_test( TARGET oops_l95_3dvar_monitoring
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dvar_monitoring.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_3dvar_qc
+ecbuild_add_test( TARGET oops_l95_3dvar_qc
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dvar_qc.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_3dvar_qc_obserr
+ecbuild_add_test( TARGET oops_l95_3dvar_qc_obserr
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dvar_qc_obserr.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_3dfgat
+ecbuild_add_test( TARGET oops_l95_3dfgat
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dfgat.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_4dfgat
+ecbuild_add_test( TARGET oops_l95_4dfgat
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dfgat.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
 
 #####################################################################
 # 4d variational tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_4dvar_drgmresr
+ecbuild_add_test( TARGET oops_l95_4dvar_drgmresr
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_drgmresr.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_dripcg
+ecbuild_add_test( TARGET oops_l95_4dvar_dripcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_dripcg.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_dripcgqn
+ecbuild_add_test( TARGET oops_l95_4dvar_dripcgqn
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_dripcgqn.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_drpcg
+ecbuild_add_test( TARGET oops_l95_4dvar_drpcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_drpcg.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_drpcgqn
+ecbuild_add_test( TARGET oops_l95_4dvar_drpcgqn
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_drpcgqn.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_drplanczos
+ecbuild_add_test( TARGET oops_l95_4dvar_drplanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_drplanczos.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_drplanclmp
+ecbuild_add_test( TARGET oops_l95_4dvar_drplanclmp
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_drplanclmp.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_fgmres
+ecbuild_add_test( TARGET oops_l95_4dvar_fgmres
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_fgmres.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_gmresr
+ecbuild_add_test( TARGET oops_l95_4dvar_gmresr
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_gmresr.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_ipcg
+ecbuild_add_test( TARGET oops_l95_4dvar_ipcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_ipcg.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_lbgmresr
+ecbuild_add_test( TARGET oops_l95_4dvar_lbgmresr
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_lbgmresr.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_pcg
+ecbuild_add_test( TARGET oops_l95_4dvar_pcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_pcg.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_planczos
+ecbuild_add_test( TARGET oops_l95_4dvar_planczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_planczos.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_rpcg
+ecbuild_add_test( TARGET oops_l95_4dvar_rpcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_rpcg.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_rplanczos
+ecbuild_add_test( TARGET oops_l95_4dvar_rplanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_rplanczos.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_minres
+ecbuild_add_test( TARGET oops_l95_4dvar_minres
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_minres.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_modbias
+ecbuild_add_test( TARGET oops_l95_4dvar_modbias
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_modbias.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_drplzero
+ecbuild_add_test( TARGET oops_l95_4dvar_drplzero
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_drplzero.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-#ecbuild_add_test( TARGET test_l95_4dforcing
+#ecbuild_add_test( TARGET oops_l95_4dforcing
 #                  COMMAND l95_4dvar.x
 #                  MPI 2
 #                  ARGS testinput/4dforcing.yaml
-#                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+#                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dsaddlepoint
+ecbuild_add_test( TARGET oops_l95_4dsaddlepoint
                   COMMAND l95_4dvar.x
                   MPI 2
                   ARGS testinput/4dsaddlepoint.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_4dvar_obsbias
+ecbuild_add_test( TARGET oops_l95_4dvar_obsbias
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_obsbias.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobsbias )
 
-ecbuild_add_test( TARGET test_l95_4dvar_allbiases
+ecbuild_add_test( TARGET oops_l95_4dvar_allbiases
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_allbiases.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobsbias )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobsbias )
 
-ecbuild_add_test( TARGET test_l95_4dvar_alpha
+ecbuild_add_test( TARGET oops_l95_4dvar_alpha
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_alpha.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_4dvar_hybrid
+ecbuild_add_test( TARGET oops_l95_4dvar_hybrid
                   COMMAND l95_4dvar.x
                   ARGS testinput/4dvar_hybrid.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_4densvar
+ecbuild_add_test( TARGET oops_l95_4densvar
                   COMMAND l95_4dvar.x
                   MPI 9
                   ARGS testinput/4densvar.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d12h oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_4densvar_seq
+ecbuild_add_test( TARGET oops_l95_4densvar_seq
                   COMMAND l95_4dvar.x
                   ARGS testinput/4densvar_seq.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d12h test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d12h oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_4densvar_hybrid
+ecbuild_add_test( TARGET oops_l95_4densvar_hybrid
                   COMMAND l95_4dvar.x
                   MPI 9
                   ARGS testinput/4densvar_hybrid.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_4densvar_static_crosstime
+ecbuild_add_test( TARGET oops_l95_4densvar_static_crosstime
                   COMMAND l95_4dvar.x
                   MPI 9
                   ARGS testinput/4densvar_static_crosstime.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d oops_l95_genenspert )
 
 #####################################################################
 # EDA tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_eda_3dfgat
+ecbuild_add_test( TARGET oops_l95_eda_3dfgat
                   MPI 4
                   COMMAND l95_eda.x
                   ARGS testinput/eda_3dfgat.yaml
                   DEPENDS l95_eda.x
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_eda_3dvar
+ecbuild_add_test( TARGET oops_l95_eda_3dvar
                   MPI 4
                   COMMAND l95_eda.x
                   ARGS testinput/eda_3dvar.yaml
                   DEPENDS l95_eda.x
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_eda_4dvar
+ecbuild_add_test( TARGET oops_l95_eda_4dvar
                   MPI 1
                   COMMAND l95_eda.x
                   ARGS testinput/eda_4dvar.yaml
                   DEPENDS l95_eda.x
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs4d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs4d )
 
-ecbuild_add_test( TARGET test_l95_eda_3dvar_block
+ecbuild_add_test( TARGET oops_l95_eda_3dvar_block
                   MPI 2
                   COMMAND l95_eda.x
                   ARGS testinput/eda_3dvar_block.yaml
-                  TEST_DEPENDS test_l95_genenspert test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_genenspert oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_eda_3dvar_pff
+ecbuild_add_test( TARGET oops_l95_eda_3dvar_pff
                   MPI 4
                   COMMAND l95_eda.x
                   ARGS testinput/eda_3dvar_pff.yaml
-                  TEST_DEPENDS test_l95_genenspert test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_genenspert oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_eda_3dvar_zeromeanpert
+ecbuild_add_test( TARGET oops_l95_eda_3dvar_zeromeanpert
                   MPI 4
                   COMMAND l95_eda.x
                   ARGS testinput/eda_3dvar_zeromeanpert.yaml
                   DEPENDS l95_eda.x
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_eda_3dvar_zeromeanpert_compare
+ecbuild_add_test( TARGET oops_l95_eda_3dvar_zeromeanpert_compare
                   SOURCES lorenz95/ObsErrorDiagZeroMeanPerturbations.cc
                   ARGS testinput/eda_3dvar_zeromeanpert_compare.yaml
                   LIBS lorenz95
-                  TEST_DEPENDS test_l95_eda_3dvar_zeromeanpert )
+                  TEST_DEPENDS oops_l95_eda_3dvar_zeromeanpert )
 
 #####################################################################
 # FSOI tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_3dvar_4fsoi_pcg
+ecbuild_add_test( TARGET oops_l95_3dvar_4fsoi_pcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dvar_4fsoi_pcg.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_fsoi_3dvar_pcg
+ecbuild_add_test( TARGET oops_l95_fsoi_3dvar_pcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/fsoi_3dvar_pcg.yaml
-                  TEST_DEPENDS test_l95_3dvar_4fsoi_pcg )
+                  TEST_DEPENDS oops_l95_3dvar_4fsoi_pcg )
 
-ecbuild_add_test( TARGET test_l95_3dvar_4fsoi_dripcg
+ecbuild_add_test( TARGET oops_l95_3dvar_4fsoi_dripcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/3dvar_4fsoi_dripcg.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_makeobs3d )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_makeobs3d )
 
-ecbuild_add_test( TARGET test_l95_fsoi_3dvar_dripcg
+ecbuild_add_test( TARGET oops_l95_fsoi_3dvar_dripcg
                   COMMAND l95_4dvar.x
                   ARGS testinput/fsoi_3dvar_dripcg.yaml
-                  TEST_DEPENDS test_l95_3dvar_4fsoi_dripcg )
+                  TEST_DEPENDS oops_l95_3dvar_4fsoi_dripcg )
 
 #####################################################################
 # state-related tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_diffstates
+ecbuild_add_test( TARGET oops_l95_diffstates
                   COMMAND l95_diffstates.x
                   ARGS testinput/diffstates.yaml
-                  TEST_DEPENDS test_l95_eda_3dvar test_l95_eda_4dvar )
+                  TEST_DEPENDS oops_l95_eda_3dvar oops_l95_eda_4dvar )
 
-ecbuild_add_test( TARGET test_l95_addincrement
+ecbuild_add_test( TARGET oops_l95_addincrement
                   COMMAND l95_addincrement.x
                   ARGS testinput/addincrement.yaml
-                  TEST_DEPENDS test_l95_diffstates )
+                  TEST_DEPENDS oops_l95_diffstates )
 
-ecbuild_add_test( TARGET test_l95_addincrement_scaled
+ecbuild_add_test( TARGET oops_l95_addincrement_scaled
                   COMMAND l95_addincrement.x
                   ARGS testinput/addincrement_scaled.yaml
-                  TEST_DEPENDS test_l95_diffstates )
+                  TEST_DEPENDS oops_l95_diffstates )
 
 
 #####################################################################
 # ETKF tests
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_letkf
+ecbuild_add_test( TARGET oops_l95_letkf
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf.yaml
                   OMP 2
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_letkf_svd
+ecbuild_add_test( TARGET oops_l95_letkf_svd
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_svd.yaml
                   OMP 2
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_letkf_noobs
+ecbuild_add_test( TARGET oops_l95_letkf_noobs
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_noobs.yaml
-                  TEST_DEPENDS test_l95_forecast test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_forecast oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_letkf_qc
+ecbuild_add_test( TARGET oops_l95_letkf_qc
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_qc.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_letkf_gsi
+ecbuild_add_test( TARGET oops_l95_letkf_gsi
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_gsi.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_getkf
+ecbuild_add_test( TARGET oops_l95_getkf
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_getkf_cpp
+ecbuild_add_test( TARGET oops_l95_getkf_cpp
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf_cpp.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_getkf_linearobserver
+ecbuild_add_test( TARGET oops_l95_getkf_linearobserver
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf_linearobserver.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_getkf_perturbed_linearobserver
+ecbuild_add_test( TARGET oops_l95_getkf_perturbed_linearobserver
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf_perturbed_linearobserver.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_getkf_perturbed_linearobserver_crossvalid
+ecbuild_add_test( TARGET oops_l95_getkf_perturbed_linearobserver_crossvalid
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf_perturbed_linearobserver_crossvalid.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_getkf_perturbed_unpert_member
+ecbuild_add_test( TARGET oops_l95_getkf_perturbed_unpert_member
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf_perturbed_unpert_member.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_hofx3d_for_getkf
+ecbuild_add_test( TARGET oops_l95_hofx3d_for_getkf
                   COMMAND l95_letkf.x
                   ARGS testinput/hofx3d_for_getkf.yaml
-                  TEST_DEPENDS test_l95_letkf )
+                  TEST_DEPENDS oops_l95_letkf )
 
-ecbuild_add_test( TARGET test_l95_letkf_linearobserver
+ecbuild_add_test( TARGET oops_l95_letkf_linearobserver
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_linearobserver.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_letkf_linearobserver_crossvalid
+ecbuild_add_test( TARGET oops_l95_letkf_linearobserver_crossvalid
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_linearobserver_crossvalid.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_letkf_perturbed_linearobserver
+ecbuild_add_test( TARGET oops_l95_letkf_perturbed_linearobserver
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_perturbed_linearobserver.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_letkf_perturbed_linearobserver_crossvalid
+ecbuild_add_test( TARGET oops_l95_letkf_perturbed_linearobserver_crossvalid
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_perturbed_linearobserver_crossvalid.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_letkf_perturbed_unpert_member
+ecbuild_add_test( TARGET oops_l95_letkf_perturbed_unpert_member
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_perturbed_unpert_member.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET test_l95_getkf_offline_hofx
+ecbuild_add_test( TARGET oops_l95_getkf_offline_hofx
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf_offline_hofx.yaml
-                  TEST_DEPENDS test_l95_hofx3d_for_getkf )
+                  TEST_DEPENDS oops_l95_hofx3d_for_getkf )
 
-ecbuild_add_test( TARGET test_l95_getkf_offline_hofx_one_member
+ecbuild_add_test( TARGET oops_l95_getkf_offline_hofx_one_member
                   COMMAND l95_letkf.x
                   ARGS testinput/getkf_offline_hofx_one_member.yaml
-                  TEST_DEPENDS test_l95_hofx3d_for_getkf test_l95_getkf )
+                  TEST_DEPENDS oops_l95_hofx3d_for_getkf oops_l95_getkf )
 
 #####################################################################
 # tests with simplified L95
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_DRGMRESR
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_DRGMRESR
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_DRGMRESR.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_DRIPCG
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_DRIPCG
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_DRIPCG.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_DRPCG
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_DRPCG
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_DRPCG.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_DRPFOM
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_DRPFOM
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_DRPFOM.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_DRPLanczos
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_DRPLanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_DRPLanczos.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_FGMRES
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_FGMRES
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_FGMRES.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_GMRESR
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_GMRESR
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_GMRESR.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_IPCG
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_IPCG
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_IPCG.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_LBGMRESR
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_LBGMRESR
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_LBGMRESR.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_MINRES
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_MINRES
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_MINRES.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_PCG
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_PCG
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_PCG.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_PLanczos
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_PLanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_PLanczos.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_RPCG
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_RPCG
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_RPCG.yaml )
 
-ecbuild_add_test( TARGET test_l95_simplifiedl95_RPLanczos
+ecbuild_add_test( TARGET oops_l95_simplifiedl95_RPLanczos
                   COMMAND l95_4dvar.x
                   ARGS testinput/simplifiedl95_RPLanczos.yaml )
 
@@ -1001,7 +1001,7 @@ ecbuild_add_test( TARGET test_l95_simplifiedl95_RPLanczos
 # Adjoint Forecast
 #####################################################################
 
-ecbuild_add_test( TARGET test_l95_adjointforecast
+ecbuild_add_test( TARGET oops_l95_adjointforecast
                   COMMAND l95_adjointforecast.x
                   ARGS testinput/adjointforecast.yaml
-                  TEST_DEPENDS test_l95_truth )
+                  TEST_DEPENDS oops_l95_truth )

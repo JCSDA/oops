@@ -49,85 +49,85 @@ ecbuild_add_resources( TARGET coupled_test_scripts
                      )
 
 # Test CoupledGeometry class
-ecbuild_add_test( TARGET  test_coupled_geometry_qg_l95
+ecbuild_add_test( TARGET  oops_coupled_geometry_qg_l95
                   SOURCES executables/TestCoupledGeometry.cc
                   ARGS    "testinput/coupledgeometry.yaml"
                   LIBS    qg lorenz95 )
 
 # Test CoupledGeometry class in parallel
-ecbuild_add_test( TARGET  test_coupled_geometry_qg_l95_parallel
+ecbuild_add_test( TARGET  oops_coupled_geometry_qg_l95_parallel
                   SOURCES executables/TestCoupledGeometry.cc
                   ARGS    "testinput/coupledgeometryparallel.yaml"
                   MPI     2
                   LIBS    qg lorenz95 )
 
 # Test CoupledModelAuxControl class
-ecbuild_add_test( TARGET  test_coupled_modelauxcontrol_qg_l95
+ecbuild_add_test( TARGET  oops_coupled_modelauxcontrol_qg_l95
                   SOURCES executables/TestCoupledModelAuxControl.cc
                   ARGS    "testinput/coupledmodelauxcontrol.yaml"
                   LIBS    qg lorenz95 )
 
 # Test CoupledState class
-ecbuild_add_test( TARGET  test_coupled_state_qg_l95
+ecbuild_add_test( TARGET  oops_coupled_state_qg_l95
                   SOURCES executables/TestCoupledState.cc
                   ARGS    "testinput/coupledstate.yaml"
                   LIBS    qg lorenz95
-                  TEST_DEPENDS test_qg_truth test_l95_3dvar)
+                  TEST_DEPENDS oops_qg_truth oops_l95_3dvar)
 
 # Test CoupledState class in parallel
-ecbuild_add_test( TARGET  test_coupled_state_qg_l95_parallel
+ecbuild_add_test( TARGET  oops_coupled_state_qg_l95_parallel
                   SOURCES executables/TestCoupledState.cc
                   ARGS    "testinput/coupledstateparallel.yaml"
                   MPI     2
                   LIBS    qg lorenz95
-                  TEST_DEPENDS test_qg_truth test_l95_3dvar)
+                  TEST_DEPENDS oops_qg_truth oops_l95_3dvar)
 
 # Test CoupledIncrement class
-ecbuild_add_test( TARGET  test_coupled_increment_qg_l95
+ecbuild_add_test( TARGET  oops_coupled_increment_qg_l95
                   SOURCES executables/TestCoupledIncrement.cc
                   ARGS    "testinput/coupledincrement.yaml"
                   LIBS    qg lorenz95
-                  TEST_DEPENDS test_qg_truth test_l95_3dvar)
+                  TEST_DEPENDS oops_qg_truth oops_l95_3dvar)
 
 # Test CoupledVariableChange class
-ecbuild_add_test( TARGET  test_coupled_convertstate_qg_l95
+ecbuild_add_test( TARGET  oops_coupled_convertstate_qg_l95
                   SOURCES executables/TestCoupledConvertState.cc
                   ARGS    "testinput/coupledconvertstate.yaml"
                   LIBS    qg lorenz95
-                  TEST_DEPENDS test_qg_truth test_l95_3dvar)
+                  TEST_DEPENDS oops_qg_truth oops_l95_3dvar)
 
 # Test CoupledModel class
-ecbuild_add_test( TARGET  test_coupled_model_qg_l95
+ecbuild_add_test( TARGET  oops_coupled_model_qg_l95
                   SOURCES executables/TestCoupledModel.cc
                   ARGS    "testinput/coupledmodel.yaml"
                   LIBS    qg lorenz95
-                  TEST_DEPENDS test_qg_truth test_l95_3dvar)
+                  TEST_DEPENDS oops_qg_truth oops_l95_3dvar)
 
 # Test CoupledModel class
-ecbuild_add_test( TARGET  test_coupled_model_qg_l95_parallel
+ecbuild_add_test( TARGET  oops_coupled_model_qg_l95_parallel
                   SOURCES executables/TestCoupledModel.cc
                   ARGS    "testinput/coupledmodelparallel.yaml"
                   MPI     2
                   LIBS    qg lorenz95
-                  TEST_DEPENDS test_qg_truth test_l95_3dvar)
+                  TEST_DEPENDS oops_qg_truth oops_l95_3dvar)
 
 # Test CoupledForecast application
-ecbuild_add_test( TARGET  test_coupled_forecast_qg_l95
+ecbuild_add_test( TARGET  oops_coupled_forecast_qg_l95
                   SOURCES executables/forecast_qg_l95.cc
                   ARGS    "testinput/forecast_qg_l95.yaml"
                   LIBS    qg lorenz95
-                  TEST_DEPENDS test_qg_truth test_l95_3dvar)
+                  TEST_DEPENDS oops_qg_truth oops_l95_3dvar)
 
 # Test HofX3D application with coupled trait
-ecbuild_add_test( TARGET  test_coupled_hofx3d_qg_qg
+ecbuild_add_test( TARGET  oops_coupled_hofx3d_qg_qg
                   SOURCES executables/hofx3d_qg_qg.cc
                   ARGS    "testinput/hofx3d_qg_qg.yaml"
                   LIBS    qg
-                  TEST_DEPENDS test_qg_truth test_qg_make_obs_4d_12h )
+                  TEST_DEPENDS oops_qg_truth oops_qg_make_obs_4d_12h )
 
 # Test Variational application with coupled trait
-ecbuild_add_test( TARGET  test_coupled_var_qg_qg
+ecbuild_add_test( TARGET  oops_coupled_var_qg_qg
                   SOURCES executables/var_qg_qg.cc
                   ARGS    "testinput/var_qg_qg.yaml"
                   LIBS    qg
-                  TEST_DEPENDS test_qg_truth test_qg_make_obs_4d_12h )
+                  TEST_DEPENDS oops_qg_truth oops_qg_make_obs_4d_12h )

@@ -748,112 +748,112 @@ if(BUILD_TESTING)
   )
 
   ecbuild_add_executable(
-    TARGET  test_oops_base_dummy_run
+    TARGET  oops_base_dummy_run
     SOURCES test/base/DummyRun.cc
     LIBS oops
   )
 
   ecbuild_add_test(
-    TARGET  test_oops_base_dummy_run_one
-    COMMAND test_oops_base_dummy_run
+    TARGET  oops_base_dummy_run_one
+    COMMAND oops_base_dummy_run
     ARGS    "test/testinput/hello.yaml"
-    DEPENDS test_oops_base_dummy_run
+    DEPENDS oops_base_dummy_run
   )
-  set_tests_properties(test_oops_base_dummy_run_one PROPERTIES
+  set_tests_properties(oops_base_dummy_run_one PROPERTIES
     PASS_REGULAR_EXPRESSION "hello earth"
   )
 
   ecbuild_add_test(
-    TARGET  test_oops_base_dummy_run_bad_arg_zero
-    COMMAND test_oops_base_dummy_run
-    DEPENDS test_oops_base_dummy_run
+    TARGET  oops_base_dummy_run_bad_arg_zero
+    COMMAND oops_base_dummy_run
+    DEPENDS oops_base_dummy_run
   )
-  set_tests_properties(test_oops_base_dummy_run_bad_arg_zero PROPERTIES
+  set_tests_properties(oops_base_dummy_run_bad_arg_zero PROPERTIES
     WILL_FAIL true
   )
 
   ecbuild_add_test(
-    TARGET  test_oops_base_dummy_run_help
-    COMMAND test_oops_base_dummy_run
+    TARGET  oops_base_dummy_run_help
+    COMMAND oops_base_dummy_run
     ARGS    "--help"
-    DEPENDS test_oops_base_dummy_run
+    DEPENDS oops_base_dummy_run
   )
-  set_tests_properties(test_oops_base_dummy_run_help PROPERTIES
+  set_tests_properties(oops_base_dummy_run_help PROPERTIES
     PASS_REGULAR_EXPRESSION "Usages:"
   )
 
   ecbuild_add_test(
-    TARGET  test_oops_base_dummy_run_h
-    COMMAND test_oops_base_dummy_run
+    TARGET  oops_base_dummy_run_h
+    COMMAND oops_base_dummy_run
     ARGS    "-h"
-    DEPENDS test_oops_base_dummy_run
+    DEPENDS oops_base_dummy_run
   )
-  set_tests_properties(test_oops_base_dummy_run_h PROPERTIES
+  set_tests_properties(oops_base_dummy_run_h PROPERTIES
     PASS_REGULAR_EXPRESSION "Usages:"
   )
 
-  ecbuild_add_test( TARGET  test_oops_base_variables
+  ecbuild_add_test( TARGET  oops_base_variables
                     SOURCES test/base/Variables.cc
                     ARGS    "test/testinput/variables.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_oops_base_obsvariables
+  ecbuild_add_test( TARGET  oops_base_obsvariables
                     SOURCES test/base/ObsVariables.cc
                     ARGS    "test/testinput/variables.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_base_posttimer
+  ecbuild_add_test( TARGET  oops_base_posttimer
                     SOURCES test/base/PostTimer.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops eckit)
 
   if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
-    ecbuild_add_test( TARGET  test_util_signal_trap_fpe_div_by_zero
+    ecbuild_add_test( TARGET  oops_util_signal_trap_fpe_div_by_zero
                       SOURCES test/util/signal_trap_fpe_div_by_zero.cc
                       LIBS    oops)
-    set_property( TEST test_util_signal_trap_fpe_div_by_zero PROPERTY WILL_FAIL TRUE )
+    set_property( TEST oops_util_signal_trap_fpe_div_by_zero PROPERTY WILL_FAIL TRUE )
   endif()
 
-  ecbuild_add_test( TARGET  test_util_signal_trap_fpe_invalid_op
+  ecbuild_add_test( TARGET  oops_util_signal_trap_fpe_invalid_op
                     SOURCES test/util/signal_trap_fpe_invalid_op.cc
                     LIBS    oops)
-  set_property( TEST test_util_signal_trap_fpe_invalid_op PROPERTY WILL_FAIL TRUE )
+  set_property( TEST oops_util_signal_trap_fpe_invalid_op PROPERTY WILL_FAIL TRUE )
 
   # This test enables fpe trapping but doesn't perform any "bad" operations. So
   # the expected outcome is for the test program to successfully complete.
-  ecbuild_add_test( TARGET  test_util_signal_trap_fpe_valid_op
+  ecbuild_add_test( TARGET  oops_util_signal_trap_fpe_valid_op
                     SOURCES test/util/signal_trap_fpe_valid_op.cc
                     LIBS    oops)
 
   # This test asks for a stacktrace. It should never fail.
-  ecbuild_add_test( TARGET  test_util_stacktrace
+  ecbuild_add_test( TARGET  oops_util_stacktrace
                     SOURCES test/util/Stacktrace.cc
                     LIBS    oops)
 
-  ecbuild_add_test( TARGET  test_util_random
+  ecbuild_add_test( TARGET  oops_util_random
                     SOURCES test/base/Random.cc
                     ARGS    "test/testinput/random.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_pushstringvector
+  ecbuild_add_test( TARGET  oops_util_pushstringvector
                     SOURCES test/base/FCString.cc
                     ARGS    "test/testinput/pushstringvector.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_parameters
+  ecbuild_add_test( TARGET  oops_util_parameters
                     SOURCES test/base/Parameters.cc
                     ARGS    "test/testinput/parameters.yaml"
                     ENVIRONMENT VALIDATE_PARAMETERS=1
                     LIBS    oops )
 
   ecbuild_add_executable(
-    TARGET  test_oops_generic_local_interpolator
+    TARGET  oops_generic_local_interpolator
     SOURCES test/generic/LocalInterpolator.cc
     LIBS oops
   )
 
   ecbuild_add_executable(
-    TARGET  test_oops_generic_global_interpolator
+    TARGET  oops_generic_global_interpolator
     SOURCES test/generic/GlobalInterpolator.cc
     LIBS oops
   )
@@ -861,18 +861,18 @@ if(BUILD_TESTING)
   # Atlas interpolation tests require a newer version of Atlas than the rest of OOPS.
   if((atlas_VERSION VERSION_GREATER 0.38.0) OR (atlas_VERSION VERSION_EQUAL 0.38.0))
 
-    ecbuild_add_test( TARGET  test_generic_atlas_interpolator
-                      COMMAND test_oops_generic_local_interpolator
+    ecbuild_add_test( TARGET  oops_generic_atlas_interpolator
+                      COMMAND oops_generic_local_interpolator
                       ARGS    "test/testinput/atlas_interpolator.yaml"
                       LIBS    oops eckit )
 
-    ecbuild_add_test( TARGET  test_generic_atlas_global_interpolator
-                      COMMAND test_oops_generic_global_interpolator
+    ecbuild_add_test( TARGET  oops_generic_atlas_global_interpolator
+                      COMMAND oops_generic_global_interpolator
                       ARGS    "test/testinput/atlas_global_interpolator.yaml"
                       LIBS    oops eckit )
 
-    ecbuild_add_test( TARGET  test_generic_atlas_global_interpolator_parallel
-                      COMMAND test_oops_generic_global_interpolator
+    ecbuild_add_test( TARGET  oops_generic_atlas_global_interpolator_parallel
+                      COMMAND oops_generic_global_interpolator
                       MPI     4
                       ARGS    "test/testinput/atlas_global_interpolator.yaml"
                       LIBS    oops eckit )
@@ -880,8 +880,8 @@ if(BUILD_TESTING)
   else()
     set(
       disabled_tests
-      "test_generic_atlas_global_interpolator"
-      "test_generic_atlas_global_interpolator_parallel"
+      "oops_generic_atlas_global_interpolator"
+      "oops_generic_atlas_global_interpolator_parallel"
     )
     message(
       WARNING
@@ -892,280 +892,280 @@ if(BUILD_TESTING)
     )
   endif()
 
-  ecbuild_add_test( TARGET  test_generic_unstructured_interpolator
-                    COMMAND test_oops_generic_local_interpolator
+  ecbuild_add_test( TARGET  oops_generic_unstructured_interpolator
+                    COMMAND oops_generic_local_interpolator
                     ARGS    "test/testinput/unstructured_interpolator.yaml"
                     LIBS    oops eckit )
 
-  ecbuild_add_test( TARGET  test_generic_unstructured_global_interpolator
-                    COMMAND test_oops_generic_global_interpolator
+  ecbuild_add_test( TARGET  oops_generic_unstructured_global_interpolator
+                    COMMAND oops_generic_global_interpolator
                     ARGS    "test/testinput/unstructured_global_interpolator.yaml"
                     LIBS    oops eckit )
 
-  ecbuild_add_test( TARGET  test_generic_unstructured_global_interpolator_parallel
-                    COMMAND test_oops_generic_global_interpolator
+  ecbuild_add_test( TARGET  oops_generic_unstructured_global_interpolator_parallel
+                    COMMAND oops_generic_global_interpolator
                     MPI     4
                     ARGS    "test/testinput/unstructured_global_interpolator.yaml"
                     LIBS    oops eckit )
 
-  ecbuild_add_test( TARGET  test_generic_gc99
+  ecbuild_add_test( TARGET  oops_generic_gc99
                     SOURCES test/generic/gc99.cc
                     LIBS    oops eckit )
 
-  ecbuild_add_test( TARGET  test_generic_soar
+  ecbuild_add_test( TARGET  oops_generic_soar
                     SOURCES test/generic/soar.cc
                     LIBS    oops eckit )
 
-  ecbuild_add_test( TARGET  test_coupled_splitvariables
+  ecbuild_add_test( TARGET  oops_coupled_splitvariables
                     SOURCES test/coupled/SplitVariables.cc
                     LIBS    oops eckit )
 
-  ecbuild_add_test( TARGET  test_util_isanypointinvolumeinterior
+  ecbuild_add_test( TARGET  oops_util_isanypointinvolumeinterior
                     SOURCES test/util/IsAnyPointInVolumeInterior.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_partialdatetime
+  ecbuild_add_test( TARGET  oops_util_partialdatetime
                     SOURCES test/util/PartialDateTime.cc
                     LIBS    oops eckit )
 
-  ecbuild_add_test( TARGET  test_util_datetime
+  ecbuild_add_test( TARGET  oops_util_datetime
                     SOURCES test/util/DateTime.cc
                     LIBS    oops eckit )
 
-  ecbuild_add_test( TARGET  test_util_duration
+  ecbuild_add_test( TARGET  oops_util_duration
                     SOURCES test/util/Duration.cc
                     LIBS    oops eckit )
 
-  ecbuild_add_test( TARGET  test_util_intset_parser
+  ecbuild_add_test( TARGET  oops_util_intset_parser
                     SOURCES test/util/IntSetParser.cc
                     LIBS    oops eckit )
 
-  ecbuild_add_test( TARGET  test_util_scalarormap
+  ecbuild_add_test( TARGET  oops_util_scalarormap
                     SOURCES test/util/ScalarOrMap.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_floatcompare
+  ecbuild_add_test( TARGET  oops_util_floatcompare
                     SOURCES test/util/FloatCompare.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_compositepath
+  ecbuild_add_test( TARGET  oops_util_compositepath
                     SOURCES test/util/CompositePath.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_stringfunctions
+  ecbuild_add_test( TARGET  oops_util_stringfunctions
                     SOURCES test/util/stringFunctions.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_testreference
+  ecbuild_add_test( TARGET  oops_util_testreference
                     SOURCES test/util/TestReference.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_range
+  ecbuild_add_test( TARGET  oops_util_range
                     SOURCES test/util/Range.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_mpi_mpi
+  ecbuild_add_test( TARGET  oops_mpi_mpi
                     MPI     4
                     SOURCES test/mpi/mpi.cc
                     ARGS    "test/testinput/mpi.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_fft_multiple
+  ecbuild_add_test( TARGET  oops_fft_multiple
                     SOURCES test/generic/fft_multiple.cc
                     ARGS    "test/testinput/fft_multiple.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_algorithms
+  ecbuild_add_test( TARGET  oops_util_algorithms
                     SOURCES test/util/algorithms.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_comparenvectors
+  ecbuild_add_test( TARGET  oops_util_comparenvectors
                     SOURCES test/util/CompareNVectors.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_missingvalues
+  ecbuild_add_test( TARGET  oops_util_missingvalues
                     SOURCES test/util/MissingValues.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_associativecontainers
+  ecbuild_add_test( TARGET  oops_util_associativecontainers
                     SOURCES test/util/AssociativeContainers.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_propertiesofnvectors
+  ecbuild_add_test( TARGET  oops_util_propertiesofnvectors
                     SOURCES test/util/PropertiesOfNVectors.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_localenvironment
+  ecbuild_add_test( TARGET  oops_util_localenvironment
                     SOURCES test/util/LocalEnvironment.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_typetraits
+  ecbuild_add_test( TARGET  oops_util_typetraits
                     SOURCES test/util/TypeTraits.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_wildcard
+  ecbuild_add_test( TARGET  oops_util_wildcard
                     SOURCES test/util/wildcard.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_configfunctions
+  ecbuild_add_test( TARGET  oops_util_configfunctions
                     SOURCES test/util/ConfigFunctions.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_confighelpers
+  ecbuild_add_test( TARGET  oops_util_confighelpers
                     SOURCES test/util/ConfigHelpers.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_timewindow
+  ecbuild_add_test( TARGET  oops_util_timewindow
                     SOURCES test/util/TimeWindow.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_arrayutil
+  ecbuild_add_test( TARGET  oops_util_arrayutil
                     MPI     2
                     SOURCES test/util/ArrayUtil.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_base_fieldsets
+  ecbuild_add_test( TARGET  oops_base_fieldsets
                     SOURCES test/base/FieldSets.cc
                     ARGS    "test/testinput/fieldsets.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_fieldset_helpers_and_operations
+  ecbuild_add_test( TARGET  oops_util_fieldset_helpers_and_operations
                     SOURCES test/util/FieldSetHelpersAndOperations.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_fieldset_subcommunicators
+  ecbuild_add_test( TARGET  oops_util_fieldset_subcommunicators
                     MPI     2
                     SOURCES test/util/FieldSetSubCommunicators.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_parallelfieldsetio_1PE
+  ecbuild_add_test( TARGET  oops_util_parallelfieldsetio_1PE
                     SOURCES test/util/ParallelFieldSetIO.cc
                     ARGS    "test/testinput/parallelfieldsetio.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_parallelfieldsetio_2PE
+  ecbuild_add_test( TARGET  oops_util_parallelfieldsetio_2PE
                     MPI     2
                     SOURCES test/util/ParallelFieldSetIO.cc
                     ARGS    "test/testinput/parallelfieldsetio.yaml"
-                    DEPENDS test_util_parallelfieldsetio_1PE
+                    DEPENDS oops_util_parallelfieldsetio_1PE
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_parallelfieldsetio_3PE
+  ecbuild_add_test( TARGET  oops_util_parallelfieldsetio_3PE
                     MPI     3
                     SOURCES test/util/ParallelFieldSetIO.cc
                     ARGS    "test/testinput/parallelfieldsetio.yaml"
-                    DEPENDS test_util_parallelfieldsetio_1PE
+                    DEPENDS oops_util_parallelfieldsetio_1PE
                     LIBS    oops )
 
   ecbuild_add_executable(
-    TARGET  test_oops_util_functionspace_helpers
+    TARGET  oops_util_functionspace_helpers
     SOURCES test/util/FunctionSpaceHelpers.cc
     LIBS oops
   )
-  ecbuild_add_test( TARGET  test_util_functionspace_helpers
-                    COMMAND test_oops_util_functionspace_helpers
+  ecbuild_add_test( TARGET  oops_util_functionspace_helpers
+                    COMMAND oops_util_functionspace_helpers
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
-  ecbuild_add_test( TARGET  test_util_functionspace_helpers_p2
-                    COMMAND test_oops_util_functionspace_helpers
+  ecbuild_add_test( TARGET  oops_util_functionspace_helpers_p2
+                    COMMAND oops_util_functionspace_helpers
                     MPI     2
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
-  ecbuild_add_test( TARGET  test_util_functionspace_helpers_p4
-                    COMMAND test_oops_util_functionspace_helpers
+  ecbuild_add_test( TARGET  oops_util_functionspace_helpers_p4
+                    COMMAND oops_util_functionspace_helpers
                     MPI     4
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
   if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
-    ecbuild_add_test( TARGET  test_assimilation_etkf
+    ecbuild_add_test( TARGET  oops_assimilation_etkf
                       SOURCES test/assimilation/ETKF.cc
                       ARGS    "test/testinput/etkf.yaml"
                       LIBS    oops )
   endif()
 
-  ecbuild_add_test( TARGET  test_assimilation_fullgmres
+  ecbuild_add_test( TARGET  oops_assimilation_fullgmres
                     SOURCES test/assimilation/FullGMRES.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_assimilation_rotmat
+  ecbuild_add_test( TARGET  oops_assimilation_rotmat
                     SOURCES test/assimilation/rotmat.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_assimilation_solvematrixequation
+  ecbuild_add_test( TARGET  oops_assimilation_solvematrixequation
                     SOURCES test/assimilation/SolveMatrixEquation.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_assimilation_spectrallmp
+  ecbuild_add_test( TARGET  oops_assimilation_spectrallmp
                     SOURCES test/assimilation/SpectralLMP.cc
                     ARGS    "test/testinput/spectrallmp.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_assimilation_subensemble_splitter
+  ecbuild_add_test( TARGET  oops_assimilation_subensemble_splitter
                     SOURCES test/assimilation/SubensembleSplitter.cc
                     ARGS    "test/testinput/subens.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_assimilation_testvector3d
+  ecbuild_add_test( TARGET  oops_assimilation_testvector3d
                     SOURCES test/assimilation/TestVector3D.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_assimilation_tridiagsolve
+  ecbuild_add_test( TARGET  oops_assimilation_tridiagsolve
                     SOURCES test/assimilation/TriDiagSolve.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_for_each
+  ecbuild_add_test( TARGET  oops_util_for_each
                     OMP 2
                     SOURCES test/util/for_each.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
-  ecbuild_add_test( TARGET  test_util_reduction
+  ecbuild_add_test( TARGET  oops_util_reduction
                     OMP 2
                     SOURCES test/util/reduction.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 
   if( HAVE_FCTEST )
-    add_fctest( TARGET  test_util_datetime_intfb.x
+    add_fctest( TARGET  oops_util_datetime_intfb.x
                 SOURCES test/util/datetime.F90
                 LINKER_LANGUAGE Fortran
                 CONDITION HAVE_FCTEST
                 LIBS    oops )
 
-    add_fctest( TARGET  test_util_duration_intfb.x
+    add_fctest( TARGET  oops_util_duration_intfb.x
                 SOURCES test/util/duration.F90
                 LINKER_LANGUAGE Fortran
                 CONDITION HAVE_FCTEST
                 LIBS    oops )
 
-    add_fctest( TARGET  test_util_missing_values_f.x
+    add_fctest( TARGET  oops_util_missing_values_f.x
                 SOURCES test/util/missing_values.F90
                 LINKER_LANGUAGE Fortran
                 CONDITION HAVE_FCTEST
