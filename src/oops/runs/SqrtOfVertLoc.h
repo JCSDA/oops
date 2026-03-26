@@ -20,7 +20,7 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/Increment4D.h"
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementSet.h"
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/ModelSpaceCovarianceBase.h"
 #include "oops/base/Variables.h"
@@ -45,7 +45,7 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
   typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef Increment<MODEL>           Increment_;
   typedef Increment4D<MODEL>         Increment4D_;
-  typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
+  typedef IncrementSet<MODEL>        IncrementSet_;
   typedef State4D<MODEL>             State4D_;
   typedef ModelSpaceCovarianceBase<MODEL>   ModelSpaceCovariance_;
 
@@ -76,7 +76,11 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
 
 //  Retrieve vertical eigenvectors from B
     const size_t samples = fullConfig.getInt("number of random samples");
-    IncrementEnsemble_ perts(geometry, vars, xx[0].validTime(), samples);
+    // Build a one-time IncrementSet with `samples` ensemble members
+    std::vector<util::DateTime> times{xx[0].validTime()};
+    std::vector<int> members(samples);
+    for (size_t m = 0; m < samples; ++m) members[m] = static_cast<int>(m);
+    IncrementSet_ perts(geometry, vars, times, oops::mpi::myself(), members);
     size_t maxNeigOutput = fullConfig.getInt("max neig output", samples);
     size_t truncatedNeig = getVerticalEigenVectors(*Bmat, geometry, perts,
                            truncationTolerance, maxNeigOutput);
@@ -87,7 +91,7 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
     Increment_ sumOfSquares(geometry, vars, xx[0].validTime());
     sumOfSquares.zero();
     for (size_t jm = 0; jm < truncatedNeig; ++jm) {
-      tmpIncr1 = perts[jm];
+      tmpIncr1 = perts(0, jm);
       tmpIncr1.schur_product_with(tmpIncr1);
       sumOfSquares += tmpIncr1;
     }
@@ -107,10 +111,10 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
     for (size_t jm = 0; jm < truncatedNeig; ++jm) {
       eckit::LocalConfiguration outConf(fullConfig, "output");
       util::setMember(outConf, jm + 1);
-      perts[jm].schur_product_with(sumOfSquares);  //  Scale eigen vectors
-      perts[jm].write(outConf);
+      perts(0, jm).schur_product_with(sumOfSquares);  //  Scale eigen vectors
+      perts(0, jm).write(outConf);
       if (fullConfig.getBool("print test for each member", true)) {
-        Log::test() << "Columns of sqrt(B) " << jm << perts[jm] << std::endl;
+        Log::test() << "Columns of sqrt(B) " << jm << perts(0, jm) << std::endl;
       }
     }
     return 0;
@@ -132,24 +136,24 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
   */
   size_t getVerticalEigenVectors(const ModelSpaceCovariance_ & cov,
                                  const Geometry_ & geom,
-                                 IncrementEnsemble_ & perts,
+                                 IncrementSet_ & perts,
                                  const double truncationTolerance,
                                  const size_t maxNeigOutput) const {
 //  Mpi communicator
     const eckit::mpi::Comm & mpiComm = geom.getComm();
 
 //  Generate random sample of B
-    Increment4D_ tmp(geom, perts[0].variables(), {perts[0].validTime()});
+    Increment4D_ tmp(geom, perts.variables(), perts.times());
     ASSERT(tmp.is_3d());
-    size_t samples = perts.size();
+    size_t samples = perts.ens_size();
     for (size_t jm = 0; jm < samples; ++jm) {
-      tmp[0] = perts[jm];
+      tmp[0] = perts(0, jm);
       cov.randomize(tmp);
-      perts[jm] = tmp[0];
+      perts(0, jm) = tmp[0];
     }
 
 //  Create temp. eigen matrices
-    oops::LocalIncrement liTmp = perts[0].getLocal(geom.begin());
+    oops::LocalIncrement liTmp = perts(0, 0).getLocal(geom.begin());
     size_t nv = liTmp.getVals().size();  // number of variables in a vertical column
     Eigen::MatrixXd Z(nv, samples);
     Eigen::VectorXd averageEigenSpectrum = Eigen::VectorXd::Zero(std::min(samples, nv));
@@ -161,18 +165,18 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
     for (GeometryIterator_ i = geom.begin(); i != geom.end(); ++i) {
       // make sure we are working with a valid local perturbation
       // e.g. local perts are 0 for ocean points on land
-      std::vector<double> doubleVector = perts[0].getLocal(i).getVals();
+      std::vector<double> doubleVector = perts(0, 0).getLocal(i).getVals();
       double l = std::inner_product(doubleVector.begin(), doubleVector.end(),
                                     doubleVector.begin(), 0.0);
       if ( l == 0 ) {
         // zero-length perturbation, skip eigen value computation
         // do not increment numberOfPointsOnThisPE
-        perts.setEigen(Eigen::MatrixXd::Zero(nv, samples), i);
+        perts.setEigen(Eigen::MatrixXd::Zero(nv, samples), i, 0);
       } else {
         // non-zero perturbation, proceed with eigen value computation
 
         // populate the eigen matrix
-        perts.packEigen(Z, i);
+        perts.packEigen(Z, i, 0);
 
         // compute correlation matrix
         Eigen::MatrixXd Zcentered = Z.colwise() - Z.rowwise().mean();
@@ -202,7 +206,7 @@ template <typename MODEL> class SqrtOfVertLoc : public Application {
         Z.setZero();
         Z.leftCols(std::min(Evecs.cols(), Z.cols())) =
                    Evecs.leftCols(std::min(Evecs.cols(), Z.cols()));
-        perts.setEigen(Z, i);
+        perts.setEigen(Z, i, 0);
 
         // increment the eigen spectrum accumulator
         for (int ii=0; ii < std::min(averageEigenSpectrum.size(), Evals.size()); ++ii) {

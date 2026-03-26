@@ -9,23 +9,16 @@
 #ifndef OOPS_RUNS_ENSMEANANDVARIANCE_H_
 #define OOPS_RUNS_ENSMEANANDVARIANCE_H_
 
-#include <memory>
 #include <string>
-#include <vector>
-
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/Increment.h"
-#include "oops/base/PostProcessor.h"
-#include "oops/base/State.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/IncrementSet.h"
+#include "oops/base/StateSet.h"
 #include "oops/base/StructuredGridWriter.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
-#include "oops/util/DateTime.h"
-#include "oops/util/Duration.h"
 
 namespace oops {
 
@@ -33,9 +26,8 @@ namespace oops {
 
 template <typename MODEL> class EnsMeanAndVariance : public Application {
   typedef Geometry<MODEL>                          Geometry_;
-  typedef Increment<MODEL>                         Increment_;
-  typedef State<MODEL>                             State_;
-  typedef StateEnsemble<MODEL>                     StateEnsemble_;
+  typedef IncrementSet<MODEL>                      IncrementSet_;
+  typedef StateSet<MODEL>                          StateSet_;
 
  public:
   // -----------------------------------------------------------------------------
@@ -50,29 +42,37 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
 
 //  Setup ensemble of states
     eckit::LocalConfiguration ensConf(fullConfig, "ensemble");
-    const StateEnsemble_ stateEnsemble(resol, ensConf);
-    const State_ ensmean = stateEnsemble.mean();
-    const Increment_ sigb2 = stateEnsemble.variance();
+    const StateSet_ stateEnsemble(resol, ensConf);
+    const StateSet_ ensmean = stateEnsemble.ens_mean();
+    // Convert StateSet to IncrementSet for variance calculation and free stateEnsemble memory
+    const IncrementSet_ ensemble(resol, stateEnsemble.variables(), stateEnsemble);
+    const IncrementSet_ sigb2 = ensemble.ens_var();
 
 //  Write mean to file
-    if (fullConfig.has("mean output"))
+    if (fullConfig.has("mean output")) {
       ensmean.write(eckit::LocalConfiguration(fullConfig, "mean output"));
+    }
 
     if (fullConfig.has("ensmean to structured grid")) {
       const eckit::LocalConfiguration latlonConf(fullConfig, "ensmean to structured grid");
       const StructuredGridWriter<MODEL> latlon(latlonConf, resol);
-      latlon.interpolateAndWrite(ensmean);
+      for (size_t jt = 0; jt < ensmean.time_size(); ++jt) {
+        latlon.interpolateAndWrite(ensmean[jt]);
+      }
     }
     Log::test() << "Mean: " << std::endl << ensmean << std::endl;
 
 //  Write variance to file
-    if (fullConfig.has("variance output"))
+    if (fullConfig.has("variance output")) {
       sigb2.write(eckit::LocalConfiguration(fullConfig, "variance output"));
+    }
 
     if (fullConfig.has("ensvariance to structured grid")) {
       const eckit::LocalConfiguration latlonConf(fullConfig, "ensvariance to structured grid");
       const StructuredGridWriter<MODEL> latlon(latlonConf, resol);
-      latlon.interpolateAndWrite(sigb2, ensmean);
+      for (size_t jt = 0; jt < ensmean.time_size(); ++jt) {
+        latlon.interpolateAndWrite(sigb2[jt], ensmean[jt]);
+      }
     }
     Log::test() << "Variance: " << std::endl << sigb2 << std::endl;
 
@@ -81,7 +81,7 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
 //  this executable to work with model interfaces with non-conforming atlas interfaces.
     if (fullConfig.has("standard deviation output")
         || fullConfig.has("standard deviation to structured grid")) {
-      const Increment_ sigb = stateEnsemble.stddev();
+      const IncrementSet_ sigb = ensemble.ens_stddev();
 
       if (fullConfig.has("standard deviation output")) {
         sigb.write(eckit::LocalConfiguration(fullConfig, "standard deviation output"));
@@ -90,7 +90,9 @@ template <typename MODEL> class EnsMeanAndVariance : public Application {
         const eckit::LocalConfiguration latlonConf(fullConfig,
                                                    "standard deviation to structured grid");
         const StructuredGridWriter<MODEL> latlon(latlonConf, resol);
-        latlon.interpolateAndWrite(sigb, ensmean);
+        for (size_t jt = 0; jt < sigb.time_size(); ++jt) {
+          latlon.interpolateAndWrite(sigb[jt], ensmean[jt]);
+        }
       }
       Log::test() << "Standard Deviation: " << std::endl << sigb << std::endl;
     }

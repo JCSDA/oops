@@ -20,8 +20,6 @@
 
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment4D.h"
-#include "oops/base/IncrementEnsemble.h"
-#include "oops/base/IncrementEnsemble4D.h"
 #include "oops/base/IncrementSet.h"
 #include "oops/base/LocalIncrement.h"
 #include "oops/generic/gc99.h"
@@ -47,8 +45,6 @@ class VerticalLocEV: private util::ObjectCounter<VerticalLocEV<MODEL>> {
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef Increment4D<MODEL>         Increment4D_;
-  typedef IncrementEnsemble<MODEL>   IncrementEnsemble_;
-  typedef IncrementEnsemble4D<MODEL> IncrementEnsemble4D_;
   typedef IncrementSet<MODEL>        IncrementSet_;
   typedef State<MODEL>               State_;
 
@@ -58,11 +54,9 @@ class VerticalLocEV: private util::ObjectCounter<VerticalLocEV<MODEL>> {
   VerticalLocEV(const eckit::Configuration &, const State_ &, const Variables &);
 
 // modulate an increment
-  void modulateIncrement(const Increment4D_ &, IncrementEnsemble4D_ &) const;
+  void modulateIncrement(const Increment4D_ &, IncrementSet_ &) const;
 
 // modulate an incrementEnsemble at a {gridPoint, timeSlice}
-  Eigen::MatrixXd modulateIncrement(const IncrementEnsemble4D_ &,
-                                    const GeometryIterator_ &, size_t) const;
   Eigen::MatrixXd modulateIncrement(const IncrementSet_ &,
                                     const GeometryIterator_ &, size_t) const;
 
@@ -94,7 +88,7 @@ class VerticalLocEV: private util::ObjectCounter<VerticalLocEV<MODEL>> {
   Eigen::MatrixXd Evecs_;
   Eigen::VectorXd Evals_;
   size_t neig_;
-  std::unique_ptr<IncrementEnsemble_> sqrtVertLoc_;
+  std::unique_ptr<IncrementSet_> sqrtVertLoc_;
   // if true store EVs as explicit 3D fields
   // TODO(frolovsa) depriciate 1D storage in the future
   // once we see no issues with always using 3D
@@ -120,7 +114,7 @@ template<typename MODEL>
     if (readEVs_) {
       oops::Log::info() << "Reading precomputed vertical localization EVs from disk" << std::endl;
       readEVsFromDisk(x.geometry(), x.validTime(), conf);
-      neig_ = sqrtVertLoc_->size();
+      neig_ = sqrtVertLoc_->ens_size();
     } else {
       oops::Log::info() << "Computing vertical localization EVs from scratch" << std::endl;
       // compute vertical corrleation matrix fo nLevs
@@ -130,8 +124,11 @@ template<typename MODEL>
       neig_ = truncateEvecs();
       // convert EVs to 3D if needed
       if (EVsStoredAs3D_) {
-        sqrtVertLoc_ = boost::make_unique<IncrementEnsemble_>
-                        (x.geometry(), incvars_, x.validTime(), neig_);
+        std::vector<util::DateTime> times{x.validTime()};
+        std::vector<int> members(neig_);
+        std::iota(members.begin(), members.end(), 0);
+        sqrtVertLoc_ = std::make_unique<IncrementSet_>
+                        (x.geometry(), incvars_, times, oops::mpi::myself(), members);
         populateIncrementEnsembleWithEVs();
       }
     }
@@ -168,9 +165,11 @@ template<typename MODEL>
                                              const eckit::Configuration & config) {
     std::vector<eckit::LocalConfiguration> memberConfig;
     config.get("list of eigen vectors to read", memberConfig);
-    sqrtVertLoc_ = boost::make_unique<IncrementEnsemble_>(
-                     geom, incvars_, tslot, memberConfig.size());
-
+    std::vector<util::DateTime> times{tslot};
+    std::vector<int> members(memberConfig.size());
+    std::iota(members.begin(), members.end(), 0);
+    sqrtVertLoc_ = std::make_unique<IncrementSet_>(
+                     geom, incvars_, times, oops::mpi::myself(), members);
     // Loop over all ensemble members
     for (size_t jj = 0; jj < memberConfig.size(); ++jj) {
       (*sqrtVertLoc_)[jj].read(memberConfig[jj]);
@@ -286,7 +285,7 @@ bool VerticalLocEV<MODEL>::testTruncateEvecs(const Geometry_ & geom) {
 // -----------------------------------------------------------------------------
 template<typename MODEL>
 void VerticalLocEV<MODEL>::modulateIncrement(const Increment4D_ & incr,
-                                      IncrementEnsemble4D_ & incrsOut) const {
+                                      IncrementSet_ & incrsOut) const {
   // modulate an increment incr using Eivec_
   // returns incrsOut
 
@@ -301,58 +300,19 @@ void VerticalLocEV<MODEL>::modulateIncrement(const Increment4D_ & incr,
     // modulate an increment
     for (size_t itime=0; itime < incr.size(); ++itime) {
       if (EVsStoredAs3D_) {  // if EVs stored as 3D use oops operation for schur_product
-        incrsOut[ieig][itime] = (*sqrtVertLoc_)[ieig];
-        incrsOut[ieig][itime].schur_product_with(incr[itime]);
-      } else {  // if EV is only available as a 1D column use grid eterator
+        incrsOut(itime, ieig) = (*sqrtVertLoc_)[ieig];
+        incrsOut(itime, ieig).schur_product_with(incr[itime]);
+      } else {
         std::vector<double> EvecRepl = replicateEigenVector(ieig);
         const Geometry_ & geom = incr[itime].geometry();
         for (GeometryIterator_ gpi = geom.begin(); gpi != geom.end(); ++gpi) {
           oops::LocalIncrement gp = incr[itime].getLocal(gpi);
           gp *= EvecRepl;
-          incrsOut[ieig][itime].setLocal(gp, gpi);
+          incrsOut(itime, ieig).setLocal(gp, gpi);
         }
       }
     }
   }
-}
-
-// -----------------------------------------------------------------------------
-template<typename MODEL>
-Eigen::MatrixXd VerticalLocEV<MODEL>::modulateIncrement(
-                                  const IncrementEnsemble4D_ & incrs,
-                                  const GeometryIterator_ & gi,
-                                  size_t itime) const {
-  // modulate an increment at grid point
-
-  size_t nv = 0;
-  std::vector<double> EvecRepl;
-  if (EVsStoredAs3D_) {
-    nv = (*sqrtVertLoc_)[0].getLocal(gi).getVals().size();
-  } else {
-    EvecRepl = replicateEigenVector(0);
-    nv = EvecRepl.size();
-  }
-  size_t nens = incrs.size();
-  Eigen::MatrixXd Z(nv, neig_*nens);
-  std::vector<double> etmp2(nv);
-
-  size_t ii = 0;
-  for (size_t iens=0; iens < nens; ++iens) {
-    etmp2 =  incrs[iens][itime].getLocal(gi).getVals();
-    for (size_t ieig=0; ieig < neig_; ++ieig) {
-      if (EVsStoredAs3D_) {
-        EvecRepl = (*sqrtVertLoc_)[ieig].getLocal(gi).getVals();
-      } else {
-        EvecRepl = replicateEigenVector(ieig);
-      }
-      // modulate and assign
-      for (size_t iv=0; iv < nv; ++iv) {
-         Z(iv, ii) = EvecRepl[iv]*etmp2[iv];
-      }
-      ++ii;
-    }
-  }
-  return Z;
 }
 
 // -----------------------------------------------------------------------------

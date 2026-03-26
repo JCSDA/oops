@@ -35,7 +35,6 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   typedef ObsErrors<OBS>              ObsErrors_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
   typedef StateSet<MODEL>             StateSet_;
-  typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
   typedef IncrementSet<MODEL>         IncrementSet_;
   typedef VerticalLocEV<MODEL>        VerticalLocEV_;
 
@@ -45,7 +44,7 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   StochasticGETKF(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t,
                   const StateSet_ &, const Variables &);
 
-  Observations_ computeHofX(const StateEnsemble4D_ &, size_t, bool) override;
+  Observations_ computeHofX(const StateSet_ &, size_t, bool) override;
 
   /// entire KF update (computeWeights+applyWeights) for a grid point GeometryIterator_
   void measurementUpdate(const Eigen::VectorXd &,
@@ -127,7 +126,7 @@ StochasticGETKF<MODEL, OBS>::StochasticGETKF(ObsSpaces_ & obspaces, const Geomet
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-Observations<OBS> StochasticGETKF<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & ens_xx,
+Observations<OBS> StochasticGETKF<MODEL, OBS>::computeHofX(const StateSet_ & ens_xx,
                                                            size_t iteration, bool readFromFile) {
   util::Timer timer(classname(), "computeHofX");
 

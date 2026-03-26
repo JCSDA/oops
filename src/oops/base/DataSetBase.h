@@ -441,7 +441,7 @@ void DataSetBase<DATA, GEOM>::write(const eckit::Configuration & config) const {
         size_t it = commTime_.rank() * localtimes_ + jt;
         if (nmembers_ > 1) {
           // Support behavior for multiple members
-          confs[it].set("member", mymembers_[jm]);
+          confs[it].set("member", mymembers_[jm]+1);
         } else if (config.has("member")) {
           // Support behavior for single member with member specified
           // in the configuration
@@ -452,7 +452,7 @@ void DataSetBase<DATA, GEOM>::write(const eckit::Configuration & config) const {
     } else {
       ASSERT(ntimes_ == 1);
       eckit::LocalConfiguration writeConf(config);
-      if (nmembers_ > 1) writeConf.set("member", mymembers_[jm]);
+      if (nmembers_ > 1) writeConf.set("member", mymembers_[jm]+1);
       this->data(0, jm).write(writeConf);
     }
   }

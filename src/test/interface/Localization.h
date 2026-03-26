@@ -25,7 +25,6 @@
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment4D.h"
-#include "oops/base/IncrementEnsemble.h"
 #include "oops/base/Localization.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
@@ -40,7 +39,6 @@ namespace test {
 template <typename MODEL> class LocalizationFixture : private boost::noncopyable {
   typedef oops::Localization<MODEL>                     Localization_;
   typedef oops::Geometry<MODEL>                         Geometry_;
-  typedef oops::IncrementEnsemble<MODEL>                Ensemble_;
 
  public:
   static const Geometry_       & resol()        {return *getInstance().resol_;}

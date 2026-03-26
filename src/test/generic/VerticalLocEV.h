@@ -24,9 +24,8 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/Increment.h"
 #include "oops/base/Increment4D.h"
-#include "oops/base/IncrementEnsemble4D.h"
+#include "oops/base/IncrementSet.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/VerticalLocEV.h"
 #include "oops/runs/Test.h"
@@ -44,7 +43,7 @@ template <typename MODEL> void testVerticalLocEV() {
   typedef oops::Geometry<MODEL>           Geometry_;
   typedef oops::VerticalLocEV<MODEL>      VerticalLocEV_;
   typedef oops::Increment4D<MODEL>        Increment4D_;
-  typedef oops::IncrementEnsemble4D<MODEL>        IncrementEnsemble_;
+  typedef oops::IncrementSet<MODEL>       IncrementSet_;
   typedef oops::State<MODEL>              State_;
 
   const Geometry_ & geometry = Test_::resol();
@@ -76,11 +75,14 @@ template <typename MODEL> void testVerticalLocEV() {
   times.push_back(Test_::time());
   Increment4D_ dx1(Test_::resol(), Test_::ctlvars(), times);
   Increment4D_ dx2(Test_::resol(), Test_::ctlvars(), times);
-  IncrementEnsemble_ incEns(Test_::resol(), Test_::ctlvars(), times, neig);
+  // Build an IncrementSet with one time and neig members
+  std::vector<int> members(neig);
+  std::iota(members.begin(), members.end(), 0);
+  IncrementSet_ incEns(Test_::resol(), Test_::ctlvars(), times, oops::mpi::myself(), members);
   // set incEns to zero
-  for (int i = 1; i < neig; ++i) {incEns[i][0].zero();}
+  for (int i = 1; i < neig; ++i) {incEns(0, i).zero();}
   for (int i = 1; i < neig; ++i) {
-    double n = incEns[0][0].dot_product_with(incEns[i][0]);
+    double n = incEns(0, 0).dot_product_with(incEns(0, i));
     EXPECT(n < 100*DBL_EPSILON);
   }
 
@@ -95,21 +97,22 @@ template <typename MODEL> void testVerticalLocEV() {
   vertloc.modulateIncrement(dx1, incEns);
 
   // check the orthogonality condition
-  double n0 = incEns[0][0].dot_product_with(incEns[0][0]);
+  double n0 = incEns(0, 0).dot_product_with(incEns(0, 0));
   // check that eigen vectors are not zeros
   EXPECT(n0 > 0);
   double tol = 20*n0*DBL_EPSILON;
 
   // check that eig[ieig>0] are orthogonal to eig[0]
   for (int i = 1; i < neig; ++i) {
-    double n = incEns[0][0].dot_product_with(incEns[i][0]);
+    double n = incEns(0, 0).dot_product_with(incEns(0, i));
     EXPECT(n < tol);
   }
 
   // try the second interface for modulateIncrement
   // this checks that modulation of a single column @geom.begin() works as well
-  IncrementEnsemble_ incEns2(Test_::resol(), Test_::ctlvars(), times, 1);
-  incEns2[0] = dx1;
+  IncrementSet_ incEns2(Test_::resol(), Test_::ctlvars(), times, oops::mpi::myself(),
+                        std::vector<int>{0});
+  incEns2[0] = dx1[0];
 
   Eigen::MatrixXd modInc = vertloc.modulateIncrement(incEns2, geometry.begin(), 0);
   Eigen::MatrixXd modIncInner = modInc.transpose()*modInc;

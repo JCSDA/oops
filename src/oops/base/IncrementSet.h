@@ -17,7 +17,6 @@
 #include "oops/base/DataSetBase.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
-#include "oops/base/StateEnsemble4D.h"
 #include "oops/base/StateSet.h"
 #include "oops/interface/GeometryIterator.h"
 #include "oops/mpi/mpi.h"
@@ -35,7 +34,6 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
   typedef Geometry<MODEL>            Geometry_;
   typedef GeometryIterator<MODEL>    GeometryIterator_;
   typedef Increment<MODEL>           Increment_;
-  typedef StateEnsemble4D<MODEL>     StateEnsemble4D_;
   typedef StateSet<MODEL>            States_;
 
  public:
@@ -51,7 +49,7 @@ class IncrementSet : public DataSetBase< Increment<MODEL>, Geometry<MODEL> > {
                const eckit::mpi::Comm & commEns = oops::mpi::myself());
   IncrementSet(const Geometry_ &, const Variables &, const States_ &);
   IncrementSet(const Geometry_ &, const Variables &, States_ &, const bool clearStates = false);
-  IncrementSet(const StateEnsemble4D_ &, const States_ &, const Variables &,
+  IncrementSet(const States_ &, const States_ &, const Variables &,
                const std::vector<int> &);
   IncrementSet(const std::vector<util::DateTime> &, const eckit::mpi::Comm &,
                const std::vector<int> &, const eckit::mpi::Comm &,
@@ -224,14 +222,14 @@ IncrementSet<MODEL>::IncrementSet(const Geometry_ & resol, const Variables & var
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-IncrementSet<MODEL>::IncrementSet(const StateEnsemble4D_ &ens, const States_ &mean,
+IncrementSet<MODEL>::IncrementSet(const States_ &ens, const States_ &mean,
                                   const Variables &vars, const std::vector<int> &members)
-    : IncrementSet(ens[0].geometry(), vars, ens[0].times(),
-                   ens[0].commTime(), members) {
+    : IncrementSet(ens.geometry(), vars, ens.times(),
+             ens.commTime(), members) {
     for (size_t itime = 0; itime < this->time_size(); ++itime) {
-        for (size_t iens = 0; iens < this->ens_size(); ++iens) {
-            (*this)(itime, iens).diff(ens[iens][itime], mean[itime]);
-        }
+      for (size_t iens = 0; iens < this->ens_size(); ++iens) {
+        (*this)(itime, iens).diff(ens(itime, iens), mean[itime]);
+      }
     }
 }
 

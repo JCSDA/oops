@@ -11,6 +11,7 @@
 #include <Eigen/Dense>
 #include <cfloat>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <utility>
 #include <vector>
@@ -22,13 +23,12 @@
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/IncrementEnsemble4D.h"
+#include "oops/base/IncrementSet.h"
 #include "oops/base/ObsEnsemble.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
-#include "oops/base/StateEnsemble4D.h"
 #include "oops/base/StateSet.h"
 #include "oops/generic/VerticalLocEV.h"
 #include "oops/interface/GeometryIterator.h"
@@ -57,7 +57,6 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
   typedef GeometryIterator<MODEL>     GeometryIterator_;
   typedef Increment<MODEL>            Increment_;
   typedef Increment4D<MODEL>          Increment4D_;
-  typedef IncrementEnsemble4D<MODEL>  IncrementEnsemble4D_;
   typedef IncrementSet<MODEL>         IncrementSet_;
   typedef LinearModel<MODEL>          LinearModel_;
   typedef Model<MODEL>                Model_;
@@ -78,7 +77,6 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
   typedef PseudoLinearModelIncrement4D<MODEL> PseudoLinearModel_;
   typedef State<MODEL>                State_;
   typedef StateSet<MODEL>             StateSet_;
-  typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
   typedef VerticalLocEV<MODEL>        VerticalLocEV_;
 
  public:
@@ -93,7 +91,7 @@ class DeterministicGETKF : public LocalEnsembleSolver<MODEL, OBS> {
                      const StateSet_ &,
                      const Variables &);
 
-  Observations_ computeHofX(const StateEnsemble4D_ &, size_t, bool) override;
+  Observations_ computeHofX(const StateSet_ &, size_t, bool) override;
 
   /// entire KF update (computeWeights+applyWeights) for a grid point GeometryIterator_
   void measurementUpdate(const Eigen::VectorXd &,
@@ -176,7 +174,7 @@ DeterministicGETKF<MODEL, OBS>::DeterministicGETKF(ObsSpaces_ & obspaces,
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsemble4D_ & ens_xx,
+Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateSet_ & ens_xx,
                                                               size_t iteration, bool readFromFile) {
   util::Timer timer(classname(), "computeHofX");
 
@@ -216,11 +214,13 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
   } else {
     const util::Duration default_tstep = (this->obspaces_.windowEnd()
                                         - this->obspaces_.windowStart()) * 2;
-    const std::vector<util::DateTime> times = ens_xx[0].validTimes();
+    const std::vector<util::DateTime> times = ens_xx.times();
     const util::Duration flength = times[times.size()-1] - times[0];
 
     Increment4D_ dx(geometry_, this->incvars_, times);
-    IncrementEnsemble4D_ Ztmp(geometry_, this->incvars_, times, neig_);
+    std::vector<int> evMembers(neig_);
+    std::iota(evMembers.begin(), evMembers.end(), 0);
+    IncrementSet_ Ztmp(geometry_, this->incvars_, times, this->xbmean_.commTime(), evMembers);
 
     size_t ii = 0;
     if (this->useLinearObserver()) {
@@ -261,7 +261,7 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
       // add linearized H(x) to the linear model postprocessor
       this->linear_hofx_->initializeTL(posttrajtl);
 
-      for (size_t iens = 0; iens < ens_xx.size(); ++iens) {
+      for (size_t iens = 0; iens < nens_; ++iens) {
         Log::info() << " DeterministicGETKF::computeHofX starting ensemble member "
                     << iens+1 << std::endl;
         util::printRunStats("DeterministicGETKF calculate hofx");
@@ -269,7 +269,9 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
         util::printRunStats("GETKFSolver calculate hofx");
         tmpDeps.zero();
         // Setup PseudoLinearModelIncrement4D to run on ensemble perturbation
-        dx.diff(ens_xx[iens], this->xbmean_);
+        for (size_t it = 0; it < times.size(); ++it) {
+          dx(it, 0).diff(ens_xx(it, iens), this->xbmean_[it]);
+        }
         // Approximate H(x) using linearized model and linearized observer
         this->applyLinearToPerturbations(dx, flength, default_tstep, obsauxinc, moderrinc,
                                       posttl, posttrajtl, tmpDeps);
@@ -282,7 +284,11 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
         // observe modulated members
         vertloc_.modulateIncrement(dx, Ztmp);
         for (size_t ieig = 0; ieig < neig_; ++ieig) {
-          this->applyLinearToPerturbations(Ztmp[ieig], flength, default_tstep, obsauxinc, moderrinc,
+          Increment4D_ z_eig(geometry_, this->incvars_, times);
+          for (size_t it = 0; it < times.size(); ++it) {
+            z_eig[it] = Ztmp(it, ieig);
+          }
+          this->applyLinearToPerturbations(z_eig, flength, default_tstep, obsauxinc, moderrinc,
                                            posttl, posttrajtl, tmpDeps);
           HZb_->setData(ii, tmpDeps);
           Observations_ tmpObs(yb_mean);
@@ -321,11 +327,15 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateEnsembl
         Log::info() << " DeterministicGETKF::computeHofX starting ensemble member "
                     << iens+1 << std::endl;
         util::printRunStats("DeterministicGETKF calculate hofx");
-        dx.diff(ens_xx[iens], this->xbmean_);
+        for (size_t it = 0; it < times.size(); ++it) {
+          dx(it, 0).diff(ens_xx(it, iens), this->xbmean_[it]);
+        }
         vertloc_.modulateIncrement(dx, Ztmp);
         for (size_t ieig = 0; ieig < neig_; ++ieig) {
           StateSet_ tmpState = this->xbmean_;
-          tmpState += Ztmp[ieig];
+          for (size_t it = 0; it < times.size(); ++it) {
+            tmpState[it] += Ztmp(it, ieig);
+          }
           Observations_ tmpObs(this->obspaces_);
           this->computeHofX4D(config, tmpState, tmpObs, flength, default_tstep, obsaux, moderr,
                               Rmat, qcflags);

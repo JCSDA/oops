@@ -15,7 +15,7 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/State.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/StateSet.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
@@ -28,7 +28,7 @@ template <typename MODEL> class EnsRecenter : public Application {
   typedef Geometry<MODEL>   Geometry_;
   typedef Increment<MODEL>  Increment_;
   typedef State<MODEL>      State_;
-  typedef StateEnsemble<MODEL> StateEnsemble_;
+  typedef StateSet<MODEL>      StateSet_;
 
  public:
   // -----------------------------------------------------------------------------
@@ -48,11 +48,10 @@ template <typename MODEL> class EnsRecenter : public Application {
       x_center.zero();
     }
 
-    // Compute ensemble mean
+    // Compute ensemble mean using StateSet
     eckit::LocalConfiguration ensConf(fullConfig, "ensemble");
-    const StateEnsemble_ stateEnsemble(resol, ensConf);
-
-    State_ ensmean = stateEnsemble.mean();
+    const StateSet_ ensemble(resol, ensConf);
+    const StateSet_ ensmean = ensemble.ens_mean();
     Log::test() << "Ensemble mean: " << std::endl << ensmean << std::endl;
 
     // Optionally write the mean out
@@ -62,10 +61,10 @@ template <typename MODEL> class EnsRecenter : public Application {
 
     // Recenter ensemble around central and save
     Variables vars(fullConfig, "recenter variables");
-    for (unsigned jj = 0; jj < stateEnsemble.size(); ++jj) {
-      State_ x(resol, stateEnsemble[jj]);
+    for (unsigned jj = 0; jj < ensemble.ens_size(); ++jj) {
+      State_ x(resol, ensemble(0, jj));
       Increment_ pert(resol, vars, x.validTime());
-      pert.diff(x, ensmean);
+      pert.diff(x, ensmean[0]);
       x = x_center;
       x += pert;
 

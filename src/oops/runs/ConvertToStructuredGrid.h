@@ -16,9 +16,9 @@
 #include "eckit/config/Configuration.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
-#include "oops/base/IncrementEnsemble.h"
+#include "oops/base/IncrementSet.h"
 #include "oops/base/State.h"
-#include "oops/base/StateEnsemble.h"
+#include "oops/base/StateSet.h"
 #include "oops/base/StructuredGridWriter.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
@@ -35,10 +35,9 @@ namespace oops {
 template <typename MODEL> class ConvertToStructuredGrid : public Application {
   typedef Geometry<MODEL>                           Geometry_;
   typedef State<MODEL>                              State_;
-  typedef StateEnsemble<MODEL>                      StateEnsemble_;
+  typedef StateSet<MODEL>                           StateSet_;
   typedef Increment<MODEL>                          Increment_;
-  typedef IncrementEnsemble<MODEL>                  IncrementEnsemble_;
-  typedef std::shared_ptr<IncrementEnsemble<MODEL>> EnsemblePtr_;
+  typedef IncrementSet<MODEL>                       IncrementSet_;
   typedef StructuredGridWriter<MODEL>               StructuredGridGridWriter_;
 
  public:
@@ -56,12 +55,13 @@ template <typename MODEL> class ConvertToStructuredGrid : public Application {
       Log::info() << "Interpolating State Ensemble" << std::endl;
       Geometry_ resol_(eckit::LocalConfiguration(stateEns, "state geometry"), this->getComm());
       eckit::LocalConfiguration statesConf(stateEns, "states");
-      StateEnsemble_ statesToInterp_(resol_, statesConf);
+      StateSet_ statesToInterp_(resol_, statesConf);
       const eckit::LocalConfiguration structuredgridConf(stateEns, "structured grid interpolation");
       const StructuredGridGridWriter_ structuredGridWriter_(structuredgridConf, resol_);
+      // loop over all states (both in ensemble and time)
       size_t numstates = statesToInterp_.size();
-      for (size_t jm=0; jm < numstates; jm++) {
-        structuredGridWriter_.interpolateAndWrite(statesToInterp_[jm]);
+      for (size_t jj=0; jj < numstates; jj++) {
+        structuredGridWriter_.interpolateAndWrite(statesToInterp_[jj]);
         Log::test() << structuredGridWriter_ << std::endl;
       }
     }
@@ -116,14 +116,16 @@ template <typename MODEL> class ConvertToStructuredGrid : public Application {
       Geometry_ resol_(eckit::LocalConfiguration(incEns, "increment geometry"), this->getComm());
       const Variables vars(incEns, "increment variables");
       eckit::LocalConfiguration incsConf(incEns, "increments");
-      IncrementEnsemble_ incrementsToInterp_(resol_, vars, incsConf);
+      const util::DateTime tt(incsConf.getString("date"));
+      std::vector<util::DateTime> times{tt};
+      IncrementSet_ incrementsToInterp_(resol_, vars, times, incsConf, oops::mpi::myself());
       const eckit::LocalConfiguration structuredgridConf(incEns, "structured grid interpolation");
       const StructuredGridGridWriter_ structuredGridWriter_(structuredgridConf, resol_);
-      size_t numstates = incrementsToInterp_.size();
+      size_t numstates = incrementsToInterp_.ens_size();
       for (size_t jm=0; jm < numstates; jm++) {
         // This supports output on model levels only; to output on pressure levels would need to
         // read in a reference background from which to read the vertical pressure coordinate
-        structuredGridWriter_.interpolateAndWrite(incrementsToInterp_[jm]);
+        structuredGridWriter_.interpolateAndWrite(incrementsToInterp_(0, jm));
         Log::test() << structuredGridWriter_ << std::endl;
       }
     }

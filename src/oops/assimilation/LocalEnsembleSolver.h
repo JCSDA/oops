@@ -35,7 +35,6 @@
 #include "oops/base/ObsLocalizations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/State.h"
-#include "oops/base/StateEnsemble4D.h"
 #include "oops/base/StateSet.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/generic/PseudoLinearModelIncrement4D.h"
@@ -68,11 +67,11 @@ class LocalEnsembleSolver {
   typedef Observations<OBS>           Observations_;
   typedef ObsLocalizations<MODEL, OBS> ObsLocalizations_;
   typedef ObsSpaces<OBS>              ObsSpaces_;
-  typedef StateEnsemble4D<MODEL>      StateEnsemble4D_;
   typedef PseudoModelState4D<MODEL>   PseudoModel_;
   typedef PseudoLinearModelIncrement4D<MODEL> PseudoLinearModel_;
   typedef State<MODEL>                State_;
   typedef StateSet<MODEL>             StateSet_;
+  typedef State4D<MODEL>              State4D_;
   typedef Increment<MODEL>            Increment_;
   typedef Increment4D<MODEL>          Increment4D_;
   typedef LinearModel<MODEL>          LinearModel_;
@@ -94,7 +93,7 @@ class LocalEnsembleSolver {
   virtual ~LocalEnsembleSolver() = default;
 
   /// computes ensemble H(\p xx), returns mean H(\p xx), saves as hofx \p iteration
-  virtual Observations_ computeHofX(const StateEnsemble4D_ & xx, size_t iteration,
+  virtual Observations_ computeHofX(const StateSet_ & xx, size_t iteration,
                       bool readFromDisk);
 
   /// update background ensemble \p bg to analysis ensemble \p an for all points on this PE
@@ -374,12 +373,12 @@ void LocalEnsembleSolver<MODEL, OBS>::readHofX(ObsEnsemble_ & obsens, const size
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
-                                                   const StateEnsemble4D_ & ens_xx,
+                                                   const StateSet_ & ens_xx,
                                                    size_t iteration,
                                                    bool readFromDisk) {
   util::Timer timer(classname(), "computeHofX");
 
-  const size_t nens = ens_xx.size();
+  const size_t nens = ens_xx.ens_size();
   ObsEnsemble_ obsens(obspaces_, nens);
   Observations_ y_mean_xb(obspaces_);
 
@@ -393,7 +392,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
     // compute and save H(x)
 
     std::vector<util::DateTime> times =
-        useLinearObserver() ? ens_xx[0].validTimes() : xbmean_.validTimes();
+        useLinearObserver() ? ens_xx.times() : xbmean_.times();
     util::Duration flength = times[times.size() - 1] - times[0];
     // default_tstep = 2*observation window is passed to PseudoModel as the default
     // pseudomodel time step. It is only used when StateSet has a single state, to enable
@@ -458,8 +457,10 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
     for (size_t jj = 0; jj < nens; ++jj) {
       if (useLinearObserver()) {
         // Setup PseudoLinearModelIncrement4D to run on ensemble perturbation
-        Increment4D_ dx(geometry_, ens_xx[jj].variables(), times);
-        dx.diff(ens_xx[jj], xbmean_);
+        Increment4D_ dx(geometry_, ens_xx.variables(), times);
+        for (size_t it = 0; it < times.size(); ++it) {
+          dx(it, 0).diff(ens_xx(it, jj), xbmean_[it]);
+        }
 
         // Approximate H(x_i) (obsens[jj]) around the ensemble mean using linearized model and
         // linearized observer. Firstly, apply the linearized obs operator to this ensemble member's
@@ -473,16 +474,21 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
         obsens[jj] += Yb_->getData(jj);
       } else {
         // These are recalculated for each ensemble member
-        times = ens_xx[jj].validTimes();
+        times = ens_xx.times();
         flength = times[times.size()-1] - times[0];
         default_tstep = (obspaces_.windowEnd() - obspaces_.windowStart()) * 2;
 
         const ModelAux_ moderr(geometry_, eckit::LocalConfiguration());
-        const ModelAuxInc_  moderrinc(geometry_, eckit::LocalConfiguration());
         const ObsAux_  obsaux(obspaces_, observersconf_);
-        const ObsAuxInc_  obsauxinc(obspaces_, observersconf_);
-        computeHofX4D(config, ens_xx[jj], obsens[jj], flength, default_tstep, obsaux, moderr,
-                      Rmat, qcflags);
+
+        // Construct a single-member StateSet and populate it from ens_xx
+        StateSet_ member_xx(geometry_, ens_xx.variables(), times, ens_xx.commTime());
+        for (size_t it = 0; it < times.size(); ++it) {
+          member_xx(it, 0) = ens_xx(it, jj);
+        }
+
+        computeHofX4D(config, member_xx, obsens[jj], flength, default_tstep,
+                      obsaux, moderr, Rmat, qcflags);
       }
       Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
       obsens[jj].save("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
