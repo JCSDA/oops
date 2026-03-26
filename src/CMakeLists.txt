@@ -741,6 +741,7 @@ if(BUILD_TESTING)
     TYPE SCRIPT
     COMMAND ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}_cpplint.py
     ARGS --quiet --recursive ${CMAKE_CURRENT_SOURCE_DIR}
+    LABELS tier2
   )
 
   ecbuild_add_executable(
