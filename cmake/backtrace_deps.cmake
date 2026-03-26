@@ -13,8 +13,12 @@
 #unset(STACKTRACE_AVAILABLE_libbacktrace CACHE)
 #unset(STACKTRACE_AVAILABLE_addr2line CACHE)
 
-find_path(backtrace_header_dir backtrace.h DOC "Path to the backtrace headers")
-find_library(backtrace_lib backtrace DOC "Path to the backtrace library")
+find_path(backtrace_header_dir backtrace.h
+          PATHS $ENV{BACKTRACE_INCLUDE_DIR}
+          DOC "Path to the backtrace headers")
+find_library(backtrace_lib backtrace
+             PATHS $ENV{BACKTRACE_LIB_DIR}
+             DOC "Path to the backtrace library")
 if ( backtrace_lib )
 	cmake_path(GET backtrace_lib PARENT_PATH backtrace_lib_dir)
 	cmake_path(GET backtrace_lib EXTENSION LAST_ONLY backtrace_ext)
