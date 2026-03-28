@@ -31,13 +31,3 @@ observations:
     uwind: 10.0
     covariance:
       uwind: 15.0
-- obs error:
-    covariance model: diagonal
-  obs space:
-    obsdatain:
-      obsfile: Data/truth.obs4d_24h.nc
-    obsdataout:
-      obsfile: Data/interface.obsincr4d_24h.nc
-    obs type: WSpeed
-  obs operator:
-    obs type: WSpeed

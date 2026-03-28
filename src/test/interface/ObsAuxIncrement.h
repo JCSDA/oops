@@ -78,6 +78,7 @@ template <typename OBS> void testObsAuxIncrementConstructor() {
 
 // -----------------------------------------------------------------------------
 /// Tests copy-constructor (with option of allocating, but not copying the data)
+/// and copy-operator.
 template <typename OBS> void testObsAuxIncrementCopyConstructor() {
   typedef ObsTestsFixture<OBS>        Test_;
   typedef oops::ObsAuxIncrement<OBS>  AuxIncr_;
@@ -88,17 +89,27 @@ template <typename OBS> void testObsAuxIncrementCopyConstructor() {
       AuxIncr_ dx1(Test_::obspace()[jj], biasconf);
       ObsAuxIncrementFixture<OBS>::covariance(jj).randomize(dx1);
       oops::Log::info() << "Printing random ObsAuxIncrement: " << dx1 << std::endl;
+
       /// Test that creating new increment without copying data works
-      AuxIncr_ dxempty(dx1, false);
-      EXPECT_EQUAL(dxempty.norm(), 0.0);
-      /// Test that creating new increment with copying data works
-      AuxIncr_ dx2(dx1);
+      AuxIncr_ dx2(dx1, false);
+      EXPECT_EQUAL(dx2.norm(), 0.0);
+
+      /// Test that copy operator works
+      dx2 = dx1;
       EXPECT(dx2.norm() > 0.0);
       EXPECT(dx2.norm() == dx1.norm());
-
       /// Test that the copy is equal to the original
       dx2 -= dx1;
       EXPECT(dx2.norm() == 0.0);
+
+      /// Test that creating new increment with copying data works
+      AuxIncr_ dx3(dx1);
+      EXPECT(dx3.norm() > 0.0);
+      EXPECT(dx3.norm() == dx1.norm());
+
+      /// Test that the copy is equal to the original
+      dx3 -= dx1;
+      EXPECT(dx3.norm() == 0.0);
     }
   }
 }
@@ -287,7 +298,7 @@ class ObsAuxIncrement : public oops::Test {
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementAxpy")
       { testObsAuxIncrementAxpy<OBS>(); });
     ts.emplace_back(CASE("interface/ObsAuxIncrement/testObsAuxIncrementSerializeDeserialize")
-      { testObsAuxIncrementAxpy<OBS>(); });
+      { testObsAuxIncrementSerializeDeserialize<OBS>(); });
   }
 
   void clear() const override {
