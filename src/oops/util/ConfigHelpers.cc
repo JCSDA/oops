@@ -16,10 +16,10 @@
 
 namespace util {
 
-void setMember(eckit::LocalConfiguration & conf, const int mem) {
+void setMember(eckit::LocalConfiguration & conf, const int mem, const size_t & zpad) {
   if (conf.has("member pattern")) {
     const std::string memberPattern = conf.getString("member pattern");
-    util::seekAndReplace(conf, memberPattern, std::to_string(mem));
+    util::seekAndReplace(conf, memberPattern, mem, zpad);
   } else {
     conf.set("member", mem);
   }

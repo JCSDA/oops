@@ -35,7 +35,7 @@ output:
   member pattern: %member%
   datadir: Data
   date: *date
-  exp: inflation.%member%
+  exp: inflation_states_1.%member%
   type: in
 
 test:

@@ -87,9 +87,10 @@ void Inflation<MODEL, T>::calculate(const std::vector<eckit::LocalConfiguration>
 
 template<typename MODEL, class T>
 void Inflation<MODEL, T>::save(const eckit::Configuration & config) {
-  eckit::LocalConfiguration outConfig(config);
+  const int zpad = config.getInt("zero padding", 0);
   for (size_t ii=0; ii < anEns_->size(); ++ii) {
-    util::setMember(outConfig, ii+1);
+    eckit::LocalConfiguration outConfig(config);
+    util::setMember(outConfig, ii+1, zpad);
     (*anEns_)[ii].write(outConfig);
   }
 }

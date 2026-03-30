@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <cstddef>
+
 namespace eckit {
 class LocalConfiguration;
 }
@@ -18,6 +20,6 @@ namespace util {
 
 /// \brief Sets a member number for an ensemble, including performing the member template
 ///        pattern substitution if needed.
-void setMember(eckit::LocalConfiguration & conf, int);
+void setMember(eckit::LocalConfiguration & conf, const int mem, const size_t & zpad = 0);
 
 }  // namespace util

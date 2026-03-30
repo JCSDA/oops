@@ -35,6 +35,7 @@ inflation:
     levels: [1]
 output:
   member pattern: %member%
+  zero padding: 3
   datadir: Data
   date: *date
   exp: inflation.%member%
