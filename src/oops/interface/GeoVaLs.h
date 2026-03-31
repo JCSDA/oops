@@ -119,7 +119,6 @@ class GeoVaLs : public util::Printable,
   GeoVaLs & operator-=(const GeoVaLs &);
   GeoVaLs & operator*=(const GeoVaLs &);
   double dot_product_with(const GeoVaLs &) const;
-  void read(const eckit::Configuration &);
   void write(const eckit::Configuration &) const;
 
   /// \brief Set the values of a given variable along specified interpolation paths.
@@ -332,16 +331,6 @@ void GeoVaLs<OBS>::fillAD(const Variable & name,
   ASSERT(indx.size() == vals.cols());
   gvals_->fillAD(name, indx, vals, levelsTopDown);
   Log::trace() << "GeoVaLs<OBS>::fillAD done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename OBS>
-void GeoVaLs<OBS>::read(const eckit::Configuration & config) {
-  Log::trace() << "GeoVaLs<OBS>::read starting" << std::endl;
-  util::Timer timer(classname(), "read");
-  gvals_->read(config);
-  Log::trace() << "GeoVaLs<OBS>::read done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
