@@ -38,8 +38,7 @@ jobs:
           aws-region: us-east-2
 
       - name: Run JEDI CI
-        # Do not submit with this change, this branch is patched for testing.
-        uses: JCSDA-internal/jedi-ci@feature/test-flags-big-fix
+        uses: JCSDA-internal/jedi-ci@develop
         with:
           container_version: 'latest'
           unittest_tag: 'oops'
