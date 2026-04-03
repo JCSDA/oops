@@ -178,11 +178,6 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateSet_ & 
                                                               size_t iteration, bool readFromFile) {
   util::Timer timer(classname(), "computeHofX");
 
-  ModelAux_ moderr(geometry_, eckit::LocalConfiguration());
-  ModelAuxInc_  moderrinc(geometry_, eckit::LocalConfiguration());
-  ObsAux_  obsaux(this->obspaces_, this->observersconf_);
-  ObsAuxInc_  obsauxinc(this->obspaces_, this->observersconf_);
-
   Observations_ yb_mean(this->obspaces_);
   Departures_ tmpDeps(this->obspaces_);
 
@@ -216,6 +211,11 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateSet_ & 
                                         - this->obspaces_.windowStart()) * 2;
     const std::vector<util::DateTime> times = ens_xx.times();
     const util::Duration flength = times[times.size()-1] - times[0];
+
+    ModelAux_ moderr(geometry_, eckit::LocalConfiguration());
+    ModelAuxInc_  moderrinc(geometry_, eckit::LocalConfiguration());
+    ObsAux_  obsaux(this->obspaces_, this->observersconf_);
+    ObsAuxInc_  obsauxinc(this->obspaces_, this->observersconf_);
 
     Increment4D_ dx(geometry_, this->incvars_, times);
     std::vector<int> evMembers(neig_);
