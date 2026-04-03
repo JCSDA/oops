@@ -69,7 +69,7 @@ call f_conf%get_or_die("tstep",str)
 ststep = str
 dtstep = trim(ststep)
 self%dt = duration_seconds(dtstep)
-write(record,*) 'qg_model_setup: dt = ',self%dt
+write(record,'(a,f8.2)') 'qg_model_setup: dt = ',self%dt
 call fckit_log%info(record)
 
 end subroutine qg_model_setup

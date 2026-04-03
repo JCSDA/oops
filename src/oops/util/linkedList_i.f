@@ -18,8 +18,6 @@ end type
 
 !> Registry type
 type :: registry_t
-  logical               :: l_init = .false.
-  integer               :: count  = 0
   type(node_t), pointer :: head   => NULL()
 
 contains

@@ -66,7 +66,7 @@ implicit none
 ! Passed variables
 type(qg_error_covariance_config),intent(inout) :: self !< Error covariance configuration
 type(fckit_configuration),intent(in) :: f_conf         !< FCKIT configuration
-type(qg_geom),intent(in) :: geom                       !< Geometry
+type(qg_geom),target,intent(in) :: geom                       !< Geometry
 
 ! Local variables
 integer :: ix,iy,jy,ky,iz,jz,kz,info

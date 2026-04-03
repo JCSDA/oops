@@ -862,7 +862,7 @@ subroutine qg_fields_write_file(fld,f_conf,vdate)
 implicit none
 
 ! Passed variables
-type(qg_fields),intent(in) :: fld              !< Fields
+type(qg_fields),target,intent(in) :: fld              !< Fields
 type(fckit_configuration),intent(in) :: f_conf !< FCKIT configuration
 type(datetime),intent(in) :: vdate             !< Date and time
 
