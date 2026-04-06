@@ -413,6 +413,7 @@ template<typename MODEL>
 IncrementSet<MODEL> IncrementSet<MODEL>::ens_mean() const {
   Log::trace() << "IncrementSet::ens_mean start" << std::endl;
   IncrementSet<MODEL> mean(this->geometry(), this->variables(), this->times(), this->commTime());
+  mean.zero();
   const double fact = 1.0 / static_cast<double>(this->ens_size());
   for (size_t jt = 0; jt < this->local_time_size(); ++jt) {
     for (size_t jm = 0; jm < this->local_ens_size(); ++jm) {
