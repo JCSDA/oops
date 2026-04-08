@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2024 UCAR
- * (C) Crown Copyright 2024 Met Office
+ * (C) Crown Copyright 2024-2026 Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -47,6 +48,11 @@ void executeFunc(const atlas::FunctionSpace & fspace, const Functor & functor) {
 }
 
 atlas::idx_t getSizeOwned(const atlas::FunctionSpace & fspace);
+
+// Counts how many owned points a FunctionSpace has (i.e, ghost(...) == 0).
+// Differs from getSizeOwned which calls a built-in method for functionspaces
+// that have a given owned size and places all owned data at the beginning.
+size_t countOwned(const atlas::FunctionSpace& fspace);
 
 // -----------------------------------------------------------------------------
 
@@ -102,6 +108,12 @@ void setupStructuredMeshWithCustomPartition(const eckit::mpi::Comm &,
     const std::vector<int> &,
     atlas::grid::Distribution &,
     atlas::Mesh &);
+
+// -----------------------------------------------------------------------------
+
+// Returns the hash of the lon lat points of a functionspace. Useful for checking
+// two functionspaces have the same partitioning for example.
+std::string getLonLatHash(const atlas::FunctionSpace&);
 
 // -----------------------------------------------------------------------------
 

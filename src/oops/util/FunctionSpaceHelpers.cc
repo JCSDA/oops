@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2024 UCAR
- * (C) Crown Copyright 2024 Met Office
+ * (C) Crown Copyright 2024-2026 Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -8,6 +8,7 @@
 
 #include "oops/util/FunctionSpaceHelpers.h"
 
+#include <memory>
 #include <string>
 
 #include "atlas/field.h"
@@ -23,6 +24,7 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
+#include "eckit/utils/Hash.h"
 
 #include "oops/util/abor1_cpp.h"
 #include "oops/util/missingValues.h"
@@ -34,6 +36,21 @@ atlas::idx_t getSizeOwned(const atlas::FunctionSpace & fspace) {
   atlas::idx_t size_owned;
   executeFunc(fspace, [&](const auto& fspace){size_owned = fspace.sizeOwned();});
   return size_owned;
+}
+
+// -----------------------------------------------------------------------------
+
+size_t countOwned(const atlas::FunctionSpace& fspace) {
+  const auto ghost = atlas::array::make_view<const int, 1>(fspace.ghost());
+
+  size_t numOwned = 0;
+  for (atlas::idx_t ij = 0; ij < ghost.shape(0); ++ij) {
+    // ghost = 0 means owned. 1 - 0 -> size += 1.
+    //       = 1 ghost.       1 - 1 -> No inc
+    numOwned += 1 - ghost(ij);
+  }
+
+  return numOwned;
 }
 
 // -----------------------------------------------------------------------------
@@ -337,6 +354,21 @@ void setupStructuredMeshWithCustomPartition(const eckit::mpi::Comm & comm,
   meshConfig.set("mpi_comm", comm.name());
   const atlas::StructuredMeshGenerator gen(meshConfig);
   mesh = gen(grid, distribution);
+}
+
+// -----------------------------------------------------------------------------
+
+std::string getLonLatHash(const atlas::FunctionSpace& fspace) {
+  std::unique_ptr<eckit::Hash> hash(eckit::HashFactory::instance().build("md5"));
+  // Add function space size to hash
+  hash->add(fspace.size());
+  // Add function space lon lat to hash
+  const auto lonlatView = atlas::array::make_view<double, 2>(fspace.lonlat());
+  for (atlas::idx_t i = 0; i < lonlatView.shape(0) ; ++i) {
+    hash->add(lonlatView(i, 0));
+    hash->add(lonlatView(i, 1));
+  }
+  return hash->digest();
 }
 
 // -----------------------------------------------------------------------------

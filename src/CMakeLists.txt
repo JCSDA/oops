@@ -304,8 +304,12 @@ list(
   oops/interface/State.h
   oops/interface/VariableChange.h
 
+  oops/mpi/ColorInfo.cc
+  oops/mpi/ColorInfo.h
   oops/mpi/mpi.cc
   oops/mpi/mpi.h
+  oops/mpi/Scope.cc
+  oops/mpi/Scope.h
 
   oops/runs/AddIncrement.h
   oops/runs/RescaleEnsPerts.h
@@ -371,6 +375,7 @@ list(
   oops/util/Duration.h
   oops/util/duration.intfb.h
   oops/util/Expect.h
+  oops/util/Factory.h
   oops/util/FieldSetHelpers.cc
   oops/util/FieldSetHelpers.h
   oops/util/FieldSetOperations.cc
@@ -425,6 +430,11 @@ list(
   oops/util/random.intfb.h
   oops/util/RandomField.h
   oops/util/Range.h
+  oops/util/redistribution/CommGatherScatterRedistribution.cc
+  oops/util/redistribution/CommGatherScatterRedistribution.h
+  oops/util/redistribution/CommRedistribution.h
+  oops/util/redistribution/CommRedistributionCompatChecker.cc
+  oops/util/redistribution/CommRedistributionCompatChecker.h
   oops/util/reduction.cc
   oops/util/reduction.h
   oops/util/ScalarOrMap.h
@@ -654,6 +664,7 @@ if(BUILD_TESTING)
     test/interface/State.h
     test/interface/VariableChange.h
 
+    test/mpi/ColorInfo.h
     test/mpi/mpi.h
 
     test/generic/fft_multiple.h
@@ -965,6 +976,12 @@ if(BUILD_TESTING)
 
   ecbuild_add_test( TARGET  oops_util_range
                     SOURCES test/util/Range.cc
+                    ARGS    "test/testinput/empty.yaml"
+                    LIBS    oops )
+
+  ecbuild_add_test( TARGET  oops_mpi_color_info
+                    MPI     6
+                    SOURCES test/mpi/ColorInfo.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 

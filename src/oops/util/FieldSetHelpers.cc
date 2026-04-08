@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2022 UCAR
+ * (C) Crown Copyright 2026 Met Office
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -20,10 +21,10 @@
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
-#include "eckit/utils/Hash.h"
 
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/FloatCompare.h"
+#include "oops/util/FunctionSpaceHelpers.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/RandomField.h"
@@ -717,24 +718,6 @@ bool compareFieldSets(const atlas::FieldSet & fset1,
 std::string getGridUid(const atlas::FunctionSpace & fspace) {
   oops::Log::trace() << "getGridUid starting" << std::endl;
 
-  // WARNING: this is a local ID per MPI task!
-  // There is an unlikely failure mode where two FunctionSpaces have equal lonlats on some MPI
-  // tasks but different lonlats on other MPI tasks. In this case the local IDs would compare equal
-  // on some tasks and non-equal on others, which could lead to serious bugs.
-  // The fix would be to allGather the strings and re-hash, ensuring a globally-consistent ID.
-  auto customUidFromLonLat = [&](const atlas::FunctionSpace & fspace) {
-    std::unique_ptr<eckit::Hash> hash(eckit::HashFactory::instance().build("md5"));
-    // Add function space size to hash
-    hash->add(fspace.size());
-    // Add function space lon lat to hash
-    const auto lonlatView = atlas::array::make_view<double, 2>(fspace.lonlat());
-    for (atlas::idx_t i = 0; i < lonlatView.shape(0) ; ++i) {
-      hash->add(lonlatView(i, 0));
-      hash->add(lonlatView(i, 1));
-    }
-    return hash->digest();
-  };
-
   // FunctionSpaces tied to structure will have a grid so we can call fspace.grid.uid.
   // But other FunctionSpaces may or may not have a grid, so we check and either use the grid
   // or compute a custom UID from the coordinates.
@@ -749,10 +732,17 @@ std::string getGridUid(const atlas::FunctionSpace & fspace) {
     if (fs.mesh().grid()) {
       return fs.mesh().grid().uid();
     } else {
-      return customUidFromLonLat(fspace);
+      // WARNING: this is a local ID per MPI task!
+      // There is an unlikely failure mode where two FunctionSpaces have equal lonlats on some MPI
+      // tasks but different lonlats on other MPI tasks.
+      // In this case the local IDs would compare equal
+      // on some tasks and non-equal on others, which could lead to serious bugs.
+      // The fix would be to allGather the strings and re-hash, ensuring a globally-consistent ID.
+      return getLonLatHash(fspace);
     }
   } else if (fspace.type() == "PointCloud") {
-    return customUidFromLonLat(fspace);
+    // WARNING: this is a local ID per MPI task!
+    return getLonLatHash(fspace);
   } else {
     throw eckit::Exception(fspace.type() + " function space not supported yet", Here());
     return "";
