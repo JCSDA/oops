@@ -44,7 +44,7 @@ namespace oops {
 /// - "model:"                                                            - For trajectory forecast.
 /// - "model aux control:"                                            - Set to null if not required.
 /// - "x1:"                                 - Nonlinear model trajectory forecast initial condition.
-/// - "x2:" OR "dx:"                    - Initial increment computed as (x2 - x1) or read from file.
+/// - "x2:" OR* "dx:"                   - Initial increment computed as (x2 - x1) or read from file.
 /// - "linear variables:"     - Optional; variables for linear model; taken from x1 if not provided.
 /// - "forecast length:"
 /// - "time resolution:"          - Optional frequency to save dx; must factor into forecast length.
@@ -93,6 +93,19 @@ namespace oops {
 /// where:
 ///   P2 is a linear operator representing a transformation from the L grid to the N grid.
 /// The second option is the default in this application.
+///
+/// *For compatibility with the LFRic model, another selection of inputs for computing linearization
+/// error is allowed, but advised against. The model's I/O system cannot output all fields at the
+/// initial time of the forecast, meaning that only the following are available for a 4D-Var cycle:
+///   x1 initial condition and forecast,
+///   dx, the separation between the two forecast initial conditions,
+///   x2 forecast, but NOT initial condition.
+/// If both dx and x2 are specified as inputs to this application, it is assumed that the
+/// compatibility mode with available LFRic inputs is being requested. In this case, x2 represents
+/// the secondary forecast after one timeResolution (i.e., coincides with the forecast of x1 after
+/// one timeResolution). Consequently, fewer states (or none if timeResolution == forecastLength)
+/// are provided to the PseudoModel configuration for the forecast from x2 as are provided for the
+/// forecast from x1.
 ///
 /// Configuration for an adjoint test is the same as for a tangent linear model forecast, except:
 /// - Exclude "x2:"/"dx:"; this indicates that an adjoint test is desired and the increments will be
@@ -221,8 +234,10 @@ template <typename MODEL> class TLMToolbox : public Application {
             }
 
             if (computeError) {
-                // Forecast x2 from time to time + timeResolution using model
-                model.forecast(*x2, mAuxCtl, timeResolution, emptyPp);
+                if (!(config.has("x2") && config.has("dx"))) {  // Normal mode
+                    // Forecast x2 from time - timeResolution to time using model
+                    model.forecast(*x2, mAuxCtl, timeResolution, emptyPp);
+                }
 
                 // Compute difference between two states at time + timeResolution
                 dxHighRes.updateTime(timeResolution);
@@ -239,6 +254,13 @@ template <typename MODEL> class TLMToolbox : public Application {
                     error -= Increment_(*linearGeometry, dxHighRes);
                     Log::test() << "error at " << time << ":" << error << std::endl;
                     errorWriter.write(error);
+                }
+
+                if (config.has("x2") && config.has("dx")) {  // LFRic compatibility mode
+                    if (time != endTime) {  // Skip on final step, since forecast is finished
+                        // Forecast x2 from time to time + timeResolution using model
+                        model.forecast(*x2, mAuxCtl, timeResolution, emptyPp);
+                    }
                 }
             }
         }
@@ -283,10 +305,12 @@ template <typename MODEL> class TLMToolbox : public Application {
                                       "\"linear geometry\" and \"nonlinear geometry\".");
         }
 
-        if (!((c.has("x2") && !c.has("dx")) ||
-              (c.has("dx") && !c.has("x2")) ||
-              (!c.has("dx") && !c.has("x2")))) {
-            throw eckit::BadParameter("TLMToolbox: define either \"x2\", \"dx\" or neither.");
+        if (c.has("x2") && c.has("dx")) {
+            Log::warning() << "TLMToolbox: both \"x2\" and \"dx\" defined. "
+                           << "Computing linearization error in LFRic compatibility mode. "
+                           << "Assume \"x1\" forecast of one timeResolution coincides with \"x2\". "
+                           << "If \"dx\" is not the initial separation of the two forecasts, "
+                           << "results will be incorrect. " << std::endl;
         }
 
         if (!c.has("forecast length")) {
@@ -354,13 +378,8 @@ template <typename MODEL> class TLMToolbox : public Application {
     Increment_ createDx(const eckit::Configuration& config, const Geometry_& linearGeometry,
         const Variables& linearVariables, const State_& x1, const State_& x2,
         Increment_& dxHighRes) const {
-            // If user has defined a perturbed nonlinear model forecast, the initial increment is
-            // the difference between the perturbed and unperturbed initial conditions
-            if (config.has("x2")) {
-                dxHighRes.diff(x2, x1);
-                return Increment_(linearGeometry, dxHighRes);
             // If the user has defined an initial increment explicitly, use that
-            } else if (config.has("dx")) {
+            if (config.has("dx")) {
                 const eckit::LocalConfiguration dxConfig(config, "dx");
                 // It can be read in at either the nonlinear or linear model resolution
                 if (dxConfig.getBool("high res", false)) {
@@ -371,6 +390,11 @@ template <typename MODEL> class TLMToolbox : public Application {
                     dx.read(dxConfig);
                     return dx;
                 }
+            // If user has defined a perturbed nonlinear model forecast, the initial increment is
+            // the difference between the perturbed and unperturbed initial conditions
+            } else if (config.has("x2")) {
+                dxHighRes.diff(x2, x1);
+                return Increment_(linearGeometry, dxHighRes);
             // If neither a perturbed nonlinear model forecast nor an initial increment was defined,
             // the user is requesting an adjoint test, so the initial increment is randomised
             } else {
