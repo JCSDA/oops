@@ -23,6 +23,7 @@
 #include "oops/base/ObsVector.h"
 #include "oops/interface/ObsError.h"
 #include "oops/runs/Test.h"
+#include "oops/util/Expect.h"
 #include "oops/util/missingValues.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
@@ -218,7 +219,7 @@ template <typename OBS> void testLocalize() {
     masknegative.ones();
     masknegative *= -1;
     if (testLocalize) {
-        EXPECT_THROWS_AS(R.localize(masknegative), eckit::BadValue);
+        EXPECT_THROWS_AS_ANY_RANK(R.localize(masknegative), eckit::BadValue);
     } else {
         EXPECT_THROWS(R.localize(masknegative));
     }

@@ -48,4 +48,26 @@
                                           "' not thrown in: " #expr, Here());                \
   } while (false)
 
+/// Check if \p expr throws an exception of type \p excpt on any of the MPI ranks the program
+/// is running on.
+#define EXPECT_THROWS_AS_ANY_RANK(expr, excpt)                                              \
+  do {                                                                                      \
+    bool threw = false;                                                                     \
+    try {                                                                                   \
+      expr;                                                                                 \
+    } catch (excpt&) {                                                                      \
+      threw = true;                                                                         \
+    }                                                                                       \
+                                                                                            \
+    /* Sum over bool results. 0 means `threw` was `false` on all MPI ranks. */              \
+    size_t globalResult = static_cast<size_t>(threw);                                       \
+    eckit::mpi::comm().allReduceInPlace(globalResult, eckit::mpi::sum());                   \
+                                                                                            \
+    if (globalResult == 0) {                                                                \
+      throw eckit::testing::TestException("Running " #expr ", expected " #excpt " to be "   \
+                                          "thrown on at least one rank but was not thrown " \
+                                          "on any rank.", Here());                          \
+    }                                                                                       \
+  } while (false)
+
 #endif  // OOPS_UTIL_EXPECT_H_
