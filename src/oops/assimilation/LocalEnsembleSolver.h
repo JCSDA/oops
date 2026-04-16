@@ -13,6 +13,7 @@
 #include <cfloat>
 #include <map>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -120,6 +121,9 @@ class LocalEnsembleSolver {
   const ObsLocalizations_ & obsloc() const {return *obsloc_;}
   bool useLinearObserver() const { return useLinearObserver_; }
 
+  /// Enable Nerger et al. 2012 observation localization regulation
+  bool useNergerRegulation() const { return useNergerRegulation_; }
+
  protected:
   const Geometry_  & geometry_;   ///< Geometry associated with the updated states
   const ObsSpaces_ & obspaces_;   ///< ObsSpaces used in the update
@@ -145,6 +149,8 @@ class LocalEnsembleSolver {
   bool doCrossValidation;  ///< cross validation trigger
   size_t nsubens_;  ///< no. of subensembles
   std::unique_ptr<oops::SubensembleSplitter> SubensembleSplitter_;  ///< pointer to splitter
+
+  bool useNergerRegulation_;  ///< toggle for Nerger observation localisation regulation
 
   /// Create a mask that excludes observations which will not be assimilated (e.g. failed QC) using
   /// a single ensemble member.
@@ -202,6 +208,8 @@ class LocalEnsembleSolver {
   }
 
  private:
+  // compute local inverse R vector with optional Nerger regulation
+  Departures_ computeNergerLocalR(const Departures_ & locvector) const;
   bool useLinearObserver_;
 };
 
@@ -239,6 +247,9 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
   } else {
     unperturbedIdx_ = -1;  // no unperturbed member
   }
+  useNergerRegulation_ = config.getBool("local ensemble DA.use nerger regulation", false);
+  Log::info() << "Nerger et al. (2012) observation localization regulation: " <<
+                 (useNergerRegulation_ ? "ON" : "OFF (default)") << std::endl;
   Log::info() << "Multiplicative inflation will be applied with multCoeff=" <<
                  inflopt_.getDouble("mult", 1.0) << std::endl;
   const double rtpp = inflopt_.getDouble("rtpp", 0.0);
@@ -266,6 +277,64 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
+typename LocalEnsembleSolver<MODEL, OBS>::Departures_
+LocalEnsembleSolver<MODEL, OBS>::computeNergerLocalR(
+  const Departures_ & locvector) const {
+  // Nerger et al. (2012) observation localization regulation applied to R matrix
+  // Currently only supports diagonal R
+
+  Log::trace() << "LocalEnsembleSolver<MODEL, OBS>::computeNergerLocalR starting" << std::endl;
+
+  if (!invVarR_) {
+    oops::Log::error() << "invVarR_ not initialized before computeNergerLocalR. \n"
+                       << "Fail because this implies that observation error is a \n"
+                       << "correlated matrix not diagonal" << std::endl;
+    throw std::logic_error("invVarR_ is null");
+  }
+  const Eigen::VectorXd invVarR_local = invVarR_->packEigen(locvector);
+  const Eigen::MatrixXd Yb_local = this->Yb_->packEigen(locvector).template cast<double>();
+
+  // VarP_i = (1/(nens-1)) * sum_m Yb[m]_i^2, or the diagonal of background covariance error
+  // per local observation
+  const Eigen::ArrayXd VarP_local = Yb_local.array().square().colwise().sum().transpose() /
+                                     static_cast<double>(Yb_local.rows() - 1);
+
+  // gammaNerger_i = VarP_i / VarR_i = VarP_i * invVarR_i, per local observation
+  const Eigen::ArrayXd gammaNerger_local = VarP_local * invVarR_local.array();
+
+  // betaNerger_i = 1 + gammaNerger_i * (1 - loc_i), per local observation
+  const Eigen::ArrayXd loc_local = locvector.packEigen(locvector).array();
+  const Eigen::ArrayXd betaNerger_arr = 1.0 + gammaNerger_local * (1.0 - loc_local);
+
+  // Build nergerBeta Departures_: 1 at non-local obs, betaNerger_i at local obs positions
+  Departures_ nergerBeta(obspaces_);
+  nergerBeta.ones();
+  const std::vector<std::vector<size_t>> localIndices =
+      nergerBeta.maskAndSerialIndices(locvector);
+  const std::vector<size_t> serialSizes = nergerBeta.serialSizes();
+  std::vector<double> betaVec;
+  betaVec.reserve(nergerBeta.serialSize());
+  for (size_t ii = 0; ii < nergerBeta.size(); ++ii) {
+    nergerBeta[ii].serialize(betaVec);
+  }
+  size_t iStart = 0;
+  size_t iObs = 0;
+  for (size_t ii = 0; ii < localIndices.size(); ++ii) {
+    for (const size_t idx : localIndices[ii]) {
+      betaVec[idx + iStart] = betaNerger_arr(iObs++);
+    }
+    iStart += serialSizes[ii];
+  }
+  ASSERT(iObs == static_cast<size_t>(betaNerger_arr.size()));
+  size_t deserIdx = 0;
+  for (size_t ii = 0; ii < nergerBeta.size(); ++ii) {
+    nergerBeta[ii].deserialize(betaVec, deserIdx);
+  }
+  return nergerBeta;
+}
+
+
+template <typename MODEL, typename OBS>
 void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
 (const IncrementSet_ & bkg_pert, IncrementSet_ & ana_pert) {
   for (GeometryIterator_ i = geometry_.begin(); i != geometry_.end(); ++i) {
@@ -275,9 +344,6 @@ void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
     this->obsloc().computeLocalization(i, locvector);
     this->applyAssimilatedMask(locvector);
     const Eigen::VectorXd local_omb_vec = this->omb_.packEigen(locvector);
-    const Eigen::VectorXd localization = locvector.packEigen(locvector);
-    R_->localize(locvector);
-
     if (local_omb_vec.size() == 0) {
       // no obs. so no need to update Wa_ and wa_
       // ana_pert[i] = bkg_pert[i]
@@ -285,16 +351,24 @@ void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
                                i,
                                ana_pert);
     } else {
-      this->measurementUpdate(local_omb_vec,
-                              *R_,
-                              locvector,
-                              bkg_pert,
-                              i,
-                              ana_pert);
+      if (useNergerRegulation_) {
+        const Departures_ localizationMask(locvector);
+        const Departures_ nergerBeta = this->computeNergerLocalR(locvector);
+        ASSERT(locvector.serialSize() == nergerBeta.serialSize());
+        locvector /= nergerBeta;
+        locvector.mask(localizationMask);
     }
+    R_->localize(locvector);
+
+    this->measurementUpdate(local_omb_vec,
+                            *R_,
+                            locvector,
+                            bkg_pert,
+                            i,
+                            ana_pert);
   }
 }
-
+}
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>

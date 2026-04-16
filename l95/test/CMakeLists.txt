@@ -107,6 +107,7 @@ list( APPEND l95_test_input
   testinput/letkf_perturbed_unpert_member.yaml
   testinput/letkf_noobs.yaml
   testinput/letkf_qc.yaml
+  testinput/letkf_nerger_localization.yaml
   testinput/linearmodel.yaml
   testinput/linobsoperator.yaml
   testinput/localization.yaml
@@ -231,6 +232,7 @@ list( APPEND l95_testoutput
   testoutput/letkf_perturbed_unpert4.test
   testoutput/letkf_noobs.test
   testoutput/letkf_qc.test
+  testoutput/letkf_nerger_localization.test
   testoutput/letkf_gsi.test
   testoutput/makeobs3d.test
   testoutput/makeobs4d.test
@@ -862,7 +864,13 @@ ecbuild_add_test( TARGET oops_l95_letkf_qc
                   ARGS testinput/letkf_qc.yaml
                   TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
-ecbuild_add_test( TARGET oops_l95_letkf_gsi
+ecbuild_add_test( TARGET oops_l95_letkf_nerger_localization
+                  COMMAND l95_letkf.x
+                  ARGS testinput/letkf_nerger_localization.yaml
+                  OMP 2
+                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+ecbuild_add_test( TARGET test_l95_letkf_gsi
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_gsi.yaml
                   TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
