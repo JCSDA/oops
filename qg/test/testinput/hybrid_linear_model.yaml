@@ -27,6 +27,12 @@ linear model:
       tstep: PT1H
       variable change: Identity
       name: QgTLM
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [500, 1000, 1500, 3000, 4000]
+      perturbed heating: 0.1
+    residual form: true
   coefficients:
     update variables: [q]
     influence region size: 3
