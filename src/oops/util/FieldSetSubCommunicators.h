@@ -12,7 +12,14 @@
 
 #include "eckit/mpi/Comm.h"
 
+#include "oops/util/redistribution/CommRedistribution.h"
+
 namespace util {
+
+void redistributeToSubcommunicator(const CommRedistribution & redist,
+                                   const atlas::FieldSet & fsetIn,
+                                   atlas::FieldSet & fsetOut,
+                                   const atlas::FunctionSpace & fspaceOut);
 
 /// Copy fieldSet from communicator to sub-communicators
 void redistributeToSubcommunicator(const atlas::FieldSet &,
@@ -21,6 +28,14 @@ void redistributeToSubcommunicator(const atlas::FieldSet &,
                                    const eckit::mpi::Comm &,
                                    const atlas::FunctionSpace &,
                                    const atlas::FunctionSpace &);
+
+
+void gatherAndSumFromSubcommunicator(const CommRedistribution & redist,
+                                     const atlas::FieldSet & fsetIn,
+                                     atlas::FieldSet & fsetOut,
+                                     const eckit::mpi::Comm & comm,
+                                     const atlas::FunctionSpace & fspaceIn,
+                                     const atlas::FunctionSpace & fspaceOut);
 
 /// Gather and sum fieldSets from sub-communicators to larger communicator
 void gatherAndSumFromSubcommunicator(const atlas::FieldSet &,

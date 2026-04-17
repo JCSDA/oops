@@ -22,11 +22,9 @@
 
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
-#include "oops/util/redistribution/CommGatherScatterRedistribution.h"
-#include "oops/util/redistribution/CommRedistribution.h"
+#include "oops/util/redistribution/CommStraightRedistribution.h"
 
 namespace util {
-namespace {
 
 // -----------------------------------------------------------------------------
 
@@ -56,6 +54,20 @@ void redistributeToSubcommunicator(const CommRedistribution & redist,
 }
 
 // -----------------------------------------------------------------------------
+
+void redistributeToSubcommunicator(const atlas::FieldSet & fsetIn,
+                                   atlas::FieldSet & fsetOut,
+                                   const eckit::mpi::Comm & comm,
+                                   const eckit::mpi::Comm & subComm,
+                                   const atlas::FunctionSpace & fspaceIn,
+                                   const atlas::FunctionSpace & fspaceOut) {
+  // Create a straight redistribution
+  const CommStraightRedistribution redist(subComm, comm, fspaceOut, fspaceIn);
+  redistributeToSubcommunicator(redist, fsetIn, fsetOut, fspaceOut);
+}
+
+// -----------------------------------------------------------------------------
+
 void gatherAndSumFromSubcommunicator(const CommRedistribution & redist,
                                      const atlas::FieldSet & fsetIn,
                                      atlas::FieldSet & fsetOut,
@@ -97,22 +109,6 @@ void gatherAndSumFromSubcommunicator(const CommRedistribution & redist,
 }
 
 // -----------------------------------------------------------------------------
-}  // namespace
-
-// -----------------------------------------------------------------------------
-
-void redistributeToSubcommunicator(const atlas::FieldSet & fsetIn,
-                                   atlas::FieldSet & fsetOut,
-                                   const eckit::mpi::Comm & comm,
-                                   const eckit::mpi::Comm & subComm,
-                                   const atlas::FunctionSpace & fspaceIn,
-                                   const atlas::FunctionSpace & fspaceOut) {
-  // Create a gather-scatter
-  const CommGatherScatterRedistribution redist(subComm, comm, fspaceOut, fspaceIn);
-  redistributeToSubcommunicator(redist, fsetIn, fsetOut, fspaceOut);
-}
-
-// -----------------------------------------------------------------------------
 
 void gatherAndSumFromSubcommunicator(const atlas::FieldSet & fsetIn,
                                      atlas::FieldSet & fsetOut,
@@ -120,8 +116,8 @@ void gatherAndSumFromSubcommunicator(const atlas::FieldSet & fsetIn,
                                      const eckit::mpi::Comm & comm,
                                      const atlas::FunctionSpace & fspaceIn,
                                      const atlas::FunctionSpace & fspaceOut) {
-  // Create a gather-scatter
-  const CommGatherScatterRedistribution redist(subComm, comm, fspaceIn, fspaceOut);
+  // Create a straight redistribution
+  const CommStraightRedistribution redist(subComm, comm, fspaceIn, fspaceOut);
   gatherAndSumFromSubcommunicator(redist, fsetIn, fsetOut, comm, fspaceIn, fspaceOut);
 }
 

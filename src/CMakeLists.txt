@@ -367,6 +367,7 @@ list(
   oops/util/DateTime.cc
   oops/util/DateTime.h
   oops/util/datetime.intfb.h
+  oops/util/defines.h
   oops/util/dot_product.h
   oops/util/duration_f.cc
   oops/util/duration_f.h
@@ -435,6 +436,10 @@ list(
   oops/util/redistribution/CommRedistribution.h
   oops/util/redistribution/CommRedistributionCompatChecker.cc
   oops/util/redistribution/CommRedistributionCompatChecker.h
+  oops/util/redistribution/CommStraightRedistribution.cc
+  oops/util/redistribution/CommStraightRedistribution.h
+  oops/util/redistribution/detail/AllToAllRouting.cc
+  oops/util/redistribution/detail/AllToAllRouting.h
   oops/util/reduction.cc
   oops/util/reduction.h
   oops/util/ScalarOrMap.h
@@ -1070,6 +1075,12 @@ if(BUILD_TESTING)
   ecbuild_add_test( TARGET  oops_util_fieldset_subcommunicators
                     MPI     2
                     SOURCES test/util/FieldSetSubCommunicators.cc
+                    ARGS    "test/testinput/empty.yaml"
+                    LIBS    oops )
+
+  ecbuild_add_test( TARGET  oops_util_comm_redistribution
+                    MPI     6
+                    SOURCES test/util/CommRedistribution.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 

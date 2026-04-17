@@ -8,14 +8,11 @@
 #pragma once
 
 #include <string_view>
-#include <algorithm>
 #include <memory>
 #include <random>
 #include <string>
 #include <utility>
 #include <vector>
-
-
 
 #include "atlas/field.h"
 #include "atlas/functionspace.h"
@@ -32,6 +29,7 @@
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/FieldSetSubCommunicators.h"
 #include "oops/util/FunctionSpaceHelpers.h"
+#include "oops/util/redistribution/CommRedistribution.h"
 
 namespace test {
 
@@ -88,11 +86,15 @@ void testSubCommunicators(const eckit::mpi::Comm & comm,
   util::setupFunctionSpace(subComm, config, subGrid, subPartitioner,
                            subMesh, subFspace, subFieldset);
 
+  // Create gather/scatter redistribution.
+  const std::string redistName = config.getString("redistribution");
+  const std::unique_ptr<util::CommRedistribution> redist(
+      util::CommRedistributionFactory::create(redistName,
+                                              subComm, comm, subFspace, fspace));
+
   // Copy fieldsets unto sub-communicators
   atlas::FieldSet fsetsub;
-  util::redistributeToSubcommunicator(fset, fsetsub,
-                                      comm, subComm,
-                                      fspace, subFspace);
+  util::redistributeToSubcommunicator(*redist, fset, fsetsub, subFspace);
 
   // Check norm hasn't changed
   const double subdp = util::normFieldSet(fsetsub, vars.variables(), subComm);
@@ -125,8 +127,9 @@ void testSubCommunicators(const eckit::mpi::Comm & comm,
 
   // Gather and sum
   atlas::FieldSet fsetGathered;
-  util::gatherAndSumFromSubcommunicator(fsetsub, fsetGathered,
-                                        subComm, comm,
+  util::gatherAndSumFromSubcommunicator(*redist,
+                                        fsetsub, fsetGathered,
+                                        comm,
                                         subFspace, fspace);
 
   // Compare to sum of initial fieldsets
@@ -144,7 +147,7 @@ void testSubCommunicators(const eckit::mpi::Comm & comm,
 }
 
 // ------------------------------------------------------------------------------------------------
-CASE("util/FieldSetSubCommunicators/StructuredColumns") {
+CASE("util/FieldSetSubCommunicators/StructuredColumns/GatherScatter") {
   // Communicator
   const eckit::mpi::Comm & comm = oops::mpi::world();
 
@@ -152,13 +155,29 @@ CASE("util/FieldSetSubCommunicators/StructuredColumns") {
   eckit::LocalConfiguration config;
   config.set("function space", "StructuredColumns");
   config.set("grid.type", "regular_lonlat");
-  config.set("grid.N", 10);
+  config.set("grid.N", 20);
   config.set("halo", 1);
+  config.set("redistribution", "gather-scatter");
 
   testSubCommunicators(comm, config);
 };
 
-CASE("util/FieldSetSubCommunicators/NodeColumns") {
+CASE("util/FieldSetSubCommunicators/StructuredColumns/Straight") {
+  // Communicator
+  const eckit::mpi::Comm & comm = oops::mpi::world();
+
+  // Functionspace configuration
+  eckit::LocalConfiguration config;
+  config.set("function space", "StructuredColumns");
+  config.set("grid.type", "regular_lonlat");
+  config.set("grid.N", 20);
+  config.set("halo", 1);
+  config.set("redistribution", "straight");
+
+  testSubCommunicators(comm, config);
+};
+
+CASE("util/FieldSetSubCommunicators/NodeColumns/GatherScatter") {
   // Communicator
   const eckit::mpi::Comm & comm = oops::mpi::world();
 
@@ -168,6 +187,22 @@ CASE("util/FieldSetSubCommunicators/NodeColumns") {
   config.set("grid.name", "CS-LFR-15");
   config.set("partitioner", "cubedsphere");
   config.set("halo", 1);
+  config.set("redistribution", "gather-scatter");
+
+  testSubCommunicators(comm, config);
+};
+
+CASE("util/FieldSetSubCommunicators/NodeColumns/Straight") {
+  // Communicator
+  const eckit::mpi::Comm & comm = oops::mpi::world();
+
+  // Functionspace configuration
+  eckit::LocalConfiguration config;
+  config.set("function space", "NodeColumns");
+  config.set("grid.name", "CS-LFR-15");
+  config.set("partitioner", "cubedsphere");
+  config.set("halo", 1);
+  config.set("redistribution", "straight");
 
   testSubCommunicators(comm, config);
 };
