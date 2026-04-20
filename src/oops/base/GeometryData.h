@@ -31,7 +31,8 @@ namespace oops {
 class GeometryData {
  public:
   GeometryData(const atlas::FunctionSpace &, const atlas::FieldSet &,
-               const bool, const eckit::mpi::Comm &);
+               const bool, const eckit::mpi::Comm &,
+               const bool & initMeshAndTrees = true);
 
   ~GeometryData() = default;
 

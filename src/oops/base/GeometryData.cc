@@ -69,7 +69,8 @@ namespace oops {
 // -----------------------------------------------------------------------------
 
 GeometryData::GeometryData(const atlas::FunctionSpace & fspace, const atlas::FieldSet & fset,
-                           const bool topdown, const eckit::mpi::Comm & comm):
+                           const bool topdown, const eckit::mpi::Comm & comm,
+                           const bool & initMeshAndTrees):
   fspace_(fspace), fset_(fset), comm_(comm), topdown_(topdown),
   firstTriangulationOfQuadsIsDelaunay_(),
   earth_(atlas::util::Earth::radius()), globalNodeTree_(earth_), localCellCenterTree_(earth_)
@@ -101,27 +102,30 @@ GeometryData::GeometryData(const atlas::FunctionSpace & fspace, const atlas::Fie
     }
   }
 
-  setMeshAndTriangulation();
-  setLocalTree();
-  setGlobalTree();
+  if (initMeshAndTrees) {
+    // Initialize mesh and trees
+    setMeshAndTriangulation();
+    setLocalTree();
+    setGlobalTree();
 
-  // This block must come after the GeometryData's mesh_ has been fully initialized
-  if (fspace_.type() == "StructuredColumns") {
-    is_atlas_structured_columns_ = true;
-    const atlas::functionspace::StructuredColumns structuredcolumns(fspace_);
-    indexMapper_.initialize(mesh_, structuredcolumns);
+    // This block must come after the GeometryData's mesh_ has been fully initialized
+    if (fspace_.type() == "StructuredColumns") {
+      is_atlas_structured_columns_ = true;
+      const atlas::functionspace::StructuredColumns structuredcolumns(fspace_);
+      indexMapper_.initialize(mesh_, structuredcolumns);
 
-    const atlas::RegularGrid rg(structuredcolumns.grid());
-    if (rg) {
-      // Save regular grid nx for pole correction
-      regular_grid_nx_ = rg.nx();
-    }
+      const atlas::RegularGrid rg(structuredcolumns.grid());
+      if (rg) {
+        // Save regular grid nx for pole correction
+        regular_grid_nx_ = rg.nx();
+      }
 
-  } else if (fspace_.type() == "NodeColumns") {
-    const atlas::RegularGrid rg(mesh_.grid());
-    if (rg) {
-      // Save regular grid nx for pole correction
-      regular_grid_nx_ = rg.nx();
+    } else if (fspace_.type() == "NodeColumns") {
+      const atlas::RegularGrid rg(mesh_.grid());
+      if (rg) {
+        // Save regular grid nx for pole correction
+        regular_grid_nx_ = rg.nx();
+      }
     }
   }
 }
