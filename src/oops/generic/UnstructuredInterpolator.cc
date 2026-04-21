@@ -82,6 +82,7 @@ void UnstructuredInterpolator::apply(const Variables & vars, const atlas::FieldS
   Log::trace() << "UnstructuredInterpolator::apply starting" << std::endl;
   util::Timer timer("oops::UnstructuredInterpolator", "apply");
 
+  if (nout_ == 0) { return; }
   ASSERT(target_mask.size() == nout_);
 
   size_t nflds = 0;
@@ -148,6 +149,7 @@ void UnstructuredInterpolator::applyAD(const Variables & vars, atlas::FieldSet &
   Log::trace() << "UnstructuredInterpolator::applyAD starting" << std::endl;
   util::Timer timer("oops::UnstructuredInterpolator", "applyAD");
 
+  if (nout_ == 0) { return; }
   ASSERT(target_mask.size() == nout_);
 
   std::vector<double>::const_iterator current = vals.begin();
