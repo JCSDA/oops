@@ -160,7 +160,6 @@ list(
   oops/base/Observers.h
   oops/base/ObserversTLAD.h
   oops/base/ObserverTLAD.h
-  oops/base/ObserverUtils.h
   oops/base/ObsLocalizations.h
   oops/base/ObsOperatorBase.h
   oops/base/ObsOperatorPert.h

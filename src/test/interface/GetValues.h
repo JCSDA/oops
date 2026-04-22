@@ -28,6 +28,7 @@
 
 #include "oops/base/Geometry.h"
 #include "oops/base/GetValues.h"
+#include "oops/base/Locations.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
@@ -55,18 +56,12 @@ template <typename MODEL, typename OBS> class GetValuesFixture : private boost::
   typedef util::TimeWindow      TimeWindow_;
 
  public:
-  static const DateTime_         & time()             {return *getInstance().time_;}
-  static const TimeWindow_       & timeWindow()       {return *getInstance().timeWindow_;}
-  static const Geometry_         & resol()            {return *getInstance().resol_;}
-  static const Variables_        & variables()        {return *getInstance().variables_;}
-  static const std::vector<size_t> & varsizes()       {return getInstance().varsizes_;}
-  static const SampledLocations_ & sampledLocations() {
-    // In this test only one location sampling method is used.
-    return locations().samplingMethod(0);
-  }
-  static const Locations_ & locations() {
-    return *getInstance().locations_;
-  }
+  static const DateTime_         & time()        {return *getInstance().time_;}
+  static const TimeWindow_       & timeWindow()  {return *getInstance().timeWindow_;}
+  static const Geometry_         & resol()       {return *getInstance().resol_;}
+  static const Variables_        & variables()   {return *getInstance().variables_;}
+  static const std::vector<size_t> & varsizes()  {return getInstance().varsizes_;}
+  static const Locations_        & locations()   {return *getInstance().locations_;}
 
   static void reset() {
     getInstance().time_.reset();
@@ -129,7 +124,7 @@ template <typename MODEL, typename OBS> void testGetValuesConstructor() {
           TestEnvironment::config(),
           Test_::resol(),
           Test_::timeWindow(),
-          Test_::sampledLocations(),
+          Test_::locations(),
           Test_::variables()));
   EXPECT(getvalues.get());
 
@@ -179,7 +174,7 @@ template <typename MODEL, typename OBS> void testGetValuesInterpolation() {
   GetValues_ getvalues(TestEnvironment::config(),
                        Test_::resol(),
                        Test_::timeWindow(),
-                       Test_::sampledLocations(),
+                       Test_::locations(),
                        Test_::variables());
 
   GetValues_::preprocess(zz);
@@ -222,7 +217,7 @@ template <typename MODEL, typename OBS> void testGetValuesTLZeroPert() {
   GetValues_ getvalues(TestEnvironment::config(),
                        Test_::resol(),
                        Test_::timeWindow(),
-                       Test_::sampledLocations(),
+                       Test_::locations(),
                        Test_::variables(),
                        Test_::variables());  // linear variables
 
@@ -274,7 +269,7 @@ template <typename MODEL, typename OBS> void testGetValuesLinearity() {
   GetValues_ getvalues(TestEnvironment::config(),
                        Test_::resol(),
                        Test_::timeWindow(),
-                       Test_::sampledLocations(),
+                       Test_::locations(),
                        Test_::variables(),
                        Test_::variables());  // linear variables
 
@@ -318,7 +313,7 @@ template <typename MODEL, typename OBS> void testGetValuesAdjoint() {
   GetValues_ getvalues(TestEnvironment::config(),
                        Test_::resol(),
                        Test_::timeWindow(),
-                       Test_::sampledLocations(),
+                       Test_::locations(),
                        Test_::variables(),
                        Test_::variables());  // linear variables
 

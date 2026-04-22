@@ -86,7 +86,9 @@ ObserversTLAD<MODEL, OBS>::ObserversTLAD(const ObsSpaces_ & obspaces,
   for (size_t jj = 0; jj < obspaces.size(); ++jj) {
     const bool passive = obsconfs_[jj].getBool("monitoring only", false);
     std::unique_ptr<ObserverTLAD_> tmp;
-    if (!passive) tmp.reset(new ObserverTLAD_(obspaces[jj], obsconfs_[jj]));
+    if (!passive) {
+      tmp.reset(new ObserverTLAD_(obspaces[jj], obsconfs_[jj]));
+    }
     observers_.push_back(std::move(tmp));
   }
   Log::trace() << "ObserversTLAD<MODEL, OBS>::ObserversTLAD done" << std::endl;
@@ -100,8 +102,7 @@ void ObserversTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const Obs
   posts_.reset(new GetValueTLADs_(getValuesConf_, winbgn_, winend_));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     if (observers_[jj]) {
-      for (std::shared_ptr<GetValues_> &getvalues : observers_[jj]->initializeTraj(geom, ybias[jj]))
-        posts_->append(std::move(getvalues));
+      posts_->append(observers_[jj]->initializeTraj(geom, ybias[jj]));
     }
   }
   pp.enrollProcessor(posts_);
@@ -112,7 +113,9 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::finalizeTraj(const std::vector<ObsDataInt_> & qcflags) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeTraj start" << std::endl;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) observers_[jj]->finalizeTraj(qcflags[jj]);
+    if (observers_[jj]) {
+      observers_[jj]->finalizeTraj(qcflags[jj]);
+    }
   }
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeTraj done" << std::endl;
 }
@@ -128,7 +131,9 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::finalizeTL(const ObsAuxIncrs_ & ybias, Departures_ & dy) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeTL start" << std::endl;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) observers_[jj]->finalizeTL(ybias[jj], dy[jj]);
+    if (observers_[jj]) {
+      observers_[jj]->finalizeTL(ybias[jj], dy[jj]);
+    }
   }
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeTL done" << std::endl;
 }
@@ -138,7 +143,9 @@ void ObserversTLAD<MODEL, OBS>::initializeAD(const Departures_ & dy, ObsAuxIncrs
                                              PostProcTLAD_ & pp) {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeAD start" << std::endl;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) observers_[jj]->initializeAD(dy[jj], ybias[jj]);
+    if (observers_[jj]) {
+      observers_[jj]->initializeAD(dy[jj], ybias[jj]);
+    }
   }
   pp.enrollProcessor(posts_);
   Log::trace() << "ObserversTLAD<MODEL, OBS>::initializeAD done" << std::endl;
@@ -148,7 +155,9 @@ template <typename MODEL, typename OBS>
 void ObserversTLAD<MODEL, OBS>::finalizeAD() {
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeAD start" << std::endl;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    if (observers_[jj]) observers_[jj]->finalizeAD();
+    if (observers_[jj]) {
+      observers_[jj]->finalizeAD();
+    }
   }
   Log::trace() << "ObserversTLAD<MODEL, OBS>::finalizeAD done" << std::endl;
 }

@@ -20,7 +20,6 @@
 #include "oops/base/GetValues.h"
 #include "oops/base/GetValueTLADs.h"
 #include "oops/base/Locations.h"
-#include "oops/base/ObserverUtils.h"
 #include "oops/base/ObsOperatorBase.h"
 #include "oops/base/ObsVariables.h"
 #include "oops/base/ObsVector.h"
@@ -65,23 +64,21 @@ class Observer {
 
 /// \brief Initializes variables, obs bias, obs filter (could be different for
 /// different iterations
-  std::vector<std::shared_ptr<GetValues_>> initialize(const Geometry_ &, const ObsAuxCtrl_ &,
-                                                      ObsError_ &, const eckit::Configuration &);
+  std::shared_ptr<GetValues_> initialize(const Geometry_ &, const ObsAuxCtrl_ &,
+                                         ObsError_ &, const eckit::Configuration &);
 
 /// \brief Computes H(x) from the filled in GeoVaLs
   void finalize(ObsVector_ &, ObsDataInt_ &);
 
-  int resetObsPert(const Geometry_ &, std::unique_ptr<ObsOperatorBase_>,
-                   const std::shared_ptr<GetValueTLADs_> &, int &);
+  void resetObsPert(const Geometry_ &, std::unique_ptr<ObsOperatorBase_>,
+                    const std::shared_ptr<GetValues_> &);
 
   void updateObserver(const eckit::Configuration &);
 
  private:
-  typedef std::vector<size_t> VariableSizes;
-
   const ObsSpace_ &                 obspace_;       // ObsSpace used in H(x)
-  Variables                         allVars_;       // All required variables
-  VariableSizes                     allVarSizes_;   // Sizes of these variables
+  Variables                         geovars_;       // All required variables
+  std::vector<size_t>               varsizes_;      // Sizes of these variables
   std::unique_ptr<ObsOperatorBase_> obsop_;         // Obs operator
   std::unique_ptr<Locations_>       locations_;     // Obs locations
   const ObsAuxCtrl_ *               biascoeff_;     // bias coefficients
@@ -91,8 +88,8 @@ class Observer {
   // Instances of GetValues. Each receives a list of model variables and a set of paths along which
   // these variables should be interpolated. The interpolated values are stored in a single GeoVaLs
   // object (shared between all instances of GetValues).
-  std::vector<std::shared_ptr<GetValues_>> getvals_;
-  std::shared_ptr<ObsDataInt_>      qcflags_;        // QC flags (should not be a pointer)
+  std::shared_ptr<GetValues_>       getvals_;
+  std::shared_ptr<ObsDataInt_>      qcflags_;       // QC flags (should not be a pointer)
   bool                              initialized_;
   bool                              hasGeoVaLsFile_;
   std::unique_ptr<eckit::LocalConfiguration> iterconf_;
@@ -106,9 +103,9 @@ class Observer {
 template <typename MODEL, typename OBS>
 Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const eckit::Configuration & conf,
                                std::unique_ptr<ObsOperatorBase_> obsOpBase)
-  : obspace_(obspace), obsop_(), biascoeff_(nullptr), filter_(), qcflags_(), initialized_(false),
-    hasGeoVaLsFile_(false), gvConf_(conf.getSubConfiguration("get values")), filterConf_(),
-    geovalsConf_()
+  : obspace_(obspace), geovars_(), varsizes_(), obsop_(), biascoeff_(nullptr), filter_(),
+    qcflags_(), initialized_(false), hasGeoVaLsFile_(false),
+    gvConf_(conf.getSubConfiguration("get values")), filterConf_(), geovalsConf_()
 {
   Log::trace() << "Observer::Observer start" << std::endl;
 
@@ -135,7 +132,7 @@ Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const eckit::Configura
 
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-std::vector<std::shared_ptr<GetValues<MODEL, OBS>>>
+std::shared_ptr<GetValues<MODEL, OBS>>
 Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & biascoeff,
                                  ObsError_ & R, const eckit::Configuration & conf) {
   Log::trace() << "Observer<MODEL, OBS>::initialize start" << std::endl;
@@ -151,26 +148,18 @@ Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & bia
 
   if (!initialized_) {
 // Get the list of required variables
-    oops::Variables geovars = obsop_->requiredVars();
-    geovars += biascoeff_->requiredVars();
-    geovars += filter_->requiredVars();
+    geovars_ = obsop_->requiredVars();
+    geovars_ += biascoeff_->requiredVars();
+    geovars_ += filter_->requiredVars();
+    varsizes_ = geom.variableSizes(geovars_);
 
 // Get the observation locations and their discretizations
     locations_ = std::make_unique<Locations_>(obsop_->locations());
 
-  // Required variables grouped by the set of paths along which they'll be interpolated
-    const std::vector<oops::Variables> groupedVars = groupVariablesByLocationSamplingMethod(
-          geovars, *locations_);
-
-// Get variable sizes (i.e. the numbers of levels in the corresponding GeoVaLs)
-    const std::vector<VariableSizes> groupedVarSizes = variableSizes(groupedVars, geom);
-
-    std::tie(allVars_, allVarSizes_) = mergeVariablesAndSizes(groupedVars, groupedVarSizes);
-
 // Set up GetValues
     if (!hasGeoVaLsFile_) {
-      getvals_ = makeGetValuesVector(gvConf_, geom, obspace_.timeWindow(),
-                                     *locations_, groupedVars);
+      getvals_.reset(new GetValues_(gvConf_, geom, obspace_.timeWindow(),
+                                    *locations_, geovars_));
     }
     initialized_ = true;
   }
@@ -188,10 +177,15 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim, ObsDataInt_ & qcflags) 
 
   // Fill GeoVaLs
   GeoVaLs_ geovals = hasGeoVaLsFile_
-                     ? GeoVaLs_(geovalsConf_,
-                                 obspace_, allVars_)
-                     : makeAndFillGeoVaLs(*locations_, allVars_,
-                                          allVarSizes_, getvals_);
+                     ? GeoVaLs_(geovalsConf_, obspace_, geovars_)
+                     : GeoVaLs_(*locations_, geovars_, varsizes_);
+  if (!hasGeoVaLsFile_) {
+    if (getvals_->useMethodsTL()) {
+      getvals_->fillGeoVaLsTL(geovals);
+    } else {
+      getvals_->fillGeoVaLs(geovals);
+    }
+  }
 
   // Compute the reduced representation of the GeoVaLs for which it's been requested
   oops::Variables reducedVars = biascoeff_->requiredVars();
@@ -259,30 +253,22 @@ void Observer<MODEL, OBS>::finalize(ObsVector_ & yobsim, ObsDataInt_ & qcflags) 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-int Observer<MODEL, OBS>::resetObsPert(const Geometry_ & geom,
-                                       std::unique_ptr<ObsOperatorBase_> obsOpBase,
-                                       const std::shared_ptr<GetValueTLADs_> & getValTLs,
-                                       int & index) {
+void Observer<MODEL, OBS>::resetObsPert(const Geometry_ & geom,
+                                        std::unique_ptr<ObsOperatorBase_> obsOpBase,
+                                        const std::shared_ptr<GetValues_> & getValTL) {
   obsop_ = std::move(obsOpBase);
-  int size = getvals_.size();
-  for (int ii = 0; ii < size; ++ii) {
-    getvals_[ii] = (*getValTLs)[ii + index];
-  }
+  getvals_ = getValTL;
 
-  allVars_ = obsop_->requiredVars();
-  allVarSizes_ = geom.variableSizes(allVars_);
+  geovars_ = obsop_->requiredVars();
+  varsizes_ = geom.variableSizes(geovars_);
   initialized_ = true;
-
-  return size + index;
 }
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
 void Observer<MODEL, OBS>::updateObserver(const eckit::Configuration & cdaConfig) {
-  for (size_t jj = 0; jj < getvals_.size(); ++jj) {
-    getvals_[jj]->updateGetVals(cdaConfig);
-  }
+  getvals_->updateGetVals(cdaConfig);
   qcflags_->zeroAppended();
   obserrfilter_->readAppended("ObsError");
   Log::trace() << "Observer obs error appended" << std::endl;

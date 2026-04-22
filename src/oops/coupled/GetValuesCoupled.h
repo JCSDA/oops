@@ -15,6 +15,7 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/GetValues.h"
 #include "oops/base/Increment.h"
+#include "oops/base/Locations.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/coupled/GeometryCoupled.h"
@@ -22,7 +23,6 @@
 #include "oops/coupled/TraitCoupled.h"
 #include "oops/coupled/UtilsCoupled.h"
 #include "oops/interface/GeoVaLs.h"
-#include "oops/interface/SampledLocations.h"
 #include "oops/util/Logger.h"
 #include "oops/util/ObjectCounter.h"
 
@@ -39,7 +39,7 @@ class GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>:
   typedef Geometry<TraitCoupled<MODEL1, MODEL2>>  Geometry_;
   typedef GeoVaLs<OBS>                            GeoVaLs_;
   typedef Increment<TraitCoupled<MODEL1, MODEL2>> Increment_;
-  typedef SampledLocations<OBS>                   SampledLocations_;
+  typedef Locations<OBS>                          Locations_;
   typedef State<TraitCoupled<MODEL1, MODEL2>>     State_;
 
  public:
@@ -47,7 +47,7 @@ class GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>:
 
   GetValues(const eckit::Configuration &, const Geometry_ &,
             const util::TimeWindow &,
-            const SampledLocations_ &,
+            const Locations_ &,
             const Variables &, const Variables & varl = Variables());
 
   static void preprocess(State_ &);
@@ -94,7 +94,7 @@ template <typename MODEL1, typename MODEL2, typename OBS>
 GetValues<TraitCoupled<MODEL1, MODEL2>, OBS>::GetValues(const eckit::Configuration & conf,
                                  const Geometry_ & geom,
                                  const util::TimeWindow & timeWindow,
-                                 const SampledLocations_ & locs,
+                                 const Locations_ & locs,
                                  const Variables & vars, const Variables & varl)
   : geovars_(vars), linvars_(varl)
 {

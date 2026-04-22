@@ -19,7 +19,6 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/GetValues.h"
 #include "oops/base/Locations.h"
-#include "oops/base/ObserverUtils.h"
 #include "oops/base/ObsVector.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LinearObsOperator.h"
@@ -52,7 +51,7 @@ class ObserverTLAD {
   ObserverTLAD(const ObsSpace_ &, const eckit::Configuration &);
   ~ObserverTLAD() {}
 
-  std::vector<std::shared_ptr<GetValues_>> initializeTraj(const Geometry_ &, const ObsAuxCtrl_ &);
+  std::shared_ptr<GetValues_> initializeTraj(const Geometry_ &, const ObsAuxCtrl_ &);
   void finalizeTraj(const ObsDataInt_ &);
 
   void finalizeTL(const ObsAuxIncr_ &, ObsVector_ &);
@@ -60,26 +59,23 @@ class ObserverTLAD {
   void initializeAD(const ObsVector_ &, ObsAuxIncr_ &);
   void finalizeAD() {}
 
-/// Accessor to linear obs operator
+  /// Accessor to linear obs operator
   const ObsOpTLAD_ & linObsOp() {return *hoptlad_;}
 
  private:
   typedef std::vector<size_t> VariableSizes;
 
-  const ObsSpace_ &             obspace_;    // ObsSpace used in H(x)
-  Variables                     hopVars_;
-  VariableSizes                 hopVarSizes_;   // Sizes of variables requested from model
-  ObsOperator_                  hop_;        // Obs operator
-  std::unique_ptr<ObsOpTLAD_>   hoptlad_;    // Linear obs operator
-  // Instances of GetValues. Each receives a list of model variables and a set of paths along which
-  // these variables should be interpolated. The interpolated values are stored in a single GeoVaLs
-  // object (shared between all instances of GetValues).
-  std::vector<std::shared_ptr<GetValues_>> getvals_;
-  VariableSizes        hoptladVarSizes_;     // Sizes of variables requested from model for
-                                             // TL/AD (e.g. number of vertical levels)
+  const ObsSpace_ &           obspace_;
+  Variables                   hopVars_;
+  VariableSizes               hopVarSizes_;
+  Variables                   tladVars_;
+  VariableSizes               tladVarSizes_;
+  ObsOperator_                hop_;      // obs operator
+  std::unique_ptr<ObsOpTLAD_> hoptlad_;  // linear obs operator
+  std::shared_ptr<GetValues_> getvals_;
   std::unique_ptr<Locations_> locations_;
-  util::TimeWindow timeWindow_;
-  const ObsAuxCtrl_ *           ybias_;
+  util::TimeWindow            timeWindow_;
+  const ObsAuxCtrl_ *         ybias_;
   bool init_;
   eckit::LocalConfiguration gvConf_;
 };
@@ -88,10 +84,11 @@ class ObserverTLAD {
 template <typename MODEL, typename OBS>
 ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const eckit::Configuration & conf)
   : obspace_(obsdb), hopVars_(), hopVarSizes_(),
-    hop_(obspace_, eckit::LocalConfiguration(conf, "obs operator")),
-    hoptlad_(), getvals_(), timeWindow_(obsdb.timeWindow()),
-    ybias_(nullptr), init_(false),
-    gvConf_(conf.getSubConfiguration("get values"))
+  tladVars_(), tladVarSizes_(),
+  hop_(obspace_, eckit::LocalConfiguration(conf, "obs operator")),
+  hoptlad_(), timeWindow_(obsdb.timeWindow()),
+  ybias_(nullptr), init_(false),
+  gvConf_(conf.getSubConfiguration("get values"))
 {
   Log::trace() << "ObserverTLAD::ObserverTLAD" << std::endl;
   if (conf.has("linear obs operator")) {
@@ -104,35 +101,26 @@ ObserverTLAD<MODEL, OBS>::ObserverTLAD(const ObsSpace_ & obsdb, const eckit::Con
 }
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
-std::vector<std::shared_ptr<GetValues<MODEL, OBS>>>
+std::shared_ptr<GetValues<MODEL, OBS>>
 ObserverTLAD<MODEL, OBS>::initializeTraj(const Geometry_ & geom, const ObsAuxCtrl_ & ybias) {
   Log::trace() << "ObserverTLAD::initializeTraj start" << std::endl;
   ybias_ = &ybias;
 
   // Get the list of variables to be obtained from the model state
-  oops::Variables geovars = hop_.requiredVars();
-  geovars += ybias_->requiredVars();
+  hopVars_ = hop_.requiredVars();
+  hopVars_ += ybias_->requiredVars();
+  hopVarSizes_ = geom.variableSizes(hopVars_);
+
+  // Now deal with the variables obtained from the model increment.
+  tladVars_ = hoptlad_->requiredVars();
+  tladVarSizes_ = geom.variableSizes(tladVars_);
 
   // Get the observation locations and their discretizations
   locations_ = std::make_unique<Locations_>(hop_.locations());
 
-  // Variables grouped by the set of paths along which they'll be interpolated
-  const std::vector<oops::Variables> groupedHopVars = groupVariablesByLocationSamplingMethod(
-        geovars, *locations_);
-
-  // Get the sizes of these variables (i.e. the numbers of levels in the corresponding GeoVaLs)
-  const std::vector<VariableSizes> groupedHopVarSizes = variableSizes(groupedHopVars, geom);
-
-  std::tie(hopVars_, hopVarSizes_) = mergeVariablesAndSizes(groupedHopVars, groupedHopVarSizes);
-
-  // Now deal with the variables obtained from the model increment.
-  hoptladVarSizes_ = geom.variableSizes(hoptlad_->requiredVars());
-  const std::vector<Variables> groupedHoptladVars = groupVariablesByLocationSamplingMethod(
-        hoptlad_->requiredVars(), *locations_);
-
   // Set up GetValues
-  getvals_ = makeGetValuesVector(gvConf_, geom, timeWindow_,
-                                 *locations_, groupedHopVars, groupedHoptladVars);
+  getvals_.reset(new GetValues_(gvConf_, geom, timeWindow_,
+                                *locations_, hopVars_, tladVars_));
 
   init_ = true;
   Log::trace() << "ObserverTLAD::initializeTraj done" << std::endl;
@@ -145,7 +133,8 @@ void ObserverTLAD<MODEL, OBS>::finalizeTraj(const ObsDataInt_ & qcflags) {
   ASSERT(init_);
 
   // Fill geovals
-  GeoVaLs_ geovals = makeAndFillGeoVaLs(*locations_, hopVars_, hopVarSizes_, getvals_);
+  GeoVaLs_ geovals(*locations_, hopVars_, hopVarSizes_);
+  getvals_->fillGeoVaLs(geovals);
 
   // Compute the reduced representation of the GeoVaLs for which it's been requested
   oops::Variables reducedVars = ybias_->requiredVars();
@@ -163,8 +152,9 @@ void ObserverTLAD<MODEL, OBS>::finalizeTL(const ObsAuxIncr_ & ybiastl, ObsVector
   Log::trace() << "ObserverTLAD::finalizeTL start" << std::endl;
 
   // TODO(wsmigaj): should we allow linear operators to require also *reduced* GeoVaLs?
-  GeoVaLs_ geovals = makeAndFillGeoVaLs(*locations_, hoptlad_->requiredVars(),
-                                        hoptladVarSizes_, getvals_);
+  // Fill GeoVaLs
+  GeoVaLs_ geovals(*locations_, tladVars_, tladVarSizes_);
+  getvals_->fillGeoVaLsTL(geovals);
 
   // Compute linear H(x)
   hoptlad_->simulateObsTL(geovals, ydeptl, ybiastl);
@@ -176,15 +166,13 @@ template <typename MODEL, typename OBS>
 void ObserverTLAD<MODEL, OBS>::initializeAD(const ObsVector_ & ydepad, ObsAuxIncr_ & ybiasad) {
   Log::trace() << "ObserverTLAD::initializeAD start" << std::endl;
 
-  GeoVaLs_ geovals(*locations_, hoptlad_->requiredVars(), hoptladVarSizes_);
+  GeoVaLs_ geovals(*locations_, tladVars_, tladVarSizes_);
 
-  // Compute adjoint of H(x)
+  // (Adjoint of) Compute linear H(x)
   hoptlad_->simulateObsAD(geovals, ydepad, ybiasad);
-  // GeoVaLs forcing to GetValues
 
-  for (size_t m = 0; m < getvals_.size(); ++m) {
-    getvals_[m]->fillGeoVaLsAD(geovals);
-  }
+  // (Adjoint of) Fill geovals
+  getvals_->fillGeoVaLsAD(geovals);
 
   Log::trace() << "ObserverTLAD::initializeAD done" << std::endl;
 }

@@ -112,10 +112,11 @@ void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrls
 
   posts_->clear();
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    std::vector<std::shared_ptr<GetValues_>> getvalues =
-        observers_[jj]->initialize(geom, obsaux[jj], Rmat[jj], conf);
-    for (std::shared_ptr<GetValues_> &gv : getvalues)
-      posts_->append(std::move(gv));
+    auto getval = observers_[jj]->initialize(geom, obsaux[jj], Rmat[jj], conf);
+    if (getval) {
+      // getval will be nullptr if observer is initialized with a GeoVaLs file
+      posts_->append(getval);
+    }
   }
   pp.enrollProcessor(posts_);
 
@@ -145,9 +146,8 @@ void Observers<MODEL, OBS>::resetObsPert(const Geometry_ & geom,
   oops::Log::trace() << "Observers<MODEL, OBS>::resetObsOp start" << std::endl;
 
   posts_.reset(new GetValuePerts_(getValuesConf_, getValTLs, vars));
-  int index = 0;
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
-    index = observers_[jj]->resetObsPert(geom, std::move(obsOpBases[jj]), getValTLs, index);
+    observers_[jj]->resetObsPert(geom, std::move(obsOpBases[jj]), (*getValTLs)[jj]);
   }
 
   oops::Log::trace() << "Observers<MODEL, OBS>::resetObsOp done" << std::endl;
