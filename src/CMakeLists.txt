@@ -435,6 +435,8 @@ list(
   oops/util/redistribution/CommRedistribution.h
   oops/util/redistribution/CommRedistributionCompatChecker.cc
   oops/util/redistribution/CommRedistributionCompatChecker.h
+  oops/util/redistribution/CommRedistributionRepository.cc
+  oops/util/redistribution/CommRedistributionRepository.h
   oops/util/redistribution/CommStraightRedistribution.cc
   oops/util/redistribution/CommStraightRedistribution.h
   oops/util/redistribution/detail/AllToAllRouting.cc
@@ -1080,6 +1082,12 @@ if(BUILD_TESTING)
   ecbuild_add_test( TARGET  oops_util_comm_redistribution
                     MPI     6
                     SOURCES test/util/CommRedistribution.cc
+                    ARGS    "test/testinput/empty.yaml"
+                    LIBS    oops )
+
+  ecbuild_add_test( TARGET  oops_util_comm_redistribution_repository
+                    MPI     2
+                    SOURCES test/util/CommRedistributionRepository.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops )
 

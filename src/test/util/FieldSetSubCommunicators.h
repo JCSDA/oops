@@ -88,13 +88,9 @@ void testSubCommunicators(const eckit::mpi::Comm & comm,
 
   // Create gather/scatter redistribution.
   const std::string redistName = config.getString("redistribution");
-  const std::unique_ptr<util::CommRedistribution> redist(
-      util::CommRedistributionFactory::create(redistName,
-                                              subComm, comm, subFspace, fspace));
-
   // Copy fieldsets unto sub-communicators
   atlas::FieldSet fsetsub;
-  util::redistributeToSubcommunicator(*redist, fset, fsetsub, subFspace);
+  util::redistributeToSubcommunicator(redistName, fset, fsetsub, subFspace);
 
   // Check norm hasn't changed
   const double subdp = util::normFieldSet(fsetsub, vars.variables(), subComm);
@@ -127,9 +123,8 @@ void testSubCommunicators(const eckit::mpi::Comm & comm,
 
   // Gather and sum
   atlas::FieldSet fsetGathered;
-  util::gatherAndSumFromSubcommunicator(*redist,
+  util::gatherAndSumFromSubcommunicator(redistName,
                                         fsetsub, fsetGathered,
-                                        comm,
                                         subFspace, fspace);
 
   // Compare to sum of initial fieldsets

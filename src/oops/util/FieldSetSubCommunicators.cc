@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <sstream>
-#include <string>
 #include <tuple>
 #include <vector>
 
@@ -22,17 +21,27 @@
 
 #include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
-#include "oops/util/redistribution/CommStraightRedistribution.h"
+#include "oops/util/redistribution/CommRedistributionRepository.h"
 
 namespace util {
 
 // -----------------------------------------------------------------------------
 
-void redistributeToSubcommunicator(const CommRedistribution & redist,
+void redistributeToSubcommunicator(const std::string& redistributionMethod,
                                    const atlas::FieldSet & fsetIn,
                                    atlas::FieldSet & fsetOut,
                                    const atlas::FunctionSpace & fspaceOut) {
   if (fsetIn.size() <= 0) return;
+
+  const atlas::FunctionSpace& parentFSpace = fsetIn[0].functionspace();
+  // Get comms
+  const eckit::mpi::Comm& subComm = eckit::mpi::comm(fspaceOut.mpi_comm());
+  const eckit::mpi::Comm& parentComm = eckit::mpi::comm(parentFSpace.mpi_comm());
+
+  const CommRedistribution& redist =
+      util::CommRedistributionRepository::get(redistributionMethod,
+                                              subComm, parentComm,
+                                              fspaceOut, parentFSpace);
 
   // Ensure that field names are sorted before performing redistribution.
   // Otherwise there could be mix-ups where colors have differing orderings.
@@ -57,23 +66,23 @@ void redistributeToSubcommunicator(const CommRedistribution & redist,
 
 void redistributeToSubcommunicator(const atlas::FieldSet & fsetIn,
                                    atlas::FieldSet & fsetOut,
-                                   const eckit::mpi::Comm & comm,
-                                   const eckit::mpi::Comm & subComm,
-                                   const atlas::FunctionSpace & fspaceIn,
                                    const atlas::FunctionSpace & fspaceOut) {
-  // Create a straight redistribution
-  const CommStraightRedistribution redist(subComm, comm, fspaceOut, fspaceIn);
-  redistributeToSubcommunicator(redist, fsetIn, fsetOut, fspaceOut);
+  // Default to a straight redistribution.
+  redistributeToSubcommunicator("straight", fsetIn, fsetOut, fspaceOut);
 }
 
 // -----------------------------------------------------------------------------
-
-void gatherAndSumFromSubcommunicator(const CommRedistribution & redist,
+void gatherAndSumFromSubcommunicator(const std::string& redistributionMethod,
                                      const atlas::FieldSet & fsetIn,
                                      atlas::FieldSet & fsetOut,
-                                     const eckit::mpi::Comm & comm,
                                      const atlas::FunctionSpace & fspaceIn,
                                      const atlas::FunctionSpace & fspaceOut) {
+  const eckit::mpi::Comm& subComm = eckit::mpi::comm(fspaceIn.mpi_comm());
+  const eckit::mpi::Comm& parentComm = eckit::mpi::comm(fspaceOut.mpi_comm());
+  const CommRedistribution& redist = util::CommRedistributionRepository::get(redistributionMethod,
+                                                                             subComm, parentComm,
+                                                                             fspaceIn, fspaceOut);
+
   // Ensure that field names are sorted before performing redistribution.
   // Otherwise there could be mix-ups where colors have differing orderings.
   std::vector<std::string> sortedFieldNames = fsetIn.field_names();
@@ -112,13 +121,10 @@ void gatherAndSumFromSubcommunicator(const CommRedistribution & redist,
 
 void gatherAndSumFromSubcommunicator(const atlas::FieldSet & fsetIn,
                                      atlas::FieldSet & fsetOut,
-                                     const eckit::mpi::Comm & subComm,
-                                     const eckit::mpi::Comm & comm,
                                      const atlas::FunctionSpace & fspaceIn,
                                      const atlas::FunctionSpace & fspaceOut) {
-  // Create a straight redistribution
-  const CommStraightRedistribution redist(subComm, comm, fspaceIn, fspaceOut);
-  gatherAndSumFromSubcommunicator(redist, fsetIn, fsetOut, comm, fspaceIn, fspaceOut);
+  // Default to a straight redistribution.
+  gatherAndSumFromSubcommunicator("straight", fsetIn, fsetOut, fspaceIn, fspaceOut);
 }
 
 // -----------------------------------------------------------------------------
