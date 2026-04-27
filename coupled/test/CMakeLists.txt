@@ -130,4 +130,4 @@ ecbuild_add_test( TARGET  oops_coupled_var_qg_qg
                   SOURCES executables/var_qg_qg.cc
                   ARGS    "testinput/var_qg_qg.yaml"
                   LIBS    qg
-                  TEST_DEPENDS oops_qg_truth oops_qg_make_obs_4d_12h )
+                  TEST_DEPENDS oops_qg_truth oops_qg_make_obs_4d_12h oops_qg_gen_ens_pert_B )
