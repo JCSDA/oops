@@ -14,6 +14,9 @@
 
 namespace eckit {
   class Configuration;
+  namespace geometry {
+    class Point3;
+  }
 }
 
 namespace lorenz95 {
@@ -30,6 +33,9 @@ class ObsLocGC99 : public util::Printable {
   /// compute localization and update localization values in \p locfactor
   /// (missing value is for obs outside of localization)
   void computeLocalization(const Iterator &, ObsVec1D & locfactor) const;
+
+  double computeLocalization(const eckit::geometry::Point3 &,
+                             const eckit::geometry::Point3 &) const;
 
  private:
   void print(std::ostream &) const override;

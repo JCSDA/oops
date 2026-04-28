@@ -41,6 +41,8 @@ class ObsLocalizations : public util::Printable,
 
   void computeLocalization(const GeometryIterator_ & point,
                            Observations_ & obsvectors) const;
+  double computeLocalization(const eckit::geometry::Point3 & point1,
+                             const eckit::geometry::Point3 & point2) const;
 
  private:
   void print(std::ostream &) const;
@@ -74,13 +76,29 @@ ObsLocalizations<MODEL, OBS>::ObsLocalizations(const eckit::Configuration & conf
 template <typename MODEL, typename OBS>
 void ObsLocalizations<MODEL, OBS>::computeLocalization(const GeometryIterator_ & point,
                                                        Observations_ & locfactor) const {
-  //  initialize locafactors to ones and then update them in the loop bellow
+  //  initialize locfactors to ones and then update them in the loop below
   locfactor.ones();
   for (size_t jj = 0; jj < local_.size(); ++jj) {
     for (size_t oli = 0; oli < local_[jj].size(); ++oli) {
       if (local_[jj][oli]) local_[jj][oli]->computeLocalization(point, locfactor[jj]);
     }
   }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+double ObsLocalizations<MODEL, OBS>::computeLocalization(
+      const eckit::geometry::Point3 & point1,
+      const eckit::geometry::Point3 & point2) const {
+  //  initialize localization to 1.0 and then update it in the loop below
+  double localization = 1.0;
+  for (size_t jj = 0; jj < local_.size(); ++jj) {
+    for (size_t oli = 0; oli < local_[jj].size(); ++oli) {
+      if (local_[jj][oli]) localization *= local_[jj][oli]->computeLocalization(point1, point2);
+    }
+  }
+  return localization;
 }
 
 // -----------------------------------------------------------------------------

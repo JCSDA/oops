@@ -42,6 +42,7 @@ list(
   oops/assimilation/DRPLanczosMinimizer.h
   oops/assimilation/DualMinimizer.h
   oops/assimilation/DualVector.h
+  oops/assimilation/EAKFSolver.h
   oops/assimilation/ETKFLinearAlgebra.cc
   oops/assimilation/ETKFLinearAlgebra.h
   oops/assimilation/FGMRES.h
@@ -97,6 +98,7 @@ list(
   oops/assimilation/SaddlePointMinimizer.h
   oops/assimilation/SaddlePointPrecondMatrix.h
   oops/assimilation/SaddlePointVector.h
+  oops/assimilation/SequentialEnsembleSolver.h
   oops/assimilation/SpectralLMP.h
   oops/assimilation/SubensembleSplitter.cc
   oops/assimilation/SubensembleSplitter.h

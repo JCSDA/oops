@@ -14,6 +14,8 @@
 #include "oops/assimilation/LETKFSolverPert.h"
 #include "oops/assimilation/LocalEnsembleSolver.h"
 
+#include "oops/assimilation/EAKFSolver.h"
+
 namespace oops {
 
 template <typename MODEL, typename OBS> void instantiateLocalEnsembleSolverFactory() {
@@ -25,6 +27,11 @@ template <typename MODEL, typename OBS> void instantiateLocalEnsembleSolverFacto
     makerGETKF_("Deterministic GETKF");
   static LocalEnsembleSolverMaker<MODEL, OBS, StochasticGETKF<MODEL, OBS> >
     makerGETKFPert_("Stochastic GETKF");
+
+  // TODO(Travis) if we're going to keep this here, it should be
+  // "instantiateEnsembleSolverFactory()" instead
+  static LocalEnsembleSolverMaker<MODEL, OBS, EAKFSolver<MODEL, OBS> >
+    makerSequentialEnsembleSolver_("EAKF");
 }
 
 }  // namespace oops

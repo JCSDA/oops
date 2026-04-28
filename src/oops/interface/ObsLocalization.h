@@ -33,6 +33,8 @@ class ObsLocalization : public util::Printable,
   ~ObsLocalization();
 
   void computeLocalization(const Iterator_ &, ObsVector_ &) const;
+  double computeLocalization(const eckit::geometry::Point3 &,
+                             const eckit::geometry::Point3 &) const;
 
  private:
   void print(std::ostream &) const override;
@@ -73,6 +75,20 @@ void ObsLocalization<MODEL, OBS>::computeLocalization(const Iterator_ & giter,
   util::Timer timer(name_, "computeLocalization");
   obsloc_->computeLocalization(giter.geometryiter(), loc.obsvector());
   Log::trace() << "ObsLocalization<OBS>::computeLocalization done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL, typename OBS>
+double ObsLocalization<MODEL, OBS>::computeLocalization(
+      const eckit::geometry::Point3 & point1,
+      const eckit::geometry::Point3 & point2) const {
+  Log::trace() << "ObsLocalization<OBS>::computeLocalization start" << std::endl;
+  util::Timer timer(name_, "computeLocalization");
+  double val = obsloc_->computeLocalization(point1, point2);
+  Log::trace() << "ObsLocalization<OBS>::computeLocalization done" <<
+  std::endl;
+  return val;
 }
 
 // -----------------------------------------------------------------------------

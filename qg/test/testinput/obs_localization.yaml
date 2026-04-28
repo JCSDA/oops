@@ -39,7 +39,7 @@ observations:
       lons: [-175.5]
       lats: [5.623]
       depths: [0.0]
-    reference rms: [1]
+    reference rms: [0.940995]
 - obs error:
     covariance model: diagonal
   obs space:
@@ -55,4 +55,4 @@ observations:
       lons: [-175.5]
       lats: [5.623]
       depths: [0.0]
-    reference rms: [1]
+    reference rms: [0.216454]

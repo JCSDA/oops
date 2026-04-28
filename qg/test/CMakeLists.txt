@@ -124,6 +124,7 @@ list( APPEND qg_testinput
   testinput/obs_aux_covariance.yaml
   testinput/obsvector.yaml
   testinput/rescale_ens_perts.yaml
+  testinput/sequential_enkf.yaml
   testinput/state.yaml
   testinput/tlm_toolbox_adjoint_test.yaml
   testinput/tlm_toolbox_linearization_error.yaml
@@ -213,6 +214,7 @@ list( APPEND qg_testoutput
   testoutput/make_single-obs_3d.test
   testoutput/make_single-obs_4d_12h.test
   testoutput/rescale_ens_perts.test
+  testoutput/sequential_enkf.test
   testoutput/tlm_toolbox_adjoint_test.test
   testoutput/tlm_toolbox_linearization_error.test
   testoutput/tlm_toolbox_tlm_forecast.test
@@ -1007,3 +1009,12 @@ ecbuild_add_test( TARGET oops_qg_letkf_crossvalid
                   COMMAND  qg_etkf.x
                   OMP 2
                   TEST_DEPENDS oops_qg_make_obs_4d oops_qg_gen_ens_pert_B )
+
+#####################################################################
+# Sequential EnKF tests
+#####################################################################
+ecbuild_add_test( TARGET oops_qg_sequential_enkf
+                  ARGS testinput/sequential_enkf.yaml
+                  COMMAND qg_etkf.x
+                  OMP 2
+                  TEST_DEPENDS oops_qg_make_obs_3d oops_qg_gen_ens_pert_B )

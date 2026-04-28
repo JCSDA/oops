@@ -14,6 +14,9 @@
 
 namespace eckit {
   class Configuration;
+  namespace geometry {
+    class Point3;
+  }
 }
 
 namespace qg {
@@ -28,6 +31,8 @@ class ObsLocQG : public util::Printable {
   ObsLocQG(const eckit::Configuration &, const ObsSpaceQG &);
 
   void computeLocalization(const GeometryQGIterator &, ObsVecQG &) const;
+  double computeLocalization(const eckit::geometry::Point3 &,
+                             const eckit::geometry::Point3 &) const;
 
  private:
   void print(std::ostream &) const override;

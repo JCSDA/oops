@@ -1,0 +1,131 @@
+time window:
+  begin: &date_bgn 2010-01-01T00:00:00Z
+  length: PT12H
+
+geometry:
+  nx: 40
+  ny: 20
+  depths: [4500.0, 5500.0]
+
+
+# update (and use for H(x) 3 states at 00Z, 06Z & 12Z
+background:
+  members from template:
+    template:
+     states:
+      - date: *date_bgn
+        filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1D.nc
+      - date: &date_mid 2010-01-01T06:00:00Z
+        filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT6H.nc
+      - date: &date_end 2010-01-01T12:00:00Z
+        filename: Data/forecast.ens.%mem%.2009-12-31T00:00:00Z.P1DT12H.nc
+    pattern: %mem%
+    nmembers: 5
+
+increment variables: [x]
+
+observations:
+  observers:
+  - obs operator:
+      obs type: Stream
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/enkf.obs4d_12h.nc
+      obs type: Stream
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - lengthscale: 5e6
+
+  - obs operator:
+      obs type: Wind
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/enkf.obs4d_12h.nc
+      obs type: Wind
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - lengthscale: 5e6
+  - obs operator:
+      obs type: WSpeed
+    obs space:
+      obsdatain:
+        obsfile: Data/truth.obs4d_12h.nc
+      obsdataout:
+        obsfile: Data/enkf.obs4d_12h.nc
+      obs type: WSpeed
+    obs error:
+      covariance model: diagonal
+    obs localizations:
+    - lengthscale: 5e6
+
+
+driver:
+  do test prints: true
+  # save prior mean: true
+  # save posterior mean: true
+  # save posterior mean increment: true
+  # save posterior ensemble increments: true
+  # save prior variance: true
+  # save posterior variance: true
+
+local ensemble DA:
+  solver: EAKF
+  inflation:
+    rtpp: 0.5
+    mult: 1.1
+
+output:
+  states:
+  - datadir: Data
+    date: *date_bgn
+    exp: enkf.bgn.%{member}%
+    type: an
+  - datadir: Data
+    date: *date_mid
+    exp: enkf.mid.%{member}%
+    type: an
+  - datadir: Data
+    date: *date_end
+    exp: enkf.end.%{member}%
+    type: an
+
+# output ensemble increments:
+#   datadir: Data
+#   date: *date_mid
+#   exp: enkf.mid.inc.%{member}%
+#   type: an
+
+# output mean prior:
+#   datadir: Data
+#   date: *date_mid
+#   exp: enkf.mid.mean.%{member}%
+#   type: an
+
+# output increment:
+#   datadir: Data
+#   date: *date_mid
+#   exp: enkf.mid.mean.inc.%{member}%
+#   type: an
+
+# output variance prior:
+#   datadir: Data
+#   date: *date_mid
+#   exp: enkf.mid.xbvar.%{member}%
+#   type: an
+
+# output variance posterior:
+#   datadir: Data
+#   date: *date_mid
+#   exp: enkf.mid.xavar.%{member}%
+#   type: an
+
+test:
+  reference filename: testoutput/sequential_enkf.test
+  test output filename: testoutput/sequential_enkf.out
+  float relative tolerance: 5.0e-4

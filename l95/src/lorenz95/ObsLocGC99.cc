@@ -47,6 +47,19 @@ void ObsLocGC99::computeLocalization(const Iterator & iterator, ObsVec1D & locfa
 
 // -----------------------------------------------------------------------------
 
+double ObsLocGC99::computeLocalization(const eckit::geometry::Point3 & point1,
+                                       const eckit::geometry::Point3 & point2) const {
+  double curdist = std::abs(point1[0] - point2[0]);
+  curdist = std::min(curdist, 1.-curdist);
+  if (curdist >= rscale_) {
+    return 0.0;
+  } else {
+    return oops::gc99(curdist/rscale_);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
 void ObsLocGC99::print(std::ostream & os) const {
   os << "Gaspari-Cohn localization with lengthscale=" << rscale_;
 }
