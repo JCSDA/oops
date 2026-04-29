@@ -21,6 +21,7 @@
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
+#include "oops/base/Variables.h"
 #include "oops/util/Timer.h"
 
 namespace util {
@@ -231,7 +232,7 @@ void allGatherv(const eckit::mpi::Comm & comm, std::vector<util::DateTime> &x);
 
 // ------------------------------------------------------------------------------------------------
 
-/// \brief Perform the MPI *all gather* operation on a vector of DateTime objects.
+/// \brief Perform the MPI *all gather* operation on a vector of strings.
 ///
 /// This operation gathers data from all tasks and delivers the combined data to all tasks.
 ///
@@ -241,6 +242,9 @@ void allGatherv(const eckit::mpi::Comm & comm, std::vector<util::DateTime> &x);
 ///   On input, data owned by this task that need to be delivered to all other tasks. On output,
 ///   combined data received from all tasks (concatenated in the order of increasing task ranks).
 void allGatherv(const eckit::mpi::Comm & comm, std::vector<std::string> &x);
+
+/// \brief Perform the MPI *broadcast* operation on an oops::Variables object.
+void broadcast(const eckit::mpi::Comm & comm, Variables & vars, const size_t root);
 
 // ------------------------------------------------------------------------------------------------
 

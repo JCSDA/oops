@@ -23,6 +23,7 @@
 #include "oops/base/Variables.h"
 #include "oops/coupled/UtilsCoupled.h"
 #include "oops/interface/ModelData.h"
+#include "oops/mpi/mpi.h"
 #include "oops/util/gatherPrint.h"
 #include "oops/util/Printable.h"
 
@@ -34,16 +35,18 @@ oops::Variables modelVariables(const std::string modelName,
                                const oops::Variables & defaultModelVars,
                                const eckit::Configuration & config)
 {
-  oops::Variables returnVars;
+  // If config has a variable list for this model, use it. Otherwise, use the default variables.
+  std::string varsKey(modelName + " variables");
+  oops::Variables returnVars = config.has(varsKey) ?
+                  oops::Variables(config.getStringVector(varsKey)) :defaultModelVars;
+  // Optionally include or exclude variables from the model's variable list.
   std::string includeVarsKey(modelName + " include variables");
   if (config.has(includeVarsKey)) {
-    returnVars = oops::Variables(config.getStringVector(includeVarsKey));
-  } else {
-    std::string excludeVarsKey(modelName + " exclude variables");
-    returnVars = defaultModelVars;
-    if (config.has(excludeVarsKey)) {
-        returnVars -= oops::Variables(config.getStringVector(excludeVarsKey));
-    }
+    returnVars += oops::Variables(config.getStringVector(includeVarsKey));
+  }
+  std::string excludeVarsKey(modelName + " exclude variables");
+  if (config.has(excludeVarsKey)) {
+    returnVars -= oops::Variables(config.getStringVector(excludeVarsKey));
   }
   return returnVars;
 }
@@ -113,23 +116,6 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const eckit::Configuration & co
   : geom1_(), geom2_(), vars_(2),
     commPrints_(nullptr), parallel_(config.getBool("parallel", false)), mymodel_(-1)
 {
-  vars_[0] = ::detail::modelVariables(name1(),
-                                      oops::ModelData<MODEL1>::defaultVariables(),
-                                      config);
-  vars_[1] = ::detail::modelVariables(name2(),
-                                      oops::ModelData<MODEL2>::defaultVariables(),
-                                      config);
-  // check that the same variable isn't specified in both models' variables
-  Variables commonvars = vars_[0];
-  commonvars.intersection(vars_[1]);
-  if (commonvars.size() > 0) {
-    std::string errMsg = "Coupled model variable lists have overlap. "
-                          "Use yaml to exclude these variables from one model:\n";
-    for (auto variable : commonvars) {
-        errMsg += variable.name() + "\n";
-    }
-    throw eckit::BadParameter(errMsg, Here());
-  }
   if (parallel_) {
     const int mytask = comm.rank();
     const int ntasks = comm.size();
@@ -147,10 +133,14 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const eckit::Configuration & co
     if (mymodel_ == 1) {
       const eckit::LocalConfiguration conf1(config, name1());
       geom1_ = std::make_shared<Geometry<MODEL1>>(conf1, commModel);
+      ModelData<MODEL1> modeldata1(*geom1_);
+      vars_[0] = ::detail::modelVariables(name1(), modeldata1.defaultVariables(), config);
     }
     if (mymodel_ == 2) {
       const eckit::LocalConfiguration conf2(config, name2());
       geom2_ = std::make_shared<Geometry<MODEL2>>(conf2, commModel);
+      ModelData<MODEL2> modeldata2(*geom2_);
+      vars_[1] = ::detail::modelVariables(name2(), modeldata2.defaultVariables(), config);
     }
 
 // This is creating Nprocs/2 new communicators, each of which pairs two processes:
@@ -161,11 +151,31 @@ GeometryCoupled<MODEL1, MODEL2>::GeometryCoupled(const eckit::Configuration & co
     std::string commPrintStr = "comm_ranks_" + std::to_string(myrank);
     char const *commPrintsName = commPrintStr.c_str();
     commPrints_ = &comm.split(myrank, commPrintsName);
+
+    // Share vars_ between paired tasks so every task knows both models' variables.
+    // In commPrints_: rank 0 = MODEL1 task, rank 1 = MODEL2 task.
+    oops::mpi::broadcast(*commPrints_, vars_[0], 0);
+    oops::mpi::broadcast(*commPrints_, vars_[1], 1);
   } else {
     const eckit::LocalConfiguration conf1(config, name1());
     geom1_ = std::make_shared<Geometry<MODEL1>>(conf1, comm);
     const eckit::LocalConfiguration conf2(config, name2());
     geom2_ = std::make_shared<Geometry<MODEL2>>(conf2, comm);
+    ModelData<MODEL1> modeldata1(*geom1_);
+    ModelData<MODEL2> modeldata2(*geom2_);
+    vars_[0] = ::detail::modelVariables(name1(), modeldata1.defaultVariables(), config);
+    vars_[1] = ::detail::modelVariables(name2(), modeldata2.defaultVariables(), config);
+  }
+  // check that the same variable isn't specified in both models' variables
+  Variables commonvars = vars_[0];
+  commonvars.intersection(vars_[1]);
+  if (commonvars.size() > 0) {
+    std::string errMsg = "Coupled model variable lists have overlap. "
+                          "Use yaml to exclude these variables from one model:\n";
+    for (auto variable : commonvars) {
+      errMsg += variable.name() + "\n";
+    }
+    throw eckit::BadParameter(errMsg, Here());
   }
 }
 

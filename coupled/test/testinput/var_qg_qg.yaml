@@ -13,8 +13,8 @@ cost function:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    QG include variables: [x, z]
-    QG 2 include variables: [q, u, v]
+    QG variables: [x, z]
+    QG 2 variables: [q, u, v]
   background:
     QG:
       date: 2010-01-01T12:00:00Z
@@ -85,8 +85,8 @@ variational:
         nx: 20
         ny: 10
         depths: [4500.0, 5500.0]
-      QG include variables: [x, z]
-      QG 2 include variables: [q, u, v]
+      QG variables: [x, z]
+      QG 2 variables: [q, u, v]
     online diagnostics:
       write increment: true
       increment:
@@ -113,8 +113,8 @@ final:
         nx: 40
         ny: 20
         depths: [4500.0, 5500.0]
-      QG include variables: [x, z]
-      QG 2 include variables: [q, u, v]
+      QG variables: [x, z]
+      QG 2 variables: [q, u, v]
     
     output:
       state component:

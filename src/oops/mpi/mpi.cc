@@ -17,6 +17,7 @@
 #include "atlas/field.h"
 
 #include "eckit/exception/Exceptions.h"
+#include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/FieldSetHelpers.h"
 
@@ -226,6 +227,21 @@ void allGatherv(const eckit::mpi::Comm & comm, std::vector<std::string> &x) {
     encodedX = {};
 
     x = decodeStrings(charBuffer.buffer, lengthBuffer.buffer);
+}
+
+// ------------------------------------------------------------------------------------------------
+
+void broadcast(const eckit::mpi::Comm & comm, Variables & vars, const size_t root) {
+  if (comm.size() == 1) return;
+  std::pair<std::vector<char>, std::vector<size_t>> encoded;
+  if (comm.rank() == root) {
+    encoded = encodeStrings(vars.variables());
+  }
+  broadcastVector(comm, encoded.first,  root);  // packed char array
+  broadcastVector(comm, encoded.second, root);  // string lengths
+  if (comm.rank() != root) {
+    vars = Variables(decodeStrings(encoded.first, encoded.second));
+  }
 }
 
 // ------------------------------------------------------------------------------------------------

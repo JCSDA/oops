@@ -25,11 +25,7 @@ ModelData::ModelData(const Resolution & geometry) {}
 
 // -------------------------------------------------------------------------------------------------
 
-ModelData::~ModelData() {}
-
-// -------------------------------------------------------------------------------------------------
-
-const oops::Variables ModelData::defaultVariables() {
+oops::Variables ModelData::defaultVariables() const {
     return oops::Variables(std::vector<std::string>({"x"}));
 }
 

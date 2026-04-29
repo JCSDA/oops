@@ -21,12 +21,11 @@ namespace qg {
 class ModelData : public util::Printable {
  public:
   static const std::string classname() {return "qg::ModelData";}
-  static const oops::Variables defaultVariables();
-
   explicit ModelData(const GeometryQG &);
-  ~ModelData();
+  ~ModelData() = default;
 
   const eckit::LocalConfiguration modelData() const;
+  oops::Variables defaultVariables() const;
 
  private:
   void print(std::ostream &) const override;

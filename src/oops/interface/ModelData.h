@@ -32,7 +32,7 @@ class ModelData : public  util::Printable,
 
  public:
   static const std::string classname() {return "oops::ModelData";}
-  static const Variables defaultVariables() {return ModelData_::defaultVariables();}
+  Variables defaultVariables() const;
 
   explicit ModelData(const Geometry_ &);
   virtual ~ModelData();
@@ -68,6 +68,16 @@ ModelData<MODEL>::~ModelData() {
   util::Timer timer(classname(), "~ModelData");
   modeldata_.reset();
   Log::trace() << "ModelData<MODEL>::~ModelData done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+Variables ModelData<MODEL>::defaultVariables() const {
+  Log::trace() << "ModelData<MODEL>::defaultVariables starting" << std::endl;
+  util::Timer timer(classname(), "defaultVariables");
+  Log::trace() << "ModelData<MODEL>::defaultVariables done" << std::endl;
+  return modeldata_->defaultVariables();
 }
 
 // -----------------------------------------------------------------------------

@@ -21,12 +21,12 @@ namespace lorenz95 {
 class ModelData : public util::Printable {
  public:
   static const std::string classname() {return "lorenz95::ModelData";}
-  static const oops::Variables defaultVariables();
 
   explicit ModelData(const Resolution &);
-  ~ModelData();
+  ~ModelData() = default;
 
   const eckit::LocalConfiguration modelData() const;
+  oops::Variables defaultVariables() const;
 
  private:
   void print(std::ostream &) const override;
