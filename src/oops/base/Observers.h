@@ -56,7 +56,7 @@ class Observers {
   typedef State<MODEL>                  State_;
   typedef PostProcessor<State_>         PostProc_;
   template <typename DATA> using ObsData_ = ObsDataVector<OBS, DATA>;
-  template <typename DATA> using ObsDataVec_ = std::vector<std::shared_ptr<ObsData_<DATA>>>;
+  template <typename DATA> using ObsDataVec_ = std::vector<ObsData_<DATA>>;
 
  public:
   Observers(const ObsSpaces_ &, const eckit::Configuration &,

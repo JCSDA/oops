@@ -31,8 +31,8 @@ namespace lorenz95 {
 class ObsFilter : public util::Printable {
  public:
   ObsFilter(const ObsTable &, const eckit::Configuration &,
-                  std::shared_ptr<ObsData1D<int> >, std::shared_ptr<ObsData1D<float> >,
-                  const int iteration = 0);
+            ObsData1D<int> &, ObsData1D<float> &,
+            const int iteration = 0);
 
   void preProcess() {}
   void priorFilter(const GomL95 &);
@@ -45,8 +45,8 @@ class ObsFilter : public util::Printable {
   void print(std::ostream & os) const override;
 
   const ObsTable & obsdb_;
-  std::shared_ptr<ObsData1D<int> > qcflags_;   // QC flags
-  std::shared_ptr<ObsData1D<float> > obserr_;  // obs error stddev
+  ObsData1D<int> & qcflags_;   // QC flags
+  ObsData1D<float> & obserr_;  // obs error stddev
   const oops::Variables novars_;
   const oops::ObsVariables noobsvars_;
   const eckit::LocalConfiguration config_;

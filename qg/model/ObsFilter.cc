@@ -19,8 +19,8 @@
 namespace qg {
 // -----------------------------------------------------------------------------
 ObsFilter::ObsFilter(const ObsSpaceQG &, const eckit::Configuration & conf,
-             std::shared_ptr<ObsDataQG<int> >, std::shared_ptr<ObsDataQG<float> >,
-             const int iteration)
+                     ObsDataQG<int> &, ObsDataQG<float> &,
+                     const int iteration)
   : novars_(), config_(conf.getSubConfiguration("obs filtering")),
     saveGeoVaLs_(config_.getBool("save geovals", false))
 {}

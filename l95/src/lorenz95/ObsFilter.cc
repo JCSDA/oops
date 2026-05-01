@@ -21,8 +21,8 @@
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
 ObsFilter::ObsFilter(const ObsTable & obsdb, const eckit::Configuration & conf,
-           std::shared_ptr<ObsData1D<int> > qcflags, std::shared_ptr<ObsData1D<float> > obserr,
-           const int iteration)
+                     ObsData1D<int> & qcflags, ObsData1D<float> & obserr,
+                     const int iteration)
   : obsdb_(obsdb), qcflags_(qcflags), obserr_(obserr), novars_(),
     config_(conf.getSubConfiguration("obs filtering")),
     threshold_(config_.getFloat("threshold", 0.0)),
@@ -42,7 +42,7 @@ void ObsFilter::priorFilter(const GomL95 & gv) {
 
 // -----------------------------------------------------------------------------
 void ObsFilter::postFilter(const GomL95 &, const ObsVec1D & hofx, const ObsVec1D &,
-                                 const ObsDiags1D &) {
+                           const ObsDiags1D &) {
   if (bgCheck_) {
     std::vector<float> yobs;
     obsdb_.getdb("ObsValue", yobs);
@@ -52,11 +52,11 @@ void ObsFilter::postFilter(const GomL95 &, const ObsVec1D & hofx, const ObsVec1D
       if (std::abs(yobs[jj] - hofx[jj]) > threshold_) {
         // inflate obs error variance
         if (inflation_ > 0.0) {
-          (*obserr_)[jj] *= inflation_;
+          obserr_[jj] *= inflation_;
           ++inflate;
         // or reject observation
         } else {
-          (*qcflags_)[jj] = 1;
+          qcflags_[jj] = 1;
           ++ireject;
         }
       }

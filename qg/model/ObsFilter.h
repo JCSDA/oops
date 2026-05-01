@@ -28,7 +28,7 @@ namespace qg {
 class ObsFilter : public util::Printable {
  public:
   ObsFilter(const ObsSpaceQG &, const eckit::Configuration &,
-            std::shared_ptr<ObsDataQG<int> >, std::shared_ptr<ObsDataQG<float> >,
+            ObsDataQG<int> &, ObsDataQG<float> &,
             const int iteration = 0);
 
   void preProcess() {}

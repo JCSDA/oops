@@ -30,16 +30,16 @@ class ObsFilter : public util::Printable,
   typedef ObsDiagnostics<OBS>                 ObsDiags_;
   typedef ObsSpace<OBS>                       ObsSpace_;
   typedef ObsVector<OBS>                      ObsVector_;
-  template <typename DATA> using ObsDataPtr_ = std::shared_ptr<ObsDataVector<OBS, DATA> >;
+  template <typename DATA> using ObsDataVec_ = ObsDataVector<OBS, DATA>;
 
  public:
   ObsFilter(const ObsSpace_ & os, const eckit::Configuration & config,
-            ObsDataPtr_<int> & flags, ObsDataPtr_<float> & obserr,
+            ObsDataVec_<int> & flags, ObsDataVec_<float> & obserr,
             const int iteration = 0) {
     filter_ = std::make_unique<ObsFilter_>(os.obsspace(), config,
-                               flags ? flags->obsdatavectorptr() : nullptr,
-                               obserr ? obserr->obsdatavectorptr() : nullptr,
-                               iteration);
+                                           flags.obsdatavector(),
+                                           obserr.obsdatavector(),
+                                           iteration);
   }
 
   ~ObsFilter() {
