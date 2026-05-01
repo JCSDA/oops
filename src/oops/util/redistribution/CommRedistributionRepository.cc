@@ -14,18 +14,19 @@
 namespace util {
 
 // ------------------------------------------------------------------------------------------------
+namespace {
 // Generate a unique id.
-std::string CommRedistributionRepository::generateKey(const std::string& methodName,
-                                                      const eckit::mpi::Comm& subComm,
-                                                      const eckit::mpi::Comm& parentComm,
-                                                      const atlas::FunctionSpace& subFSpace,
-                                                      const atlas::FunctionSpace& parentFSpace) {
+std::string generateKey(const std::string& methodName,
+                        const eckit::mpi::Comm& subComm,
+                        const eckit::mpi::Comm& parentComm,
+                        const atlas::FunctionSpace& subFSpace,
+                        const atlas::FunctionSpace& parentFSpace) {
   const std::string sep = "_";
   return methodName + sep + subComm.name() + sep + parentComm.name() + sep +
          util::getGridUid(subFSpace) + sep +
          util::getLonLatHash(subFSpace) + util::getLonLatHash(parentFSpace);
 }
-
+}  // namespace
 // ------------------------------------------------------------------------------------------------
 
 const CommRedistribution& CommRedistributionRepository::get(

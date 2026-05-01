@@ -34,12 +34,6 @@ class CommRedistributionRepository {
   CommRedistributionRepository(const CommRedistributionRepository&)            = delete;
   CommRedistributionRepository& operator=(const CommRedistributionRepository&) = delete;
 
-  static std::string generateKey(const std::string& methodName,
-                                 const eckit::mpi::Comm& subComm,
-                                 const eckit::mpi::Comm& parentComm,
-                                 const atlas::FunctionSpace& subFSpace,
-                                 const atlas::FunctionSpace& parentFSpace);
-
   static CommRedistributionRepository& getInstance() {
     static CommRedistributionRepository theInstance;
     return theInstance;
