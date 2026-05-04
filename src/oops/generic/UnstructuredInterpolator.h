@@ -74,6 +74,8 @@ class UnstructuredInterpolator : public atlasbase::Interpolator,
 
   const GeometryData & geom_;
   size_t nout_;
+  double regionalNnFillDistance_ = 0.0;
+  bool enableRegionalCheck_ = true;
 
   // Current triangulation-based algorithm requires the interpolation stencil to contain 3 points,
   // but this could in principle depend on the config if we generalize the algorithm to perform

@@ -76,3 +76,32 @@ Case4_FromRegionalLatLon:
   global interpolator:
     local interpolator type: oops unstructured grid interpolator
   tolerance interpolation: 5e-3
+
+Case5_FromRegionalLatLon_NnFill:
+  source grid:
+    function space: StructuredColumns
+    grid:
+      type: regional
+      nx: 40
+      ny: 40
+      dx: 20000
+      dy: 20000
+      y_numbering: -1
+      lonlat(centre): [60., 2.]
+      projection:
+        type: lambert_conformal_conic
+        longitude0: 60.
+        latitude0: 2.
+    halo: 1
+    partitioner: checkerboard
+  target points:
+    number: *number_target_points
+    longitude bounds: [55., 65.]
+    latitude bounds: [-2., 6.]
+  global interpolator:
+    local interpolator type: oops unstructured grid interpolator
+    regional nn fill distance in km: 200
+  # Tolerance is loosened relative to Case4 because target points outside the domain receive
+  # nearest-neighbor fill (rather than barycentric interpolation), introducing an approximation
+  # error proportional to the distance from the domain edge (~0.01 at the farthest corners).
+  tolerance interpolation: 1e-2

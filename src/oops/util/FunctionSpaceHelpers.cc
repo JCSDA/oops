@@ -31,6 +31,31 @@
 
 namespace util {
 
+bool isRegional(const atlas::FunctionSpace & fspace,
+                const atlas::FieldSet & fields) {
+  if (const auto fs = atlas::functionspace::StructuredColumns(fspace); fs.valid()) {
+    return !fs.grid().domain().global();
+  } else if (const auto fs = atlas::functionspace::NodeColumns(fspace); fs.valid()) {
+    ASSERT(fields.has("owned"));
+    const auto ghost = atlas::array::make_view<int, 1>(fs.ghost());
+    const auto owned = atlas::array::make_view<int, 2>(fields["owned"]);
+    int has_regional_bc = 0;
+    for (int jj = 0; jj < ghost.shape(0); ++jj) {
+      if (ghost(jj) == 0 && owned(jj, 0) == 0) {
+        // A boundary point is not ghost because it's not borrowed from another MPI task,
+        // but it's also not owned by this MPI task.
+        has_regional_bc = 1;
+        break;
+      }
+    }
+    const auto & comm = eckit::mpi::comm(fs.mpi_comm());
+    comm.allReduceInPlace(has_regional_bc, eckit::mpi::max());
+    return (has_regional_bc > 0);
+  } else {
+    ABORT("FunctionSpace type '" + fspace.type() + "' not supported");
+  }
+  return false;
+}
 
 atlas::idx_t getSizeOwned(const atlas::FunctionSpace & fspace) {
   atlas::idx_t size_owned;

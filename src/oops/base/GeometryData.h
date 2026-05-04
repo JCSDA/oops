@@ -7,7 +7,9 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "atlas/field.h"
@@ -41,13 +43,20 @@ class GeometryData {
 
   int closestTask(const double, const double) const;
 
+  /// Returns the task-local index into the FunctionSpace of the globally-nearest
+  /// grid point to (lat, lon). Aborts if the tree is empty or if the nearest point
+  /// is not owned by this MPI rank. It is assumed that the closestTask method will
+  /// have been previously used, so that the call to this method is placed on the
+  /// correct MPI task.
+  /// Note that `radius` is a chord distance in meters.
+  std::optional<int> closestPointWithinRadius(double lat, double lon, double radius) const;
+
   /// Identifies the three model grid points defining the triangle containing (lat,lon).
   ///
   /// Returns true if such a triangle is found; false if not.
   bool containingTriangleAndBarycentricCoords(double lat, double lon,
       std::array<int, 3> & indices, std::array<double, 3> & barycentricCoords) const;
 
-// Accessors
   const atlas::FunctionSpace & functionSpace() const {return fspace_;}
   const atlas::FieldSet & fieldSet() const {return fset_;}
   const eckit::mpi::Comm & comm() const {return comm_;}
@@ -69,8 +78,10 @@ class GeometryData {
   atlas::Mesh mesh_;
   std::vector<bool> firstTriangulationOfQuadsIsDelaunay_;
   const atlas::Geometry earth_;
-  atlas::util::IndexKDTree globalNodeTree_;  // JEDI grid nodes = model cell-centers
-  atlas::util::IndexKDTree localCellCenterTree_;  // JEDI cell centers
+  // JEDI grid nodes = model cell-centers
+  atlas::util::KDTree<std::pair<atlas::idx_t, atlas::idx_t>> globalNodeTree_;
+  // JEDI cell centers
+  atlas::util::IndexKDTree localCellCenterTree_;
 
   // When the FunctionSpace is StructuredColumns, we'll need to map the Mesh indices used in the
   // interpolation stencil computation onto the FunctionSpace indices used to read FieldSet data.

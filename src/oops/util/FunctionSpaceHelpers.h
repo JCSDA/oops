@@ -47,6 +47,8 @@ void executeFunc(const atlas::FunctionSpace & fspace, const Functor & functor) {
   }
 }
 
+bool isRegional(const atlas::FunctionSpace & fspace, const atlas::FieldSet & fields);
+
 atlas::idx_t getSizeOwned(const atlas::FunctionSpace & fspace);
 
 // Counts how many owned points a FunctionSpace has (i.e, ghost(...) == 0).

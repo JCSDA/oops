@@ -69,6 +69,9 @@ UnstructuredInterpolator::UnstructuredInterpolator(const eckit::Configuration & 
   ASSERT(lats_out.size() == lons_out.size());
   nout_ = lats_out.size();
 
+  regionalNnFillDistance_ = config.getDouble("regional nn fill distance in km", 0.0) * 1000.0;
+  enableRegionalCheck_ = config.getBool("regional check enabled", true);
+
   computeUnmaskedInterpMatrix(lats_out, lons_out);
 
   Log::trace() << "UnstructuredInterpolator::UnstructuredInterpolator done" << std::endl;
@@ -329,14 +332,49 @@ void UnstructuredInterpolator::computeUnmaskedInterpMatrix(
         std::vector<std::vector<size_t>>(nout_, std::vector<size_t>(nstencil_)),
         std::vector<std::vector<double>>(nout_, std::vector<double>(nstencil_, 0.0))}));
 
+  // The logic switch on enableRegionalCheck_ enables an "unsafe" mode where the
+  // atlas-based isRegional() call is skipped, thereby not ensuring the regional
+  // nn fill feature is only activated in a regional domain. This is unsafe
+  // because using this feature in a global domain could mask real geometry
+  // construction errors... so ideally it would be disabled.
+  // The rationale for providing the unsafe mode is to temporarily support
+  // models whose atlas geometry setup backing isRegional() may be buggy.
+  // TODO(FH): Remove enableRegionalCheck_ and unsafe mode, by instead ensuring
+  //           all models are able to provide an accurate isRegional()
+  bool enableRegionalNnFill = false;
+  if (enableRegionalCheck_) {
+    const bool isRegional = util::isRegional(geom_.functionSpace(), geom_.fieldSet());
+    enableRegionalNnFill = (isRegional && regionalNnFillDistance_ > 0.0);
+  } else {
+    enableRegionalNnFill = true;
+  }
+
   for (size_t jloc = 0; jloc < nout_; ++jloc) {
     std::array<int, 3> indices{};
     std::array<double, 3> baryCoords{};
     const bool validTriangle = geom_.containingTriangleAndBarycentricCoords(
         lats_out[jloc], lons_out[jloc], indices, baryCoords);
 
-    // Edge case: target point outside of source grid, can occur for local-area models
+    // Edge case: target point outside of source grid, can occur for regional models
     if (!validTriangle) {
+      if (enableRegionalNnFill) {
+        const auto search_result = geom_.closestPointWithinRadius(lats_out[jloc], lons_out[jloc],
+                                                                  regionalNnFillDistance_);
+        if (search_result.has_value()) {
+          // NN extrapolation: full weight on the single nearest source point
+          const int index = search_result.value();
+          auto & interp_is = interp_matrices_.at(unmaskedName_).stencils[jloc];
+          auto & interp_ws = interp_matrices_.at(unmaskedName_).weights[jloc];
+          interp_is[0] = static_cast<size_t>(index);
+          interp_is[1] = static_cast<size_t>(index);
+          interp_is[2] = static_cast<size_t>(index);
+          interp_ws[0] = 1.0;
+          interp_ws[1] = 0.0;
+          interp_ws[2] = 0.0;
+          // targetHasValidStencil[jloc] remains true (as initialized)
+          continue;
+        }
+      }
       interp_matrices_[unmaskedName_].targetHasValidStencil[jloc] = false;
       continue;
     }

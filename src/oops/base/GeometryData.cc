@@ -8,6 +8,7 @@
 #include "oops/base/GeometryData.h"
 
 #include <algorithm>
+#include <utility>
 
 #include "atlas/grid/Distribution.h"
 #include "atlas/grid/Grid.h"
@@ -136,9 +137,26 @@ int GeometryData::closestTask(const double lat, const double lon) const {
   ASSERT(!globalNodeTree_.empty());
   atlas::PointLonLat target(lon, lat);
   target.normalise();
-  const int itask = globalNodeTree_.closestPoint(target).payload();
+  const int itask = globalNodeTree_.closestPoint(target).payload().first;
   ASSERT(itask >= 0 && (size_t)itask < comm_.size());
   return itask;
+}
+
+// -----------------------------------------------------------------------------
+
+std::optional<int> GeometryData::closestPointWithinRadius(const double lat, const double lon,
+    const double radius) const {
+  ASSERT(!globalNodeTree_.empty());
+  ASSERT(radius > 0.0);
+  atlas::PointLonLat target(lon, lat);
+  target.normalise();
+  const auto points = globalNodeTree_.closestPointsWithinRadius(target, radius);
+  if (points.size() > 0) {
+    ASSERT(points[0].payload().first == static_cast<atlas::idx_t>(comm_.rank()));
+    return static_cast<int>(points[0].payload().second);
+  } else {
+    return std::nullopt;
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -312,7 +330,7 @@ bool GeometryData::containingTriangleAndBarycentricCoords(const double lat, cons
   // The most likely explanation for failing to locate the target point is that it lies outside of
   // a regional grid. It is also possible (but unlikely) that the triangle containing the target
   // point is not in the group of triangles checked, i.e., is not one of the 8 closest triangles.
-  // For now, we return false and let the client handle the failure to local the target point.
+  // For now, we return false and let the client handle the failure to locate the target point.
   return success;
 }
 
@@ -335,19 +353,20 @@ void GeometryData::setGlobalTree() {
     return result;
   }();
 
-  // Copy owned points into local buffer
-  std::vector<double> lonlat(2 * nb_owned);
-  size_t counter = 0;
+  // Copy owned points into local buffer:
+  // lon, lat, and task-local index (as double) into FunctionSpace
+  std::vector<double> lonlatidx;
+  lonlatidx.reserve(3 * nb_owned);
   for (atlas::idx_t jj = 0; jj < ghost_view.shape(0); ++jj) {
     if (ghost_view(jj) == 0) {
-      lonlat[2 * counter] = lonlat_view(jj, 0);
-      lonlat[2 * counter + 1] = lonlat_view(jj, 1);
-      ++counter;
+      lonlatidx.emplace_back(lonlat_view(jj, 0));
+      lonlatidx.emplace_back(lonlat_view(jj, 1));
+      lonlatidx.emplace_back(static_cast<double>(jj));
     }
   }
-  ASSERT(counter == nb_owned);
+  ASSERT(lonlatidx.size() == 3 * nb_owned);
 
-  // Collect global grid lats and lons
+  // Collect global grid lats, lons, task-local index
   const size_t nb_tasks = comm_.size();
   std::vector<size_t> sizes(nb_tasks);
   comm_.allGather(nb_owned, sizes.begin(), sizes.end());
@@ -357,21 +376,25 @@ void GeometryData::setGlobalTree() {
     nb_global += sizes[jtask];
   }
 
-  std::vector<double> lonlat_global(2 * nb_global);
-  mpi::allGatherv(comm_, lonlat, lonlat_global);
+  std::vector<double> lonlatidx_global(3 * nb_global);
+  mpi::allGatherv(comm_, lonlatidx, lonlatidx_global);
 
-  // Arrange coordinates and task index for kd-tree
-  std::vector<atlas::PointLonLat> nodes(nb_global);
-  std::vector<int> tasks(nb_global);
-  counter = 0;
+  // Arrange coordinates and {task, task-local index} pair for kd-tree
+  std::vector<atlas::PointLonLat> nodes;
+  std::vector<std::pair<atlas::idx_t, atlas::idx_t>> payloads;
+  nodes.reserve(nb_global);
+  payloads.reserve(nb_global);
+  int counter = 0;
   for (size_t jtask = 0; jtask < nb_tasks; ++jtask) {
     for (size_t jj = 0; jj < sizes[jtask]; ++jj) {
-      nodes[counter] = atlas::PointLonLat(lonlat_global[2 * counter],
-                                          lonlat_global[2 * counter + 1]);
-      tasks[counter] = jtask;
+      nodes.emplace_back(lonlatidx_global[3 * counter], lonlatidx_global[3 * counter + 1]);
+      payloads.emplace_back(static_cast<atlas::idx_t>(jtask),
+                            static_cast<atlas::idx_t>(lonlatidx_global[3 * counter + 2]));
       ++counter;
     }
   }
+  ASSERT(nodes.size() == nb_global);
+  ASSERT(payloads.size() == nb_global);
   ASSERT(counter == nb_global);
 
   // Hacky step:
@@ -402,7 +425,7 @@ void GeometryData::setGlobalTree() {
   }
 
   // Create global kd-tree
-  globalNodeTree_.build(nodes, tasks);
+  globalNodeTree_.build(nodes, payloads);
 }
 
 // -----------------------------------------------------------------------------
