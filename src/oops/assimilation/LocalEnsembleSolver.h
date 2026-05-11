@@ -166,6 +166,13 @@ class LocalEnsembleSolver {
   /// Apply the assimilated mask to a departures vector \p dep - missing values
   /// in the mask will become missing in the departures.
   void applyAssimilatedMask(Departures_ & dep) const { dep.mask(*invVarR_); }
+  /// Apply the assimilated mask to a observations vector \p obs - missing
+  /// values in the mask will become missing in the observations.
+  void applyAssimilatedMask(Observations_ & obs) const {
+    for (size_t jobs = 0; jobs < obs.size(); ++jobs) {
+      obs[jobs].mask((*invVarR_)[jobs]);
+    }
+  }
   /// Apply the non-linear observation operator to the background state \p xx and store the result
   /// in \p yy. If \ref useLinearObserver() returns true, the observation operator is also
   /// linearized about the background state \p xx (cf \ref applyLinearToPerturbations).
@@ -543,6 +550,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
                                    posttrajtl, tmpDeps);
         // Secondly, add this to the ensemble mean in observation space (calculated with the
         // nonlinear obs operator) giving the approximate H(x_i)
+        updateAssimilatedMask(tmpDeps);
         Yb_->setData(jj, tmpDeps);
         obsens[jj] = y_mean_xb;
         obsens[jj] += Yb_->getData(jj);
@@ -608,6 +616,7 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
   }
   // apply assimilated mask to the mean departures
   applyAssimilatedMask(omb_);
+  applyAssimilatedMask(yb_mean);
 
   // return mean H(x)
   return yb_mean;

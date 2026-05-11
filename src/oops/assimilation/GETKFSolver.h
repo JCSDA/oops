@@ -275,6 +275,7 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateSet_ & 
         // Approximate H(x) using linearized model and linearized observer
         this->applyLinearToPerturbations(dx, flength, default_tstep, obsauxinc, moderrinc,
                                       posttl, posttrajtl, tmpDeps);
+        this->updateAssimilatedMask(tmpDeps);
         (this->Yb_)->setData(iens, tmpDeps);
         Observations_ tmpObs(yb_mean);
         tmpObs += (this->Yb_)->getData(iens);
@@ -290,6 +291,7 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateSet_ & 
           }
           this->applyLinearToPerturbations(z_eig, flength, default_tstep, obsauxinc, moderrinc,
                                            posttl, posttrajtl, tmpDeps);
+          this->updateAssimilatedMask(tmpDeps);
           HZb_->setData(ii, tmpDeps);
           Observations_ tmpObs(yb_mean);
           tmpObs += HZb_->getData(ii);
@@ -355,11 +357,18 @@ Observations<OBS> DeterministicGETKF<MODEL, OBS>::computeHofX(const StateSet_ & 
   // Apply the assimilated mask to the H(x) ensemble perturbations and mean
   // departures
   this->applyAssimilatedMask(this->omb_);
+  this->applyAssimilatedMask(yb_mean);
   for (size_t iens = 0; iens < nanal_; ++iens) {
     tmpDeps.zero();
     tmpDeps = (this->HZb_)->getData(iens);
     this->applyAssimilatedMask(tmpDeps);
     (this->HZb_)->setData(iens, tmpDeps);
+    if (iens < nens_) {
+      tmpDeps.zero();
+      tmpDeps = (this->Yb_)->getData(iens);
+      this->applyAssimilatedMask(tmpDeps);
+      (this->Yb_)->setData(iens, tmpDeps);
+    }
   }
 
   return yb_mean;
