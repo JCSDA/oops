@@ -857,7 +857,7 @@ if(BUILD_TESTING)
                     LIBS    oops )
 
   ecbuild_add_test( TARGET  oops_util_parameters
-                    SOURCES test/base/Parameters.cc
+                    SOURCES test/util/Parameters.cc
                     ARGS    "test/testinput/parameters.yaml"
                     ENVIRONMENT VALIDATE_PARAMETERS=1
                     LIBS    oops )

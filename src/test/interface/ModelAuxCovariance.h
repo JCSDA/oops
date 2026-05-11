@@ -25,35 +25,14 @@
 #include "oops/interface/ModelAuxCovariance.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Test.h"
-#include "oops/util/parameters/IgnoreOtherParameters.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
-/// \brief Parameters loaded from the input YAML file and used by this test.
-template <typename MODEL>
-class TestParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
-
- public:
-  /// \brief Group of parameters controlling the tested model's geometry.
-  oops::RequiredParameter<eckit::LocalConfiguration> geometry{"geometry", this};
-  /// \brief Group of parameters controlling the tested implementation of the ModelAuxCovariance
-  /// interface.
-  oops::RequiredParameter<eckit::LocalConfiguration> modelAuxError{"model aux error", this};
-  /// \brief Don't treat the presence of other parameter groups as an error (this makes it
-  /// possible to reuse a single YAML file in tests of implementations of multiple oops interfaces).
-  oops::IgnoreOtherParameters ignoreOthers{this};
-};
-
-// -----------------------------------------------------------------------------
 template <typename MODEL> class ModelAuxCovarianceFixture : private boost::noncopyable {
   typedef oops::Geometry<MODEL>           Geometry_;
   typedef oops::ModelAuxCovariance<MODEL> Covariance_;
-  typedef TestParameters<MODEL>           TestParameters_;
 
  public:
   static const eckit::LocalConfiguration & config() {return getInstance().config_;}
@@ -70,11 +49,9 @@ template <typename MODEL> class ModelAuxCovarianceFixture : private boost::nonco
   }
 
   ModelAuxCovarianceFixture() {
-    TestParameters_ parameters;
-    parameters.validateAndDeserialize(TestEnvironment::config());
-
     config_ = eckit::LocalConfiguration(TestEnvironment::config(), "model aux error");
-    resol_.reset(new Geometry_(parameters.geometry, oops::mpi::world()));
+    eckit::LocalConfiguration geom(TestEnvironment::config(), "geometry");
+    resol_.reset(new Geometry_(geom, oops::mpi::world()));
   }
 
   ~ModelAuxCovarianceFixture() {}

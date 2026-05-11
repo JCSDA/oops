@@ -28,9 +28,6 @@
 #include "oops/interface/ObsOperator.h"
 #include "oops/runs/Test.h"
 #include "oops/util/Expect.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "test/interface/ObsTestsFixture.h"
 #include "test/TestEnvironment.h"
 
@@ -38,76 +35,17 @@ namespace test {
 
 // -----------------------------------------------------------------------------
 
-/// \brief Options used to configure a test simulating observations from a single obs space
-/// using a particular ObsOperator.
-class ObsTypeParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(ObsTypeParameters, Parameters)
-
- public:
-  /// Options used to load GeoVaLs from a file.
-  oops::RequiredParameter<eckit::LocalConfiguration> geovals{"geovals", this};
-  oops::RequiredParameter<eckit::LocalConfiguration> obsop{"obs operator", this};
-  oops::OptionalParameter<eckit::LocalConfiguration> linobsop{"linear obs operator", this};
-  oops::OptionalParameter<eckit::LocalConfiguration> obsbias{"obs bias", this};
-  oops::OptionalParameter<eckit::LocalConfiguration> obserror{"obs error", this};
-  oops::RequiredParameter<eckit::LocalConfiguration> obspace{"obs space", this};
-
-  // One of these parameters must be set.
-  oops::OptionalParameter<std::string> expectConstructorToThrow{
-    "expect constructor to throw exception with message", this};
-  oops::OptionalParameter<std::string> expectSimulateObsToThrow{
-    "expect simulateObs to throw exception with message", this};
-  oops::OptionalParameter<double> tolerance{"tolerance", this};
-
-  // One of these parameters must be set if `tolerance` is.
-  oops::OptionalParameter<std::string> vectorRef{"vector ref", this};
-  oops::OptionalParameter<std::string> normRef{"norm ref", this};
-  oops::OptionalParameter<double> rmsRef{"rms ref", this};
-
- private:
-  // Parameters ignored by this test but used by the LinearObsOperator test. Both tests tend to
-  // use the same YAML files.
-  oops::Parameter<eckit::LocalConfiguration> linearObsOperatorTest{
-    "linear obs operator test", eckit::LocalConfiguration(), this};
-  oops::Parameter<eckit::LocalConfiguration> expectSetTrajectoryToThrow{
-    "expect setTrajectory to throw exception with message", eckit::LocalConfiguration(), this};
-  oops::Parameter<eckit::LocalConfiguration> expectSimulateObsTLToThrow{
-    "expect simulateObsTL to throw exception with message", eckit::LocalConfiguration(), this};
-  oops::Parameter<eckit::LocalConfiguration> expectSimulateObsADToThrow{
-    "expect simulateObsAD to throw exception with message", eckit::LocalConfiguration(), this};
-};
-
-// -----------------------------------------------------------------------------
-
-/// \brief Top-level options taken by the ObsOperator test.
-class TestParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
-
- public:
-  /// Options describing the assimilation time window.
-  oops::RequiredParameter<eckit::LocalConfiguration> timeWindow{"time window", this};
-
-  /// Each element of this list configures an observation space and an operator whose capability
-  /// of simulating observations from this space is to be tested.
-  oops::Parameter<std::vector<ObsTypeParameters>> observations{"observations", {}, this};
-};
-
-// -----------------------------------------------------------------------------
-
 /// \brief tests constructor and print method
 template <typename OBS> void testConstructor() {
   typedef oops::ObsOperator<OBS>             ObsOperator_;
-  typedef ObsTypeParameters                  ObsTypeParameters_;
   typedef ObsTestsFixture<OBS>               Test_;
-  typedef TestParameters                     TestParameters_;
 
-  TestParameters_ testParams;
-  testParams.validateAndDeserialize(TestEnvironment::config());
+  const std::vector<eckit::LocalConfiguration> obsConfs =
+      TestEnvironment::config().getSubConfigurations("observations");
 
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    const ObsTypeParameters_ &obsTypeParams = testParams.observations.value()[jj];
-    const eckit::LocalConfiguration & obsOpConf = obsTypeParams.obsop.value();
-    if (obsTypeParams.expectConstructorToThrow.value() == boost::none) {
+    const eckit::LocalConfiguration obsOpConf(obsConfs[jj], "obs operator");
+    if (!obsConfs[jj].has("expect constructor to throw exception with message")) {
       auto hop = std::make_unique<ObsOperator_>(Test_::obspace()[jj], obsOpConf);
       EXPECT(hop.get());
       oops::Log::info() << "Testing ObsOperator: " << *hop << std::endl;
@@ -115,7 +53,8 @@ template <typename OBS> void testConstructor() {
       EXPECT(!hop.get());
     } else {
       // The constructor is expected to throw an exception containing the specified string.
-      const std::string &expectedMessage = *obsTypeParams.expectConstructorToThrow.value();
+      const std::string expectedMessage =
+          obsConfs[jj].getString("expect constructor to throw exception with message");
       EXPECT_THROWS_MSG(ObsOperator_(Test_::obspace()[jj], obsOpConf),
                         expectedMessage.c_str());
     }
@@ -129,18 +68,15 @@ template <typename OBS> void testSimulateObs() {
   typedef oops::ObsDiagnostics<OBS>    ObsDiags_;
   typedef oops::ObsAuxControl<OBS>     ObsAuxCtrl_;
   typedef oops::ObsOperator<OBS>       ObsOperator_;
-  typedef ObsTypeParameters            ObsTypeParameters_;
   typedef oops::ObsVector<OBS>         ObsVector_;
   typedef ObsTestsFixture<OBS>         Test_;
-  typedef TestParameters               TestParameters_;
 
-  TestParameters_ testParams;
-  testParams.validateAndDeserialize(TestEnvironment::config());
+  const std::vector<eckit::LocalConfiguration> obsConfs =
+      TestEnvironment::config().getSubConfigurations("observations");
+
   for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
-    const ObsTypeParameters_ &obsTypeParams = testParams.observations.value()[jj];
-    const eckit::LocalConfiguration obsConf = obsTypeParams.toConfiguration();
-
-    if (obsTypeParams.expectConstructorToThrow.value() != boost::none)
+    const eckit::Configuration & obsConf = obsConfs[jj];
+    if (obsConf.has("expect constructor to throw exception with message"))
       continue;
 
     // initialize observation operator (set variables requested from the model,
@@ -162,7 +98,7 @@ template <typename OBS> void testSimulateObs() {
     oops::Variables reducedHopvars = ybias.requiredVars();
     hopvars += reducedHopvars;  // the reduced format is derived from the sampled format
     // read geovals from the file (in the sampled format)
-    GeoVaLs_ gval(obsTypeParams.geovals, Test_::obspace()[jj], hopvars);
+    GeoVaLs_ gval(eckit::LocalConfiguration(obsConf, "geovals"), Test_::obspace()[jj], hopvars);
     // convert geovals to the reduced format
     hop.computeReducedVars(reducedHopvars, gval);
 
@@ -179,10 +115,11 @@ template <typename OBS> void testSimulateObs() {
     ObsDiags_ diags(Test_::obspace()[jj], hop.locations(), diagvars);
 
     // call H(x), save result in the output file as @hofx
-    if (obsTypeParams.expectSimulateObsToThrow.value() != boost::none) {
+    if (obsConf.has("expect simulateObs to throw exception with message")) {
       // The simulateObs method is expected to throw an exception
       // containing the specified string.
-      const std::string expectedMessage = *obsTypeParams.expectSimulateObsToThrow.value();
+      const std::string expectedMessage =
+          obsConf.getString("expect simulateObs to throw exception with message");
       EXPECT_THROWS_MSG(hop.simulateObs(gval, hofx, ybias, qc_flags, bias, diags),
                         expectedMessage.c_str());
       continue;
@@ -192,20 +129,20 @@ template <typename OBS> void testSimulateObs() {
     hofx.save("hofx");
     bias.save("ObsBias");
 
-    const double tol = obsTypeParams.tolerance.value().value();
-    if (obsTypeParams.vectorRef.value() != boost::none) {
+    const double tol = obsConf.getDouble("tolerance");
+    if (obsConf.has("vector ref")) {
       // if reference h(x) is saved in file as a vector, read from file
       // and compare the norm of difference to zero
-      ObsVector_ obsref(Test_::obspace()[jj], *obsTypeParams.vectorRef.value());
+      ObsVector_ obsref(Test_::obspace()[jj], obsConf.getString("vector ref"));
       obsref -= hofx;
       const double zz = obsref.rms();
       oops::Log::info() << "Vector difference between reference and computed: " << obsref;
       EXPECT(zz < 100*tol);  //  change tol from percent to actual value.
                              //  tol used in is_close is relative
-    } else if (obsTypeParams.normRef.value() != boost::none) {
+    } else if (obsConf.has("norm ref")) {
       // if reference h(x) is saved in file as a vector, read from file
       // and compare the difference, normalised by the reference values to zero
-      ObsVector_ obsref(Test_::obspace()[jj], *obsTypeParams.normRef.value());
+      ObsVector_ obsref(Test_::obspace()[jj], obsConf.getString("norm ref"));
       obsref -= hofx;
       obsref /= hofx;
       const double zz = obsref.rms();
@@ -216,7 +153,7 @@ template <typename OBS> void testSimulateObs() {
     } else {
       // else compare h(x) norm to the norm from the config
       const double zz = hofx.rms();
-      const double xx = *obsTypeParams.rmsRef.value();
+      const double xx = obsConf.getDouble("rms ref");
       EXPECT(oops::is_close(xx, zz, tol));
     }
   }

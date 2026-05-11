@@ -24,7 +24,6 @@
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
-#include "oops/base/ParameterTraitsVariables.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
 #include "oops/mpi/mpi.h"
@@ -33,78 +32,21 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
-#include "oops/util/parameters/IgnoreOtherParameters.h"
-#include "oops/util/parameters/OptionalParameter.h"
-#include "oops/util/parameters/Parameter.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
 
 // -----------------------------------------------------------------------------
 
-/// Configuration of the state test.
-template <typename MODEL>
-class StateTestParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(StateTestParameters, Parameters)
-
- public:
-  /// Relative tolerance of norm comparisons.
-  oops::RequiredParameter<double> tolerance{"tolerance", this};
-  /// Validity time for states loaded from a file and generated on the fly.
-  oops::RequiredParameter<util::DateTime> date{"date", this};
-
-  /// Configuration of the state loaded from a file.
-  oops::RequiredParameter<eckit::LocalConfiguration> statefile{"statefile", this};
-  /// Expected norm of the state loaded from a file.
-  oops::RequiredParameter<double> normFile{"norm file", this};
-
-  /// Configuration of the state generated on the fly.
-  oops::OptionalParameter<eckit::LocalConfiguration> stateGenerate{"state generate", this};
-  /// Expected norm of the state generated on the fly.
-  ///
-  /// This option must be present if `state generate` is.
-  oops::OptionalParameter<double> normGeneratedState{"norm generated state", this};
-
-  oops::OptionalParameter<eckit::LocalConfiguration> writeReadTest{"write then read test", this};
-
-  /// Flag indicating whether to run the test of the variable change State constructor
-  oops::Parameter<bool> testVarConstructor{"test variable change constructor", true, this};
-
-  /// Variables to pass to the variable change State constructor in the test
-  oops::OptionalParameter<oops::Variables> toVariables{"construct to variables", this};
-};
-
-// -----------------------------------------------------------------------------
-
-/// Top-level test parameters.
-template <typename MODEL>
-class TestParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
-
-  typedef oops::Geometry<MODEL>           Geometry_;
-  typedef StateTestParameters<MODEL>      StateTestParameters_;
-
- public:
-  oops::RequiredParameter<StateTestParameters_> stateTest{"state test", this};
-  oops::RequiredParameter<eckit::LocalConfiguration> geometry{"geometry", this};
-  // The YAML file may also contain options used by other tests; don't treat them as errors.
-  oops::IgnoreOtherParameters ignore{this};
-};
-
-// -----------------------------------------------------------------------------
-
 template <typename MODEL> class StateFixture : private boost::noncopyable {
  public:
-  typedef oops::Geometry<MODEL>      Geometry_;
-  typedef StateTestParameters<MODEL> StateTestParameters_;
+  typedef oops::Geometry<MODEL> Geometry_;
 
-  static const StateTestParameters_ & test()  {return *getInstance().test_;}
-  static const Geometry_            & resol() {return *getInstance().resol_;}
+  static const eckit::LocalConfiguration & test()  {return getInstance().test_;}
+  static const Geometry_                 & resol() {return *getInstance().resol_;}
   static void reset() {
     getInstance().resol_.reset();
-    getInstance().test_.reset();
+    getInstance().test_ = eckit::LocalConfiguration{};
   }
 
  private:
@@ -114,18 +56,15 @@ template <typename MODEL> class StateFixture : private boost::noncopyable {
   }
 
   StateFixture<MODEL>() {
-    TestParameters<MODEL> parameters;
-    parameters.validateAndDeserialize(TestEnvironment::config());
-
-    test_ = std::make_unique<StateTestParameters_>(parameters.stateTest);
-    resol_ = std::make_unique<Geometry_>(parameters.geometry,
-                                         oops::mpi::world(), oops::mpi::myself());
+    test_ = eckit::LocalConfiguration(TestEnvironment::config(), "state test");
+    eckit::LocalConfiguration geom(TestEnvironment::config(), "geometry");
+    resol_ = std::make_unique<Geometry_>(geom, oops::mpi::world(), oops::mpi::myself());
   }
 
   ~StateFixture<MODEL>() {}
 
-  std::unique_ptr<StateTestParameters_> test_;
-  std::unique_ptr<Geometry_>            resol_;
+  eckit::LocalConfiguration  test_;
+  std::unique_ptr<Geometry_> resol_;
 };
 
 // -----------------------------------------------------------------------------
@@ -134,12 +73,13 @@ template <typename MODEL> void testStateConstructors() {
   typedef StateFixture<MODEL>   Test_;
   typedef oops::State<MODEL>    State_;
 
-  const double norm = Test_::test().normFile;
-  const double tol = Test_::test().tolerance;
-  const util::DateTime vt(Test_::test().date);
+  const double norm = Test_::test().getDouble("norm file");
+  const double tol = Test_::test().getDouble("tolerance");
+  const util::DateTime vt(Test_::test().getString("date"));
 
 // Test main constructor
-  std::unique_ptr<State_> xx1(new State_(Test_::resol(), Test_::test().statefile));
+  std::unique_ptr<State_> xx1(new State_(Test_::resol(),
+                                         eckit::LocalConfiguration(Test_::test(), "statefile")));
 
   EXPECT(xx1.get());
   oops::Log::info() << "Printing State from yaml: " << *xx1 << std::endl;
@@ -177,11 +117,11 @@ template <typename MODEL> void testStateConstructors() {
   EXPECT(xx4.variables() == xx1->variables());
 
 // Test State(const Variables &, const State &) constructor (unless told not to)
-  const bool testVarChangeConstructor = Test_::test().testVarConstructor.value();
-  if (testVarChangeConstructor)
-  {
-    EXPECT(Test_::test().toVariables.value() != boost::none);
-    const auto & toVars = Test_::test().toVariables.value().value();
+  const bool testVarChangeConstructor = Test_::test().getBool("test variable change constructor",
+                                                               true);
+  if (testVarChangeConstructor) {
+    EXPECT(Test_::test().has("construct to variables"));
+    const oops::Variables toVars(Test_::test(), "construct to variables");
     EXPECT(toVars.size() > 0);
     State_ xx5(toVars, *xx1);
     EXPECT(xx5.norm() > 0.0);
@@ -201,7 +141,7 @@ template <typename MODEL> void testStateAtlasInterface() {
 
   const oops::Geometry<MODEL> & geom = Test_::resol();
 
-  State_ xx(geom, Test_::test().statefile);
+  State_ xx(geom, eckit::LocalConfiguration(Test_::test(), "statefile"));
   const oops::Variables & vars = xx.variables();
 
   atlas::FieldSet fset{};
@@ -252,15 +192,15 @@ template <typename MODEL> void testStateGeometry() {
   typedef oops::Geometry<MODEL> Geometry_;
   typedef oops::State<MODEL>    State_;
 
-  const double norm = Test_::test().normFile;
-  const double tol = Test_::test().tolerance;
-  const util::DateTime vt(Test_::test().date);
+  const double norm = Test_::test().getDouble("norm file");
+  const double tol = Test_::test().getDouble("tolerance");
 
-  State_ xx1(Test_::resol(), Test_::test().statefile);
+  const eckit::LocalConfiguration statefile(Test_::test(), "statefile");
+  State_ xx1(Test_::resol(), statefile);
 
   // get geometry from xx1 and initialize xx2 (xx2 & xx1 should be the same)
   const Geometry_ & geometry = xx1.geometry();
-  State_ xx2(geometry, Test_::test().statefile);
+  State_ xx2(geometry, statefile);
 
   const double norm2 = xx2.norm();
   EXPECT(oops::is_close(norm2, norm, tol));
@@ -295,16 +235,15 @@ template <typename MODEL> void testStateAnalyticInitialCondition() {
   // from the "geometry" and "state test.state generate" sections of
   // the config file and checks its norm
 
-  if (Test_::test().stateGenerate.value() == boost::none ||
-      Test_::test().normGeneratedState.value() == boost::none) {
+  if (!Test_::test().has("state generate") || !Test_::test().has("norm generated state")) {
     oops::Log::warning() << "Bypassing Analytical Initial Condition Test";
     return;
   }
 
-  const State_ xx(Test_::resol(), *Test_::test().stateGenerate.value());
+  const State_ xx(Test_::resol(), eckit::LocalConfiguration(Test_::test(), "state generate"));
 
-  const double norm = *Test_::test().normGeneratedState.value();
-  const double tol = Test_::test().tolerance;
+  const double norm = Test_::test().getDouble("norm generated state");
+  const double tol = Test_::test().getDouble("tolerance");
 
   EXPECT(oops::is_close(xx.norm(), norm, tol));
 }
@@ -325,15 +264,16 @@ template <typename MODEL> void testStateZeroAndAccumul() {
   typedef StateFixture<MODEL>    Test_;
   typedef oops::State<MODEL>     State_;
 
-  State_ xx(Test_::resol(), Test_::test().statefile);
-  const double tol = Test_::test().tolerance;
+  const eckit::LocalConfiguration statefile(Test_::test(), "statefile");
+  State_ xx(Test_::resol(), statefile);
+  const double tol = Test_::test().getDouble("tolerance");
 
   // Set state xx to zero
   xx.zero();
   EXPECT(xx.norm() == 0.0);
 
   // Set state xx to various multiples of yy
-  const State_ yy(Test_::resol(), Test_::test().statefile);
+  const State_ yy(Test_::resol(), statefile);
   const std::vector<double> mults {3.0, 0.0, -3.0};
   for (const auto & mult : mults) {
     xx.zero();
@@ -342,7 +282,7 @@ template <typename MODEL> void testStateZeroAndAccumul() {
   }
 
   // Ensure that a non-zero state, when acted on with accumul, is not equal to the result
-  State_ zz(Test_::resol(), Test_::test().statefile);
+  State_ zz(Test_::resol(), statefile);
   zz.accumul(3.0, yy);
   EXPECT_NOT(oops::is_close(zz.norm(), yy.norm(), tol, 0, oops::TestVerbosity::SILENT));
 }
@@ -364,8 +304,10 @@ template <typename MODEL> void testStateDateTime() {
   typedef StateFixture<MODEL>    Test_;
   typedef oops::State<MODEL>     State_;
 
+  const eckit::LocalConfiguration statefile(Test_::test(), "statefile");
+
   // Configuration to read initial state
-  State_ xx(Test_::resol(), Test_::test().statefile);
+  State_ xx(Test_::resol(), statefile);
 
   // Update the time by two lots of one hour
   const util::Duration onehour(3600);
@@ -373,7 +315,7 @@ template <typename MODEL> void testStateDateTime() {
   xx.updateTime(onehour);
 
   // Create another state
-  State_ yy(Test_::resol(), Test_::test().statefile);
+  State_ yy(Test_::resol(), statefile);
 
   // Update the time of the second state by two hours
   const util::Duration twohours(7200);
@@ -396,13 +338,15 @@ template <typename MODEL> void testStateSerialize() {
   typedef StateFixture<MODEL>   Test_;
   typedef oops::State<MODEL>    State_;
 
+  const eckit::LocalConfiguration statefile(Test_::test(), "statefile");
+
   // Configuration to read initial state
-  State_ xx(Test_::resol(), Test_::test().statefile);
+  State_ xx(Test_::resol(), statefile);
   const util::Duration tt("PT15H");
   xx.updateTime(tt);
 
 // Create another state
-  State_ yy(Test_::resol(), Test_::test().statefile);
+  State_ yy(Test_::resol(), statefile);
   yy.zero();
   yy.accumul(2.5, xx);
 
@@ -447,9 +391,11 @@ template <typename MODEL> void testStateReadWrite() {
   typedef StateFixture<MODEL>          Test_;
   typedef oops::State<MODEL>           State_;
 
+  const eckit::LocalConfiguration statefile(Test_::test(), "statefile");
+
   // Configuration to read initial state
-  State_ xx(Test_::resol(), Test_::test().statefile);
-  const double tol = Test_::test().tolerance;
+  State_ xx(Test_::resol(), statefile);
+  const double tol = Test_::test().getDouble("tolerance");
 
   // Determine initial state norm
   const double norm = xx.norm();
@@ -458,14 +404,13 @@ template <typename MODEL> void testStateReadWrite() {
   xx.zero();
 
   // Read input file
-  xx.read(Test_::test().statefile.value());
+  xx.read(statefile);
 
   // Check norm has its initial value
   EXPECT(xx.norm() == norm);
 
-  if (Test_::test().writeReadTest.value() != boost::none) {
-    const eckit::LocalConfiguration testconf = Test_::test().toConfiguration();
-    const eckit::LocalConfiguration rwconf(testconf, "write then read test");
+  if (Test_::test().has("write then read test")) {
+    const eckit::LocalConfiguration rwconf(Test_::test(), "write then read test");
     // Modify state
     const double mult = 2.0;
     xx.accumul(mult, xx);

@@ -22,8 +22,6 @@
 #include "oops/runs/Test.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Expect.h"
-#include "oops/util/parameters/Parameters.h"
-#include "oops/util/parameters/RequiredParameter.h"
 
 namespace eckit
 {
@@ -35,31 +33,26 @@ namespace eckit
 namespace test {
 
 // -----------------------------------------------------------------------------------------------
-class TestParameters : public oops::Parameters {
-  OOPS_CONCRETE_PARAMETERS(TestParameters, Parameters)
- public:
-  oops::RequiredParameter<std::vector<util::DateTime>> datetime{"datetime", this};
-  oops::RequiredParameter<std::vector<int>> int_{"int", this};
-  oops::RequiredParameter<std::vector<std::string>> string{"string", this};
-};
-
-// -----------------------------------------------------------------------------------------------
 template <typename T>
-const std::vector<T> & getTestData(const TestParameters &params);
+const std::vector<T> getTestData(const eckit::Configuration & conf);
 
 template <>
-const std::vector<util::DateTime> & getTestData(const TestParameters &params) {
-  return params.datetime;
+const std::vector<util::DateTime> getTestData(const eckit::Configuration & conf) {
+  std::vector<util::DateTime> dates;
+  for (const std::string & sdate : conf.getStringVector("datetime")) {
+     dates.emplace_back(util::DateTime(sdate));
+  }
+  return dates;
 }
 
 template <>
-const std::vector<int> & getTestData(const TestParameters &params) {
-  return params.int_;
+const std::vector<int> getTestData(const eckit::Configuration & conf) {
+  return conf.getIntVector("int");
 }
 
 template <>
-const std::vector<std::string> & getTestData(const TestParameters &params) {
-  return params.string;
+const std::vector<std::string> getTestData(const eckit::Configuration & conf) {
+  return conf.getStringVector("string");
 }
 
 // -----------------------------------------------------------------------------------------------
@@ -68,14 +61,12 @@ void testAllGatherv() {
   const eckit::Configuration &conf = TestEnvironment::config();
   const eckit::mpi::Comm &comm = oops::mpi::world();
 
-  TestParameters localParams;
   const size_t rank = comm.rank();
-  localParams.deserialize(conf.getSubConfiguration("local" + std::to_string(rank)));
-  std::vector<T> values = getTestData<T>(localParams);
+  const eckit::LocalConfiguration localConf(conf, "local" + std::to_string(rank));
+  std::vector<T> values = getTestData<T>(localConf);
 
-  TestParameters globalParams;
-  globalParams.deserialize(conf.getSubConfiguration("global"));
-  const std::vector<T> &expectedResult = getTestData<T>(globalParams);
+  const eckit::LocalConfiguration globalConf(conf, "global");
+  const std::vector<T> &expectedResult = getTestData<T>(globalConf);
 
   oops::mpi::allGatherv(comm, values);
   EXPECT_EQUAL(values, expectedResult);
@@ -96,14 +87,12 @@ CASE("mpi/mpi/allGathervUsingSerialize") {
   const eckit::Configuration &conf = TestEnvironment::config();
   const eckit::mpi::Comm &comm = oops::mpi::world();
 
-  TestParameters localParams;
   const size_t rank = comm.rank();
-  localParams.deserialize(conf.getSubConfiguration("local" + std::to_string(rank)));
-  const std::vector<util::DateTime> &localValues = localParams.datetime;
+  const eckit::LocalConfiguration localConf(conf, "local" + std::to_string(rank));
+  const std::vector<util::DateTime> localValues = getTestData<util::DateTime>(localConf);
 
-  TestParameters globalParams;
-  globalParams.deserialize(conf.getSubConfiguration("global"));
-  const std::vector<util::DateTime> &expectedGlobalValues = globalParams.datetime;
+  const eckit::LocalConfiguration globalConf(conf, "global");
+  const std::vector<util::DateTime> expectedGlobalValues = getTestData<util::DateTime>(globalConf);
 
   size_t numGlobalValues;
   comm.allReduce(localValues.size(), numGlobalValues, eckit::mpi::Operation::SUM);
@@ -153,14 +142,12 @@ CASE("mpi/mpi/gatherSerializable") {
   const eckit::Configuration &conf = TestEnvironment::config();
   const eckit::mpi::Comm &comm = oops::mpi::world();
 
-  TestParameters localParams;
   const size_t rank = comm.rank();
-  localParams.deserialize(conf.getSubConfiguration("local" + std::to_string(rank)));
-  const std::vector<util::DateTime> &localValues = localParams.datetime;
+  const eckit::LocalConfiguration localConf(conf, "local" + std::to_string(rank));
+  const std::vector<util::DateTime> localValues = getTestData<util::DateTime>(localConf);
 
-  TestParameters globalParams;
-  globalParams.deserialize(conf.getSubConfiguration("global"));
-  const std::vector<util::DateTime> &expectedGlobalValues = globalParams.datetime;
+  const eckit::LocalConfiguration globalConf(conf, "global");
+  const std::vector<util::DateTime> expectedGlobalValues = getTestData<util::DateTime>(globalConf);
 
   size_t numGlobalValues;
   comm.allReduce(localValues.size(), numGlobalValues, eckit::mpi::Operation::SUM);
