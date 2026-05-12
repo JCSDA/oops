@@ -171,7 +171,11 @@ void SequentialEnsembleSolver<MODEL, OBS>::measurementUpdate(const IncrementSet_
     std::vector<int> peRecvCount(comm.size());
     std::vector<int> peDispls(comm.size());
     comm.allGather(nobs_local, peRecvCount.begin(), peRecvCount.end());
-    std::exclusive_scan(peRecvCount.begin(), peRecvCount.end(), peDispls.begin(), 0);
+    int sum = 0;
+    for (size_t i = 0; i < peRecvCount.size(); ++i) {
+      peDispls[i] = sum;
+      sum += peRecvCount[i];
+    }
     comm.allGatherv(obOwnerRank_local.begin(), obOwnerRank_local.end(), obOwnerRank.begin(),
                     peRecvCount.data(), peDispls.data());
   }
