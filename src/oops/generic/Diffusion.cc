@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <set>
 #include <utility>
+#include <vector>
 
 #include "atlas/mesh/actions/BuildEdges.h"
 
@@ -319,9 +320,13 @@ Diffusion::Diffusion(const GeometryData & geometryData,
 
 // --------------------------------------------------------------------------------------
 
-void Diffusion::setParameters(const atlas::FieldSet & parameters) {
+void Diffusion::setParameters(const atlas::FieldSet & parameters,
+                              VerticalMethod vtMethod,
+                              int vtImplicitIterations) {
   oops::Log::trace() << "Diffusion::setParameters start" << std::endl;
   util::Timer timer("oops::Diffusion", "setParameters");
+
+  vtMethod_ = vtMethod;
 
   const std::string HZ_SCALES = "hzScales";
   const std::string VT_SCALES = "vtScales";
@@ -389,41 +394,87 @@ void Diffusion::setParameters(const atlas::FieldSet & parameters) {
   // Vertical diffusion parameters (in units of # of levels)
   //-------------------------------------------------------------------------------------
   if (parameters.has(VT_SCALES)) {
-    // calculate the min number of vertical iterations, and the diffusion coefficients
-    double minItr = 0;
     const auto v_vtScales = atlas::array::make_view<double, 2> (parameters[VT_SCALES]);
-    kvdt_ = fs.createField<double>(atlas::option::levels(v_vtScales.shape(1)-1));
-    auto v_kvdt = atlas::array::make_view<double, 2>(kvdt_);
-    for (atlas::idx_t i = 0; i < kvdt_.shape(0); i++) {
-      for (atlas::idx_t level = 0; level < kvdt_.shape(1); level++) {
-        if (v_vtScales(i, level) == 0.0 || v_vtScales(i, level+1) == 0.0) {
-          // one of the nodes is masked out, don't diffuse with it.
-          v_kvdt(i, level) = 0.0;
-        } else {
-          // calculate the diffusion coefficient (not taking into account the number of
-          // iterations.. yet)
-          double s = (v_vtScales(i, level) + v_vtScales(i, level+1)) / 2;
-          v_kvdt(i, level) = s * s;
+    const atlas::idx_t nz     = v_vtScales.shape(1);
+    const atlas::idx_t nIface = nz - 1;
 
-          // calculate the minimum number of iterations needed to be computationally stable
-          // on this PE
-          minItr = std::max(2.0 * s * s, minItr);
+    if (vtMethod_ == VerticalMethod::Explicit) {
+      // calculate the min number of vertical iterations, and the diffusion coefficients
+      double minItr = 0;
+      kvdt_ = fs.createField<double>(atlas::option::levels(nIface));
+      auto v_kvdt = atlas::array::make_view<double, 2>(kvdt_);
+      for (atlas::idx_t i = 0; i < kvdt_.shape(0); i++) {
+        for (atlas::idx_t level = 0; level < kvdt_.shape(1); level++) {
+          if (v_vtScales(i, level) == 0.0 || v_vtScales(i, level+1) == 0.0) {
+            // one of the nodes is masked out, don't diffuse with it.
+            v_kvdt(i, level) = 0.0;
+          } else {
+            // calculate the diffusion coefficient (not taking into account the number of
+            // iterations.. yet)
+            double s = (v_vtScales(i, level) + v_vtScales(i, level+1)) / 2;
+            v_kvdt(i, level) = s * s;
+
+            // calculate the minimum number of iterations needed to be computationally stable
+            // on this PE
+            minItr = std::max(2.0 * s * s, minItr);
+          }
         }
       }
-    }
-    niterVt_ = std::ceil(minItr/2) * 2;  // make sure number of iterations is even
-    // get the global min number of iterations
-    geom_.comm().allReduceInPlace(niterVt_, eckit::mpi::Operation::MAX);
+      niterVt_ = std::ceil(minItr/2) * 2;  // make sure number of iterations is even
+      // get the global min number of iterations
+      geom_.comm().allReduceInPlace(niterVt_, eckit::mpi::Operation::MAX);
 
-    // TODO(Travis) do some error checking to make sure niterVt_ is not too big
-    oops::Log::info() << "Diffusion: vertical iterations: " << niterVt_ << std::endl;
+      // TODO(Travis) do some error checking to make sure niterVt_ is not too big
+      oops::Log::info() << "Diffusion: vertical iterations (explicit): " << niterVt_ << std::endl;
 
-    // adjust the above calculated diffusion coefficients by the final number of
-    // iterations
-    for (atlas::idx_t i = 0; i < kvdt_.shape(0); i++) {
-      for (atlas::idx_t lvl = 0; lvl < kvdt_.shape(1); lvl++) {
-        v_kvdt(i, lvl) *= 1.0 / (2.0 * niterVt_);
+      // adjust the above calculated diffusion coefficients by the final number of
+      // iterations
+      for (atlas::idx_t i = 0; i < kvdt_.shape(0); i++) {
+        for (atlas::idx_t lvl = 0; lvl < kvdt_.shape(1); lvl++) {
+          v_kvdt(i, lvl) *= 1.0 / (2.0 * niterVt_);
+        }
       }
+    } else {
+      // Implicit scheme: build (I - alpha*Laplacian) per column with Neumann BCs
+      // and pre-factorize as LDL^T. See jedi-docs for the Matern-M derivation and
+      // the alpha = s^2 / (2M - 3) formula linking user's length to Daley length.
+      if (vtImplicitIterations < 2 || vtImplicitIterations % 2 != 0) {
+        util::abor1_cpp("Diffusion: implicit vertical iterations must be an even integer >= 2",
+                        __FILE__, __LINE__);
+      }
+      niterVt_ = vtImplicitIterations;
+      const double invC = 1.0 / (2.0 * niterVt_ - 3.0);
+
+      vtImplicitD_       = fs.createField<double>(atlas::option::levels(nz));
+      vtImplicitSubDiag_ = fs.createField<double>(atlas::option::levels(nIface));
+      auto v_D = atlas::array::make_view<double, 2>(vtImplicitD_);
+      auto v_L = atlas::array::make_view<double, 2>(vtImplicitSubDiag_);
+
+      std::vector<double> alpha(nIface);
+      for (atlas::idx_t i = 0; i < v_vtScales.shape(0); i++) {
+        for (atlas::idx_t k = 0; k < nIface; k++) {
+          if (v_vtScales(i, k) == 0.0 || v_vtScales(i, k+1) == 0.0) {
+            alpha[k] = 0.0;  // masked points decouple
+          } else {
+            const double s = (v_vtScales(i, k) + v_vtScales(i, k+1)) / 2.0;
+            alpha[k] = s * s * invC;
+          }
+        }
+
+        v_D(i, 0) = (nIface > 0) ? 1.0 + alpha[0] : 1.0;
+        for (atlas::idx_t k = 1; k < nz; k++) {
+          const double a = -alpha[k-1];
+          const double dk_raw = (k < nz - 1)
+                                ? 1.0 + alpha[k-1] + alpha[k]
+                                : 1.0 + alpha[k-1];
+          const double Lk = a / v_D(i, k-1);
+          v_L(i, k-1) = Lk;
+          v_D(i, k)   = dk_raw - Lk * a;
+        }
+      }
+
+      oops::Log::info() << "Diffusion: vertical iterations (implicit): "
+                        << niterVt_ << std::endl;
     }
   }
   oops::Log::trace() << "Diffusion::setScales end" << std::endl;
@@ -448,7 +499,10 @@ void Diffusion::multiply(atlas::FieldSet &fset, Mode mode) const {
     bool doHz = (mode == Mode::HorizontalOnly || mode == Mode::Split3D) && niterHz_ > 0;
 
     // apply half the vertical diffusion iterations
-    if (doVt) multiplyVtTL(field);
+    if (doVt) {
+      if (vtMethod_ == VerticalMethod::Explicit) multiplyVtExplicitTL(field);
+      else                                       multiplyVtImplicit(field);
+    }
 
     // then all the horizontal diffusion iterations
     if (doHz) {
@@ -457,7 +511,10 @@ void Diffusion::multiply(atlas::FieldSet &fset, Mode mode) const {
     }
 
     // then the other half of the vertical diffusion iterations
-    if (doVt) multiplyVtTL(field);
+    if (doVt) {
+      if (vtMethod_ == VerticalMethod::Explicit) multiplyVtExplicitTL(field);
+      else                                       multiplyVtImplicit(field);
+    }
   }
 
   oops::Log::trace() << "Diffusion::multiply end" << std::endl;
@@ -483,7 +540,10 @@ void Diffusion::multiplySqrtTL(atlas::FieldSet &fset, Mode mode) const {
     bool doHz = (mode == Mode::HorizontalOnly || mode == Mode::Split3D) && niterHz_ > 0;
 
     if (doHz) multiplyHzTL(field);
-    if (doVt) multiplyVtTL(field);
+    if (doVt) {
+      if (vtMethod_ == VerticalMethod::Explicit) multiplyVtExplicitTL(field);
+      else                                       multiplyVtImplicit(field);
+    }
   }
   oops::Log::trace() << "Diffusion::multiplySqrtTL end" << std::endl;
 }
@@ -507,7 +567,10 @@ void Diffusion::multiplySqrtAD(atlas::FieldSet &fset, Mode mode) const {
     bool doVt = (mode == Mode::VerticalOnly || mode == Mode::Split3D) && niterVt_ > 0;
     bool doHz = (mode == Mode::HorizontalOnly || mode == Mode::Split3D) && niterHz_ > 0;
 
-    if (doVt) multiplyVtAD(field);
+    if (doVt) {
+      if (vtMethod_ == VerticalMethod::Explicit) multiplyVtExplicitAD(field);
+      else                                       multiplyVtImplicit(field);
+    }
     if (doHz) multiplyHzAD(field);
   }
   oops::Log::trace() << "Diffusion::multiplySqrtAD end" << std::endl;
@@ -630,7 +693,7 @@ void Diffusion::multiplyHzAD(atlas::Field & field) const {
 
 // --------------------------------------------------------------------------------------
 
-void Diffusion::multiplyVtTL(atlas::Field & field) const {
+void Diffusion::multiplyVtExplicitTL(atlas::Field & field) const {
   if (field.shape(1) <= 1) return;  // early exit for 2D fields
 
   // make sure input field is correct shape
@@ -664,7 +727,7 @@ void Diffusion::multiplyVtTL(atlas::Field & field) const {
 // --------------------------------------------------------------------------------------
 // NOTE: the vertical adjoint code should produce identical answers compared
 // with the TL code above. It's explicitly coded anyway just to be safe
-void Diffusion::multiplyVtAD(atlas::Field & field) const {
+void Diffusion::multiplyVtExplicitAD(atlas::Field & field) const {
   if (field.shape(1) <= 1) return;  // early exit for 2D fields
 
   // make sure input field is correct shape
@@ -694,6 +757,44 @@ void Diffusion::multiplyVtAD(atlas::Field & field) const {
       }
     }
   }
+}
+
+// --------------------------------------------------------------------------------------
+// Apply M/2 solves of the pre-factored A = L D L^T to deliver the square root
+// of the implicit vertical diffusion. The discrete A is SPD by construction, so
+// each solve is exactly self-adjoint and this single routine serves as both
+// square-root TL and AD. See jedi-docs for the derivation.
+void Diffusion::multiplyVtImplicit(atlas::Field & field) const {
+  if (field.shape(1) <= 1) return;  // early exit for 2D fields
+  ASSERT(field.shape(0) == vtImplicitD_.shape(0));
+  ASSERT(field.shape(1) == vtImplicitD_.shape(1));
+  ASSERT(vtImplicitSubDiag_.shape(1) == field.shape(1) - 1);
+
+  field.haloExchange();
+  auto v_field = atlas::array::make_view<double, 2>(field);
+  const auto v_D = atlas::array::make_view<double, 2>(vtImplicitD_);
+  const auto v_L = atlas::array::make_view<double, 2>(vtImplicitSubDiag_);
+
+  const atlas::idx_t nz = field.shape(1);
+
+  for (int itr = 0; itr < niterVt_ / 2; itr++) {
+    for (atlas::idx_t i = 0; i < field.shape(0); i++) {
+      // forward substitution
+      for (atlas::idx_t k = 1; k < nz; k++) {
+        v_field(i, k) -= v_L(i, k-1) * v_field(i, k-1);
+      }
+      // diagonal
+      for (atlas::idx_t k = 0; k < nz; k++) {
+        v_field(i, k) /= v_D(i, k);
+      }
+      // backward substitution
+      for (atlas::idx_t k = nz - 2; k >= 0; k--) {
+        v_field(i, k) -= v_L(i, k) * v_field(i, k+1);
+      }
+    }
+  }
+
+  field.set_dirty(true);
 }
 
 // --------------------------------------------------------------------------------------

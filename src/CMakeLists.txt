@@ -932,6 +932,10 @@ if(BUILD_TESTING)
                     SOURCES test/generic/soar.cc
                     LIBS    oops eckit )
 
+  ecbuild_add_test( TARGET  oops_generic_diffusion
+                    SOURCES test/generic/diffusion.cc
+                    LIBS    oops eckit )
+
   ecbuild_add_test( TARGET  oops_coupled_splitvariables
                     SOURCES test/coupled/SplitVariables.cc
                     LIBS    oops eckit )

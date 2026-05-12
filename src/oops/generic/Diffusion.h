@@ -38,6 +38,14 @@ class Diffusion :  private util::ObjectCounter<Diffusion>  {
     VerticalOnly  ///< Only vertical diffusion is used
   };
 
+  /// The numerical scheme used for vertical diffusion.
+  /// Horizontal always uses the explicit scheme.
+  enum class VerticalMethod {
+    Explicit,  ///< Explicit iterative pseudo-diffusion (Weaver & Courtier 2001). Default.
+    Implicit   ///< Implicit diffusion via per-column Cholesky/LDL^T tridiagonal solves
+               ///  (Mirouze & Weaver 2010). Unconditionally stable; yields Matern-M kernels.
+  };
+
   // derived grid geometry
   struct DerivedGeom;
 
@@ -59,7 +67,12 @@ class Diffusion :  private util::ObjectCounter<Diffusion>  {
   ///   - "hzScales" A 3D or 2D field with the horizontal length scales (units: meters).
   ///                If a 2D field is given the same scales are used on each level.
   ///   - "vtScales" A 3D field with the vertical length scales (units: number of levels)
-  void setParameters(const atlas::FieldSet & parameters);
+  /// @param vtMethod one of VerticalMethod::Explicit (default) or VerticalMethod::Implicit.
+  /// @param vtImplicitIterations number of implicit iterations M (must be even, >= 2).
+  ///        Ignored when vtMethod is Explicit.
+  void setParameters(const atlas::FieldSet & parameters,
+                     VerticalMethod vtMethod = VerticalMethod::Explicit,
+                     int vtImplicitIterations = 4);
 
   /// Perform diffusion smoothing of the input fields.
   /// If you need an operation that is self-adjoint, use `multiplySqrtAD()` and
@@ -84,14 +97,30 @@ class Diffusion :  private util::ObjectCounter<Diffusion>  {
   std::vector<std::vector<double> > khdt_;  // the horizontal diffusion constants (dim[edge][lvl] )
 
   // vertical diffusion parameters
-  int niterVt_ = -1;  // number of iterations for vertical diffusion, or -1 if off
-  atlas::Field kvdt_;  // the vertical diffusion constants
+  int niterVt_ = -1;  // total number of iterations M for vertical diffusion (even), or -1 if off
+  atlas::Field kvdt_;  // the vertical diffusion constants (used by explicit scheme)
 
-  // private methods where the magic happens!
+  // Implicit vertical diffusion state. Only populated when vtMethod_ == Implicit.
+  // The tridiagonal matrix is symmetric positive-definite; we store an LDL^T
+  // factorization per column, precomputed once in setParameters and reused by
+  // every solve. Layout:
+  //   vtImplicitD_         [ngrid, nz]    diagonal entries of D
+  //   vtImplicitSubDiag_   [ngrid, nz-1]  subdiagonal of L (strictly below)
+  VerticalMethod vtMethod_ = VerticalMethod::Explicit;
+  atlas::Field vtImplicitD_;
+  atlas::Field vtImplicitSubDiag_;
+
+  // Square-root building blocks. Each routine applies M/2 iterations (the
+  // "square root" of the full diffusion); multiply() composes two of them
+  // around the horizontal pass to deliver the full M-iteration operator.
   void multiplyHzTL(atlas::Field &) const;
   void multiplyHzAD(atlas::Field &) const;
-  void multiplyVtTL(atlas::Field &) const;
-  void multiplyVtAD(atlas::Field &) const;
+  void multiplyVtExplicitTL(atlas::Field &) const;
+  void multiplyVtExplicitAD(atlas::Field &) const;
+  // Implicit vertical solve is exactly self-adjoint (the discrete tridiagonal
+  // matrix is symmetric by construction), so a single routine serves as both
+  // square-root TL and AD.
+  void multiplyVtImplicit(atlas::Field &) const;
 };
 
 // --------------------------------------------------------------------------------------
