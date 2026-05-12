@@ -13,6 +13,7 @@
 
 #include <Eigen/Dense>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -227,6 +228,95 @@ template <typename OBS> void testLocalize() {
 }
 
 // -----------------------------------------------------------------------------
+/// Test localInverseMultiply routine.
+template <typename OBS> void testLocalInverseMultiply() {
+  typedef ObsTestsFixture<OBS>                 Test_;
+  typedef oops::ObsError<OBS>                  Covar_;
+  typedef oops::ObsVector<OBS>                 ObsVector_;
+
+  std::vector<eckit::LocalConfiguration> conf;
+  TestEnvironment::config().get("observations", conf);
+
+  for (std::size_t jj = 0; jj < Test_::obspace().size(); ++jj) {
+    if (!conf[jj].has("obs error test")) {
+        const std::string name = Test_::obspace()[jj].obsname();
+        oops::Log::info() << name + ": obs error test not found" << std::endl;
+        continue;
+    }
+    const eckit::LocalConfiguration testConf(conf[jj], "obs error test");
+
+    // It is only possible to run this test if the `localize()` function has been
+    // implemented for the obs error class.
+    if (!testConf.getBool("test localization", false)) {
+      continue;
+    }
+
+    const eckit::LocalConfiguration rconf(conf[jj], "obs error");
+    Covar_ R(rconf, Test_::obspace()[jj]);
+
+    // Perform localization.
+    ObsVector_ maskones(Test_::obspace()[jj]);
+    maskones.ones();
+    R.localize(maskones);
+
+    const bool testLocalInverseMultiply = testConf.has("RMS localInverseMultiply");
+    // If testing localInverseMultiply has not been requested, expect that calling
+    // `R.localInverseMultiply()` for an obs error class will throw an exception.
+    // This ensures that the user will not forget to add a reference RMS
+    // if they fill in the `localInverseMultiply()` function for the obs error class.
+    if (!testLocalInverseMultiply) {
+      EXPECT_THROWS(R.localInverseMultiply(Eigen::MatrixXf(1, R.localDim())));
+      continue;
+    }
+
+    const float RMSref = testConf.getFloat("RMS localInverseMultiply");
+    // A negative reference value of RMS indicates that the test should not be performed.
+    // This is useful when dealing with artificial data sets that do not contain the
+    // ObsValue and GsiHofX groups.
+    if (RMSref < 0.0) {
+      continue;
+    }
+
+    // Compute O-B.
+    ObsVector_ omb(Test_::obspace()[jj], "ObsValue");
+    const ObsVector_ bkg(Test_::obspace()[jj], "GsiHofX");
+    omb -= bkg;
+
+    // Obs Error used for masking.
+    const ObsVector_ err(Test_::obspace()[jj], "ObsError");
+
+    // Convert omb into its localized version (local_omb).
+    std::vector<double> vals;
+    omb.maskAndSerialize(err, vals);
+    const Eigen::VectorXd local_omb = Eigen::Map<Eigen::VectorXd>(vals.data(), vals.size());
+
+    // Convert local_omb into an Eigen::MatrixXf.
+    const Eigen::MatrixXf local_omb_f = static_cast<Eigen::MatrixXf>(local_omb.cast<float>());
+
+    // Run localInverseMultiply.
+    const Eigen::MatrixXf LIM = R.localInverseMultiply(local_omb_f.transpose());
+
+    // Expect the result of R^-1 OmB will have a single row and at least one column.
+    EXPECT(LIM.rows() == 1);
+    EXPECT(LIM.cols() > 0);
+
+    // Compute RMS of R^-1 OmB.
+    const Eigen::VectorXf LIM0 = static_cast<Eigen::VectorXf>(LIM.row(0));
+    std::vector<float> LIMvector(LIM0.data(), LIM0.data() + LIM0.rows());
+    oops::mpi::allGatherv(Test_::comm(), LIMvector);
+    EXPECT(LIMvector.size() == err.nobs());
+    const float RMS = std::sqrt(std::inner_product(LIMvector.begin(),
+                                                   LIMvector.end(),
+                                                   LIMvector.begin(),
+                                                   0.0) / static_cast<float>(LIMvector.size()));
+
+    // Compare RMS against reference value.
+    const float RMStol = rconf.getFloat("Obs Error test tolerance", 1e-5);
+    EXPECT(oops::is_close(RMS, RMSref, RMStol));
+  }
+}
+
+// -----------------------------------------------------------------------------
 
 template <typename OBS>
 class ObsErrorCovariance : public oops::Test {
@@ -252,6 +342,8 @@ class ObsErrorCovariance : public oops::Test {
       { testReader<OBS>(); });
     ts.emplace_back(CASE("interface/ObsErrorCovariance/testLocalize")
       { testLocalize<OBS>(); });
+    ts.emplace_back(CASE("interface/ObsErrorCovariance/testLocalInverseMultiply")
+      { testLocalInverseMultiply<OBS>(); });
   }
 
   void clear() const override {
