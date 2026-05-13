@@ -19,9 +19,10 @@ class TimerTree {
   explicit TimerTree(const std::string &);
   ~TimerTree() = default;
   TimerTree * goDown(const std::string &);
-  TimerTree * goUp();
+  TimerTree * goUp() const;
   void addTime(const double);
-  void printTree(std::ostream &, const std::string& prefix = "", bool isLast = true) const;
+  void printTree(std::ostream &, const std::string& prefix = "", const bool isLast = true) const;
+  double time() const;
 
  private:
   std::string name_;

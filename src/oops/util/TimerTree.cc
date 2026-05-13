@@ -5,10 +5,12 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "oops/util/TimerTree.h"
@@ -33,7 +35,7 @@ TimerTree * TimerTree::goDown(const std::string & name) {
 
 // -----------------------------------------------------------------------------
 
-TimerTree * TimerTree::goUp() {
+TimerTree * TimerTree::goUp() const {
   return parent_;
 }
 
@@ -46,20 +48,32 @@ void TimerTree::addTime(const double time) {
 
 // -----------------------------------------------------------------------------
 
-void TimerTree::printTree(std::ostream & os, const std::string & prefix, bool isLast) const {
+double TimerTree::time() const {
+  return time_;
+}
+
+// -----------------------------------------------------------------------------
+
+void TimerTree::printTree(std::ostream & os, const std::string & prefix, const bool isLast) const {
   // Print current node
   os << prefix;
   os << (isLast ? "└── " : "├── ");
   os << name_ << " (" << std::fixed << std::setprecision(2) << time_<< " ms, "
      << calls_ << " calls)" << std::endl;
 
-  // Print children
+  // Print children sorted in descending order of time taken.
   if (!children_.empty()) {
-    auto it = children_.begin();
-    for (size_t i = 0; i < children_.size(); ++i, ++it) {
-      bool childIsLast = (i == children_.size() - 1);
-      std::string childPrefix = prefix + (isLast ? "    " : "│   ");
-      it->second->printTree(os, childPrefix, childIsLast);
+    std::vector<std::pair<std::string, double>> childTimes;
+    childTimes.reserve(children_.size());
+    for (auto it = children_.begin(); it != children_.end(); ++it) {
+      childTimes.emplace_back(it->first, it->second->time());
+    }
+    std::sort(childTimes.begin(), childTimes.end(),
+              [](auto &a, auto &b) {return a.second > b.second;});
+    for (size_t i = 0; i < childTimes.size(); ++i) {
+      const bool childIsLast = (i == childTimes.size() - 1);
+      const std::string childPrefix = prefix + (isLast ? "    " : "│   ");
+      children_.at(childTimes[i].first)->printTree(os, childPrefix, childIsLast);
     }
   }
 }
