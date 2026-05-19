@@ -44,6 +44,11 @@ class ObsVariables : public VariablesBase {
 
   const std::vector<int> & channels() const {return channels_;}
 
+  std::vector<std::string> dimList() const {
+    return channels_.empty() ? std::vector<std::string>{"Location"}
+                             : std::vector<std::string>{"Location", "Channel"};
+  }
+
   void sort();
 
  private:
