@@ -113,6 +113,9 @@ template <typename OBS> void testMultiplies() {
     // RMSE should be equal to the rms that was read from the file
     EXPECT(oops::is_close(R.getRMSE(), obserr.rms(), RMSE_tolerance));
 
+    // update/finalize R from dy_update (((after qc)))
+    R.update(obserr);
+
     // create random vector dy and its copies dy1, dy2
     ObsVector_ dy(Test_::obspace()[jj], "");
     R.randomize(dy);
