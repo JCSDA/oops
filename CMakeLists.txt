@@ -12,7 +12,7 @@
 ################################################################################
 
 cmake_minimum_required( VERSION 3.23 )
-project( oops VERSION 1.10.0 LANGUAGES CXX Fortran )
+project( oops VERSION 1.13.0 LANGUAGES CXX Fortran )
 
 option(OPENMP "Build oops with OpenMP support" ON)
 
