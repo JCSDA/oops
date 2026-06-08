@@ -63,6 +63,7 @@ class GlobalInterpolator : public util::Printable {
   std::vector<std::unique_ptr<atlasbase::Interpolator>> interp_;
   std::vector<int> mytarget_counts_;
   std::vector<int> mylocal_counts_;
+  bool use_sparse_comms_;
 };
 
 

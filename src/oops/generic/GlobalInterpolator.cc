@@ -97,13 +97,57 @@ namespace {
     const auto recvcnt_v = recvdispls_v.back() + recvcounts_v.back();
 
     const auto sendbuf = flatten(senddata);
-    std::vector<double> recvbuf(recvcnt_v);
+    std::vector<T> recvbuf(recvcnt_v);
 
     comm.allToAllv(sendbuf.data(), sendcounts_v.data(), senddispls_v.data(),
                    recvbuf.data(), recvcounts_v.data(), recvdispls_v.data());
 
     const auto recvdata = expand(recvbuf, recvcounts_v);
     return recvdata;
+  }
+
+  template<typename T>
+  std::vector<std::vector<T>> redistributeSparse(
+      const eckit::mpi::Comm& comm,
+      const std::vector<std::vector<T>>& senddata,
+      const std::vector<int>& sendcounts,
+      const std::vector<int>& recvcounts,
+      const int vec)
+  {
+    ASSERT(comm.size() == senddata.size() &&
+           senddata.size() == sendcounts.size() &&
+           sendcounts.size() == recvcounts.size());
+
+    const int nranks = static_cast<int>(comm.size());
+    const auto sendcounts_v = scale(sendcounts, static_cast<int>(vec));
+    ASSERT(hasGivenSizes(senddata, sendcounts_v));
+    const auto recvcounts_v = scale(recvcounts, static_cast<int>(vec));
+
+    // Allocate receive buffers and post non-blocking receives
+    std::vector<std::vector<T>> recvbufs(nranks);
+    std::vector<eckit::mpi::Request> recvreqs;
+    for (int src = 0; src < nranks; ++src) {
+      if (recvcounts_v[src] > 0) {
+        recvbufs[src].resize(recvcounts_v[src]);
+        recvreqs.push_back(comm.iReceive(recvbufs[src].data(), recvcounts_v[src], src, 0));
+      }
+    }
+
+    // Flatten send data and post non-blocking sends
+    std::vector<eckit::mpi::Request> sendreqs;
+    for (int dest = 0; dest < nranks; ++dest) {
+      if (sendcounts_v[dest] > 0) {
+        // senddata[dest] must not be destroyed until corresponding wait,
+        // but that is ensured by the structure of the code that calls wait
+        // just a few lines below.
+        sendreqs.push_back(comm.iSend(senddata[dest].data(), sendcounts_v[dest], dest, 0));
+      }
+    }
+
+    comm.waitAll(recvreqs);
+    comm.waitAll(sendreqs);
+
+    return recvbufs;
   }
 }  // namespace
 
@@ -156,6 +200,17 @@ GlobalInterpolator::GlobalInterpolator(
     mytarget_counts_[i] = mytarget_latlon_by_task[i].size() / 2;
     mylocal_counts_[i] = mylocs_latlon_by_task[i].size() / 2;
   }
+
+  // Compute the global fraction of empty (sender, receiver) pairs to decide comm strategy
+  size_t local_empty = static_cast<size_t>(
+      std::count(mytarget_counts_.begin(), mytarget_counts_.end(), 0));
+  comm_.allReduceInPlace(local_empty, eckit::mpi::sum());
+  const double empty_fraction = static_cast<double>(local_empty)
+                              / static_cast<double>(ntasks * ntasks);
+  // The default value used below is arbitrary and could be updated as performance
+  // knowledge is gained. Ideally the user should not have to control this knob.
+  const double sparse_threshold = config.getDouble("sparse communication threshold", 0.5);
+  use_sparse_comms_ = (empty_fraction >= sparse_threshold);
 
   interp_.resize(ntasks);
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
@@ -221,8 +276,9 @@ void GlobalInterpolator::apply(const atlas::FieldSet & source,
   }
 
   // Gather results across MPI ranks
-  const auto mytarget_interp = redistribute(comm_, mylocal_interp, mylocal_counts_,
-                                            mytarget_counts_, nvars);
+  const auto mytarget_interp = use_sparse_comms_
+      ? redistributeSparse(comm_, mylocal_interp, mylocal_counts_, mytarget_counts_, nvars)
+      : redistribute(comm_, mylocal_interp, mylocal_counts_, mytarget_counts_, nvars);
 
   // Copy data from vector<double> to atlas::FieldSet
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
@@ -284,8 +340,9 @@ void GlobalInterpolator::applyAD(atlas::FieldSet & source,
   }
 
   // (Adjoint of) Gather results across MPI ranks
-  const auto mylocal_interp = redistribute(comm_, mytarget_interp, mytarget_counts_,
-                                           mylocal_counts_, nvars);
+  const auto mylocal_interp = use_sparse_comms_
+      ? redistributeSparse(comm_, mytarget_interp, mytarget_counts_, mylocal_counts_, nvars)
+      : redistribute(comm_, mytarget_interp, mytarget_counts_, mylocal_counts_, nvars);
 
   // (Adjoint of) Interpolate
   for (size_t jtask = 0; jtask < ntasks; ++jtask) {
