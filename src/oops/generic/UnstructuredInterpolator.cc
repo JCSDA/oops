@@ -70,7 +70,6 @@ UnstructuredInterpolator::UnstructuredInterpolator(const eckit::Configuration & 
   nout_ = lats_out.size();
 
   regionalNnFillDistance_ = config.getDouble("regional nn fill distance in km", 0.0) * 1000.0;
-  enableRegionalCheck_ = config.getBool("regional check enabled", true);
 
   computeUnmaskedInterpMatrix(lats_out, lons_out);
 
@@ -332,22 +331,13 @@ void UnstructuredInterpolator::computeUnmaskedInterpMatrix(
         std::vector<std::vector<size_t>>(nout_, std::vector<size_t>(nstencil_)),
         std::vector<std::vector<double>>(nout_, std::vector<double>(nstencil_, 0.0))}));
 
-  // The logic switch on enableRegionalCheck_ enables an "unsafe" mode where the
-  // atlas-based isRegional() call is skipped, thereby not ensuring the regional
-  // nn fill feature is only activated in a regional domain. This is unsafe
-  // because using this feature in a global domain could mask real geometry
-  // construction errors... so ideally it would be disabled.
-  // The rationale for providing the unsafe mode is to temporarily support
-  // models whose atlas geometry setup backing isRegional() may be buggy.
-  // TODO(FH): Remove enableRegionalCheck_ and unsafe mode, by instead ensuring
-  //           all models are able to provide an accurate isRegional()
-  bool enableRegionalNnFill = false;
-  if (enableRegionalCheck_) {
-    const bool isRegional = util::isRegional(geom_.functionSpace(), geom_.fieldSet());
-    enableRegionalNnFill = (isRegional && regionalNnFillDistance_ > 0.0);
-  } else {
-    enableRegionalNnFill = true;
-  }
+  // TODO(FH):
+  // Enable some logic check so that regional NN fill is *only* activated on
+  // regional grids. This will require a robust way of identifying regional
+  // grids, probably by passing a bool from the model's Geometry interface.
+  // Today, this fill capability can be activated on global grids, where it
+  // could mask unintended grid configuration errors.
+  const bool enableRegionalNnFill = (regionalNnFillDistance_ > 0.0);
 
   for (size_t jloc = 0; jloc < nout_; ++jloc) {
     std::array<int, 3> indices{};
