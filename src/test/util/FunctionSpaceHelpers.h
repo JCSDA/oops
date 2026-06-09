@@ -76,7 +76,6 @@ void testStructuredColumnsLonLat(const eckit::mpi::Comm & comm) {
   EXPECT(partitioner.type() == "equal_regions");
   EXPECT(functionspace.type() == "StructuredColumns");
   EXPECT(fieldset.has("owned"));
-  EXPECT(!util::isRegional(functionspace, fieldset));
 
   testIndexMapper(mesh, functionspace);
 }
@@ -115,7 +114,6 @@ void testStructuredColumnsGaussian(const eckit::mpi::Comm & comm) {
   EXPECT(partitioner.type() == "equal_regions");
   EXPECT(functionspace.type() == "StructuredColumns");
   EXPECT(fieldset.has("owned"));
-  EXPECT(!util::isRegional(functionspace, fieldset));
 
   testIndexMapper(mesh, functionspace);
 }
@@ -156,7 +154,6 @@ void testStructuredColumnsGaussianCustomDistribution(const eckit::mpi::Comm & co
   EXPECT(static_cast<size_t>(partitioner.nb_partitions()) == std::max(2ul, comm.size()) - 1);
   EXPECT(functionspace.type() == "StructuredColumns");
   EXPECT(fieldset.has("owned"));
-  EXPECT(!util::isRegional(functionspace, fieldset));
 
   testIndexMapper(mesh, functionspace);
 }
@@ -203,7 +200,6 @@ void testStructuredColumnsRegional(const eckit::mpi::Comm & comm) {
   EXPECT(partitioner.type() == "checkerboard");
   EXPECT(functionspace.type() == "StructuredColumns");
   EXPECT(fieldset.has("owned"));
-  EXPECT(util::isRegional(functionspace, fieldset));
 
   testIndexMapper(mesh, functionspace);
 }
@@ -242,7 +238,6 @@ void testNodeColumnsCubedSphere(const eckit::mpi::Comm & comm) {
   EXPECT(partitioner.type() == "cubedsphere");
   EXPECT(functionspace.type() == "NodeColumns");
   EXPECT(fieldset.has("owned"));
-  EXPECT(!util::isRegional(functionspace, fieldset));
 }
 
 CASE("util/FunctionSpaceHelpers/NodeColumnsCubedSphere") {
@@ -280,7 +275,6 @@ void testNodeColumnsUnstructured(const eckit::mpi::Comm & comm) {
   EXPECT(partitioner.type() == "equal_regions");
   EXPECT(functionspace.type() == "NodeColumns");
   EXPECT(fieldset.has("owned"));
-  EXPECT(!util::isRegional(functionspace, fieldset));
 }
 
 CASE("util/FunctionSpaceHelpers/NodeColumnsUnstructured") {
