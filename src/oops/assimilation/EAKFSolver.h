@@ -34,29 +34,26 @@ class EAKFSolver : public SequentialEnsembleSolver<MODEL, OBS> {
   virtual ~EAKFSolver() = default;
 
  protected:
-  void obsEnsembleUpdate(const Eigen::VectorXf & yb_k,
+  void obsEnsembleUpdate(const Eigen::VectorXd & yb_k,
                          const double omb_k,
                          const double oberr_variance_k,
-                         Eigen::VectorXf & delta_y_k) override;
+                         Eigen::VectorXd & delta_y_k) override;
 };
 
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void EAKFSolver<MODEL, OBS>::obsEnsembleUpdate(const Eigen::VectorXf & yb_k,
+void EAKFSolver<MODEL, OBS>::obsEnsembleUpdate(const Eigen::VectorXd & yb_k,
                                                const double omb_k,
                                                const double oberr_variance_k,
-                                               Eigen::VectorXf & delta_y_k) {
+                                               Eigen::VectorXd & delta_y_k) {
   // Implement a basic EAKF algorithm for updating the observation ensemble
 
   const Eigen::Index N = yb_k.size();
-
-  // cast to double for numerics
-  Eigen::VectorXd yb_d = yb_k.cast<double>();
-  const double yb_mean = yb_d.mean();
+  const double yb_mean = yb_k.mean();
 
   // sample variance (unbiased)
-  const double Pb = (yb_d.array() - yb_mean).square().sum() / (N - 1);
+  const double Pb = (yb_k.array() - yb_mean).square().sum() / (N - 1);
   if (Pb <= 0.0) {
     // hopefully we never get here, but just in case, exit gracefully
     delta_y_k.setZero();

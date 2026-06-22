@@ -83,12 +83,9 @@ template<typename MODEL, typename OBS>
 double ObsLocalization<MODEL, OBS>::computeLocalization(
       const eckit::geometry::Point3 & point1,
       const eckit::geometry::Point3 & point2) const {
-  Log::trace() << "ObsLocalization<OBS>::computeLocalization start" << std::endl;
-  util::Timer timer(name_, "computeLocalization");
-  double val = obsloc_->computeLocalization(point1, point2);
-  Log::trace() << "ObsLocalization<OBS>::computeLocalization done" <<
-  std::endl;
-  return val;
+  // No timer/trace: called O(ngrid * nobs) times by sequential EnKF;
+  // per-call instrumentation dominated wall-clock.
+  return obsloc_->computeLocalization(point1, point2);
 }
 
 // -----------------------------------------------------------------------------

@@ -12,6 +12,7 @@
 #include <cmath>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
@@ -21,9 +22,11 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/StateSet.h"
 
+#include "oops/assimilation/ETKFLinearAlgebra.h"
 #include "oops/assimilation/LocalEnsembleSolver.h"
 
 #include "oops/util/abor1_cpp.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -84,10 +87,10 @@ class SequentialEnsembleSolver : public LocalEnsembleSolver<MODEL, OBS> {
   /// \param oberr_variance_k Observation error variance for the k-th observation
   /// \param delta_y_k Output observation ensemble increment for the k-th observation
   ///                  to be updated in-place by the derived class implementation
-virtual void obsEnsembleUpdate(const Eigen::VectorXf & yb_k,
+virtual void obsEnsembleUpdate(const Eigen::VectorXd & yb_k,
                                const double omb_k,
                                const double oberr_variance_k,
-                               Eigen::VectorXf & delta_y_k) = 0;
+                               Eigen::VectorXd & delta_y_k) = 0;
 };
 
 // -----------------------------------------------------------------------------
@@ -119,8 +122,34 @@ void SequentialEnsembleSolver<MODEL, OBS>::measurementUpdate(const IncrementSet_
   mask.ones();
   this->applyAssimilatedMask(mask);
   Eigen::VectorXd omb = this->omb_.packEigen(mask);
-  Eigen::MatrixXf yb = (this->Yb_)->packEigen(mask);
+  Eigen::MatrixXd yb = (this->Yb_)->packEigen(mask).template cast<double>();
   Eigen::VectorXd invVarR = this->invVarR_->packEigen(mask);
+
+  // Early exit if no observations anywhere — analysis = background, no
+  // inflation. Mirrors LocalEnsembleSolver's `copyLocalIncrement` no-obs
+  // fallback at the global level.
+  const int nobs_local = omb.size();
+  int nobs_global;
+  comm.allReduce(nobs_local, nobs_global, eckit::mpi::sum());
+  if (nobs_global == 0) {
+    Log::info() << "SequentialEnsembleSolver: no observations to assimilate; "
+                << "analysis = background." << std::endl;
+    return;
+  }
+
+  // multiplicative inflation
+  // mult applied as prior inflation by sqrt(mult) on Xa and yb so the
+  // analysis variance scales by mult, matching LETKF semantics.
+  // bkg_pert is left untouched so RTPP below uses the original prior as Xb.
+  const double mult = this->inflopt_.getDouble("mult", 1.0);
+  if (mult <= 0.0) {
+    ABORT("SequentialEnsembleSolver: 'mult' inflation must be > 0");
+  }
+  if (mult != 1.0) {
+    const double sqrtMult = std::sqrt(mult);
+    ana_pert *= sqrtMult;
+    yb *= sqrtMult;
+  }
   std::vector<double> maskVec;  // 1.0 where valid, some other crazy number where masked out
   for (size_t i = 0; i < mask.size(); ++i) {
     std::vector<double> maskVecSub;
@@ -158,9 +187,6 @@ void SequentialEnsembleSolver<MODEL, OBS>::measurementUpdate(const IncrementSet_
   ASSERT(static_cast<Eigen::Index>(locations.size()) == omb.size());
 
   // create a distributed list of which PE owns which observations
-  const int nobs_local = omb.size();
-  int nobs_global;
-  comm.allReduce(nobs_local, nobs_global, eckit::mpi::sum());
   std::vector<int> obOwnerRank(nobs_global);
   {
     // TODO(Travis) change this to a round-robin distribution (or get the indexes
@@ -180,6 +206,31 @@ void SequentialEnsembleSolver<MODEL, OBS>::measurementUpdate(const IncrementSet_
                     peRecvCount.data(), peDispls.data());
   }
 
+  // geometry_.end() returns by value (constructs a GeometryIterator each call).
+  const GeometryIterator_ geomEnd = this->geometry_.end();
+  const size_t nTimes = ana_pert.time_size();
+
+  // Pack ana_pert per gridpoint into Xas; the obs loop below reads/writes
+  // the cache instead of packEigen/setEigen per (obs, gridpoint). Memory
+  // cost is ~one extra IncrementSet (same data, reorganized by gridpoint).
+  // BUT this is much faster than iterating over the geometry every time when
+  // an ob increment needs to be applied to the model state.
+  std::vector<eckit::geometry::Point3> gridPoints;
+  std::vector<Eigen::MatrixXd> Xas;
+  for (GeometryIterator_ geomItr = this->geometry_.begin();
+       geomItr != geomEnd; ++geomItr) {
+    gridPoints.push_back(*geomItr);
+    for (size_t itime = 0; itime < nTimes; ++itime) {
+      Eigen::MatrixXd Xa;
+      ana_pert.packEigen(Xa, geomItr, itime);
+      Xas.emplace_back(std::move(Xa));
+    }
+  }
+  const size_t nGridLocal = gridPoints.size();
+
+  // Per-gridpoint state size is constant within a MODEL, so size beta once.
+  Eigen::VectorXd beta(nGridLocal > 0 ? Xas[0].rows() : 0);
+
   // iterate globally over each observation sequentially
   Eigen::Index nextLocalObIdx = 0;  // next ob on THIS PE to assimilate when it's our turn
   for (Eigen::Index kk = 0; kk < nobs_global; ++kk)  {
@@ -189,8 +240,8 @@ void SequentialEnsembleSolver<MODEL, OBS>::measurementUpdate(const IncrementSet_
 
     // observation prior ensemble and increments, for the current observation
     // (to be calculated by the owner PE and then broadcast to all PEs)
-    Eigen::VectorXf yb_k(yb.rows());
-    Eigen::VectorXf delta_y_k(yb_k.size());
+    Eigen::VectorXd yb_k(yb.rows());
+    Eigen::VectorXd delta_y_k(yb_k.size());
     eckit::geometry::Point3 y_location;
 
     // calculate the observation increment (if PE owns this ob)
@@ -223,68 +274,77 @@ void SequentialEnsembleSolver<MODEL, OBS>::measurementUpdate(const IncrementSet_
     // Explicit recentering is required: yb_k is not guaranteed to have zero mean at
     // this point (verified empirically — omitting the subtraction changes analysis
     // answers in the L95 and QG tests).
-    Eigen::VectorXf yb_k_dev = yb_k.array() - yb_k.mean();
+    Eigen::VectorXd yb_k_dev = yb_k.array() - yb_k.mean();
     double yb_k_dev2 = yb_k_dev.squaredNorm();
 
-    // if there is no spread in the obs ensemble, skip it. otherwise, update the
-    // subsequent obs ensembles and state ensemble
+    // Obs-on-obs feedback. The per-jj update is column-independent in yb,
+    // so the scalar loop is one rank-1 GEMM on the trailing yb block.
     if (yb_k_dev2 > 0.0) {
       // iterate over all unused observation prior ensembles on this PE, to update them.
       // skip the current observation (jj == nextLocalObIdx) on the owning PE since it
       // has already been assimilated and updating it would be wasteful.
       const Eigen::Index jj_start = nextLocalObIdx + (obOwnedByThisPE ? 1 : 0);
-      for (Eigen::Index jj = jj_start; jj < nobs_local; ++jj) {
-        // calculate localization between the two obs
-        double localization = this->obsloc().computeLocalization(locations[jj], y_location);
-
-        // if localization > 0.0, update the observation prior ensemble
-        if (localization > 0.0)  {
-          Eigen::VectorXf yb_j = yb.col(jj);
-          Eigen::VectorXf delta_y_j(delta_y_k.size());
-
-          // calculate regression between the two observation ensembles
-          double beta = yb_k_dev.dot(yb_j) / yb_k_dev2;
-
-          // update the observation prior ensembles, and omb.
-          // ensure mean of the delta_y_j is zero, since omb is updated separately with the mean
-          delta_y_j = localization * beta * delta_y_k;
-          const double delta_mean = delta_y_j.mean();
-          delta_y_j.array() -= delta_mean;
-          yb_j += delta_y_j;
-          yb.col(jj) = yb_j;
-          omb(jj) -= delta_mean;
+      const Eigen::Index nrem = nobs_local - jj_start;
+      if (nrem > 0) {
+        // Clamp localization to >= 0 to match the scalar `if (loc > 0.0)` skip.
+        Eigen::VectorXd locs(nrem);
+        for (Eigen::Index j = 0; j < nrem; ++j) {
+          locs(j) = std::max(0.0,
+              this->obsloc().computeLocalization(locations[jj_start + j], y_location));
         }
+        auto yb_block = yb.middleCols(jj_start, nrem);
+        auto omb_block = omb.segment(jj_start, nrem);
+
+        Eigen::RowVectorXd alphas =
+            locs.transpose().cwiseProduct(yb_k_dev.transpose() * yb_block) / yb_k_dev2;
+
+        const double delta_y_mean = delta_y_k.mean();
+        const Eigen::VectorXd delta_y_k_dem = delta_y_k.array() - delta_y_mean;
+        yb_block.noalias() += delta_y_k_dem * alphas;
+        omb_block.noalias() -= delta_y_mean * alphas.transpose();
       }
 
-      // state ensemble update
-      for (GeometryIterator_ geomItr = this->geometry_.begin();
-          geomItr != this->geometry_.end(); ++geomItr)  {
-        // calculate localization between this grid point and the observation
-        // location, and skip update if localization <= 0.0
-        double localization = this->obsloc().computeLocalization(*geomItr, y_location);
+      // state ensemble update on cached Xas
+      for (size_t g = 0; g < nGridLocal; ++g) {
+        const double localization =
+            this->obsloc().computeLocalization(gridPoints[g], y_location);
         if (localization <= 0.0) continue;
-
-        // for each time
-        for (size_t itime = 0; itime < ana_pert.time_size(); ++itime) {
-          // get the local state ensemble at this grid point
-          // TODO(someone) this pack/set is inefficient, and (at least for QG) is
-          // a main source of unnecessary overhead.
-          Eigen::MatrixXd Xa;
-          ana_pert.packEigen(Xa, geomItr, itime);
-
-          // calculate the regression between observation and state ensembles.
-          Eigen::VectorXd beta = (Xa * yb_k_dev.cast<double>()) / yb_k_dev2;
-
-          // update the local state ensemble at this grid point
-          Xa += localization * beta * delta_y_k.transpose().cast<double>();
-          ana_pert.setEigen(Xa, geomItr, itime);
+        for (size_t itime = 0; itime < nTimes; ++itime) {
+          Eigen::MatrixXd & Xa = Xas[g * nTimes + itime];
+          beta.noalias() = (Xa * yb_k_dev) / yb_k_dev2;
+          Xa.noalias() += localization * beta * delta_y_k.transpose();
         }
-      }  // end of state ensemble update
+      }
     }
 
     // increment the observation index
     if (obOwnedByThisPE) {
       ++nextLocalObIdx;
+    }
+  }
+
+  // Inflation and calling setEigen to update the state
+  // Demean Xa before ETKF_posteriorInflation: the cached Xa carries the
+  // analysis mean shift on top of the perturbations, and the helper
+  // assumes zero-mean inputs (without demean it damps the mean shift by
+  // (1-α), matching LETKF where ETKF_updateAnalysis re-adds the mean).
+  const double rtpp = this->inflopt_.getDouble("rtpp", 0.0);
+  const double rtps = this->inflopt_.getDouble("rtps", 0.0);
+  const bool inflate = (rtpp > 0.0 && rtpp <= 1.0) || rtps > 0.0;
+  size_t g = 0;
+  for (GeometryIterator_ geomItr = this->geometry_.begin();
+       geomItr != geomEnd; ++geomItr, ++g) {
+    for (size_t itime = 0; itime < nTimes; ++itime) {
+      Eigen::MatrixXd & Xa = Xas[g * nTimes + itime];
+      if (inflate) {
+        Eigen::MatrixXd Xb;
+        bkg_pert.packEigen(Xb, geomItr, itime);
+        const Eigen::VectorXd xa_mean = Xa.rowwise().mean();
+        Xa.colwise() -= xa_mean;
+        ETKF_posteriorInflation(Xb, Xa, this->inflopt_);
+        Xa.colwise() += xa_mean;
+      }
+      ana_pert.setEigen(Xa, geomItr, itime);
     }
   }
 }

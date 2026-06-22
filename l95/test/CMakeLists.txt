@@ -130,6 +130,7 @@ list( APPEND l95_test_input
   testinput/pseudomodel.yaml
   testinput/pseudomodel_state4d.yaml
   testinput/sequential_enkf.yaml
+  testinput/sequential_enkf_noobs.yaml
   testinput/simplifiedl95_DRGMRESR.yaml
   testinput/simplifiedl95_DRIPCG.yaml
   testinput/simplifiedl95_DRPCG.yaml
@@ -242,6 +243,7 @@ list( APPEND l95_testoutput
   testoutput/makeobspert.test
   testoutput/truth.test
   testoutput/sequential_enkf.test
+  testoutput/sequential_enkf_noobs.test
   testoutput/simplifiedl95_DRGMRESR.test
   testoutput/simplifiedl95_DRIPCG.test
   testoutput/simplifiedl95_DRPCG.test
@@ -954,6 +956,11 @@ ecbuild_add_test( TARGET test_l95_sequential_enkf
                   COMMAND l95_letkf.x
                   ARGS testinput/sequential_enkf.yaml
                   TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+
+ecbuild_add_test( TARGET test_l95_sequential_enkf_noobs
+                  COMMAND l95_letkf.x
+                  ARGS testinput/sequential_enkf_noobs.yaml
+                  TEST_DEPENDS oops_l95_forecast oops_l95_genenspert )
 
 #####################################################################
 # tests with simplified L95
