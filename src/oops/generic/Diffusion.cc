@@ -56,76 +56,81 @@ std::unique_ptr<Diffusion::DerivedGeom> calculateDerivedGeom_NodeColumns(
                     " are running with > 1 PE, until oops is updated to use atlas version"
                     " >= 0.37", __FILE__, __LINE__);
   }
-  ASSERT(mesh.nodes().has_field("xyz"));
-  ASSERT(mesh.cells().has_field("centre"));
-  ASSERT(mesh.edges().size() > 0);
+  // An empty partition -- a rank that owns no mesh nodes, which can happen for
+  // observation-space diffusion on more than one PE -- has no mesh edges. Skip the
+  // edge-geometry build on such ranks, but still run the collective inv_area halo
+  // exchange below so every rank stays in lockstep.
+  if (mesh.edges().size() > 0) {
+    ASSERT(mesh.nodes().has_field("xyz"));
+    ASSERT(mesh.cells().has_field("centre"));
 
-  // process the geometry. (Noting that the atlas mesh nodes are the center of
-  // our model grid cell) For each pair of connecting nodes we need to calculate
-  // the length of the edge connecting two nodes (easy) and the length of the
-  // model grid box side that crosses this edge (not as easy).
-  // ----------------------------------------------------------------------------------------------
+    // process the geometry. (Noting that the atlas mesh nodes are the center of
+    // our model grid cell) For each pair of connecting nodes we need to calculate
+    // the length of the edge connecting two nodes (easy) and the length of the
+    // model grid box side that crosses this edge (not as easy).
+    // ----------------------------------------------------------------------------------------------
 
-  // get the fields we'll need later
-  const auto ghost = atlas::array::make_view<int, 1>(mesh.nodes().ghost());
-  const auto xyz = atlas::array::make_view<double, 2>(mesh.nodes().field("xyz"));
-  const auto centers = atlas::array::make_view<double, 2>(mesh.cells().field("centre"));
+    // get the fields we'll need later
+    const auto ghost = atlas::array::make_view<int, 1>(mesh.nodes().ghost());
+    const auto xyz = atlas::array::make_view<double, 2>(mesh.nodes().field("xyz"));
+    const auto centers = atlas::array::make_view<double, 2>(mesh.cells().field("centre"));
 
-  // get the edge/node/cell connectivity
-  const auto & edge2node = mesh.edges().node_connectivity();
-  const auto & edge2cell = mesh.edges().cell_connectivity();
+    // get the edge/node/cell connectivity
+    const auto & edge2node = mesh.edges().node_connectivity();
+    const auto & edge2cell = mesh.edges().cell_connectivity();
 
-  // calculate the grid parameters we'll need later for diffusion.
-  derivedGeom->edgeGeom.reserve(mesh.edges().size());
-  for (atlas::idx_t i = 0; i < mesh.edges().size(); i++) {
-    // get the node indexes
-    ASSERT(edge2node.cols(i) == 2);
-    const auto nodeA = edge2node(i, 0);
-    const auto nodeB = edge2node(i, 1);
-    ASSERT(nodeA != nodeB);
+    // calculate the grid parameters we'll need later for diffusion.
+    derivedGeom->edgeGeom.reserve(mesh.edges().size());
+    for (atlas::idx_t i = 0; i < mesh.edges().size(); i++) {
+      // get the node indexes
+      ASSERT(edge2node.cols(i) == 2);
+      const auto nodeA = edge2node(i, 0);
+      const auto nodeB = edge2node(i, 1);
+      ASSERT(nodeA != nodeB);
 
-    // If both nodes are in the halo, don't bother adding this edge to the vector
-    if (ghost(nodeA) && ghost(nodeB)) continue;
+      // If both nodes are in the halo, don't bother adding this edge to the vector
+      if (ghost(nodeA) && ghost(nodeB)) continue;
 
-    // create edge in vector. Make sure the lowest value index is first for
-    // reasons that I might care about later, maybe.
-    Diffusion::DerivedGeom::EdgeGeom &edgeGeom = derivedGeom->edgeGeom.emplace_back();
-    edgeGeom.nodeA = nodeA;
-    edgeGeom.nodeB = nodeB;
-    if (edgeGeom.nodeA > edgeGeom.nodeB) {
-      std::swap(edgeGeom.nodeA, edgeGeom.nodeB);
+      // create edge in vector. Make sure the lowest value index is first for
+      // reasons that I might care about later, maybe.
+      Diffusion::DerivedGeom::EdgeGeom &edgeGeom = derivedGeom->edgeGeom.emplace_back();
+      edgeGeom.nodeA = nodeA;
+      edgeGeom.nodeB = nodeB;
+      if (edgeGeom.nodeA > edgeGeom.nodeB) {
+        std::swap(edgeGeom.nodeA, edgeGeom.nodeB);
+      }
+
+      // calculate the length of the mesh edge (i.e. length between two model grid cell centers)
+      const auto & pointA = atlas::Point3(xyz(nodeA, 0), xyz(nodeA, 1), xyz(nodeA, 2));
+      const auto & pointB = atlas::Point3(xyz(nodeB, 0), xyz(nodeB, 1), xyz(nodeB, 2));
+      edgeGeom.edgeLength = atlas::Point3::distance(pointA, pointB);
+
+      // get atlas mesh cell centers, and estimate length of original model grid cell edge
+      // that passes through this atlas edge.
+      ASSERT(edge2cell.cols(i) == 2);
+      const atlas::idx_t cellA = edge2cell(i, 0);
+      const atlas::idx_t cellB = edge2cell(i, 1);
+
+      // NOTE atlas is returning a cell index of -1 if there is only 1 cell. Also,
+      // at one point with some compilers I was getting very large cell indexes
+      // for invalid cells, not sure if that is still a problem
+      if (cellA < 0 || cellB < 0 ||
+          cellA >= mesh.cells().size() || cellB >= mesh.cells().size()) {
+        // There is no second cell center, so just make up a reasonable value
+        edgeGeom.aspectRatio = 1.0;
+      } else {
+        const auto & centerA = atlas::Point3(centers(cellA, 0),
+                                             centers(cellA, 1),
+                                             centers(cellA, 2));
+        const auto & centerB = atlas::Point3(centers(cellB, 0),
+                                             centers(cellB, 1),
+                                             centers(cellB, 2));
+        const double center2centerLen = atlas::Point3::distance(centerA, centerB);
+        edgeGeom.aspectRatio = edgeGeom.edgeLength < MIN_LENGTH ? 0.0 :
+                               center2centerLen / edgeGeom.edgeLength;
+      }
     }
-
-    // calculate the length of the mesh edge (i.e. length between two model grid cell centers)
-    const auto & pointA = atlas::Point3(xyz(nodeA, 0), xyz(nodeA, 1), xyz(nodeA, 2));
-    const auto & pointB = atlas::Point3(xyz(nodeB, 0), xyz(nodeB, 1), xyz(nodeB, 2));
-    edgeGeom.edgeLength = atlas::Point3::distance(pointA, pointB);
-
-    // get atlas mesh cell centers, and estimate length of original model grid cell edge
-    // that passes through this atlas edge.
-    ASSERT(edge2cell.cols(i) == 2);
-    const atlas::idx_t cellA = edge2cell(i, 0);
-    const atlas::idx_t cellB = edge2cell(i, 1);
-
-    // NOTE atlas is returning a cell index of -1 if there is only 1 cell. Also,
-    // at one point with some compilers I was getting very large cell indexes
-    // for invalid cells, not sure if that is still a problem
-    if (cellA < 0 || cellB < 0 ||
-        cellA >= mesh.cells().size() || cellB >= mesh.cells().size()) {
-      // There is no second cell center, so just make up a reasonable value
-      edgeGeom.aspectRatio = 1.0;
-    } else {
-      const auto & centerA = atlas::Point3(centers(cellA, 0),
-                                           centers(cellA, 1),
-                                           centers(cellA, 2));
-      const auto & centerB = atlas::Point3(centers(cellB, 0),
-                                           centers(cellB, 1),
-                                           centers(cellB, 2));
-      const double center2centerLen = atlas::Point3::distance(centerA, centerB);
-      edgeGeom.aspectRatio = edgeGeom.edgeLength < MIN_LENGTH ? 0.0 :
-                             center2centerLen / edgeGeom.edgeLength;
-    }
-  }
+  }  // if (mesh.edges().size() > 0)
 
   // save other grid based constants that are used later. e.g. inv_area (1/area)
   derivedGeom->inv_area = fs.createField<double>();
