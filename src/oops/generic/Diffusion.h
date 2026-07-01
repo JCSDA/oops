@@ -59,6 +59,10 @@ class Diffusion :  private util::ObjectCounter<Diffusion>  {
   /// multiple Diffusion classes
   static std::shared_ptr<DerivedGeom> calculateDerivedGeom(const oops::GeometryData &);
 
+  /// The per-node inverse control-volume area (1/area) used by the finite-volume
+  /// diffusion. Exposed for verification of the area estimate on irregular meshes.
+  const atlas::Field & inverseArea() const;
+
   /// Set the parameters used by the diffusion operator.
   /// TODO(Travis) currently this is only taking the hz and vt scales, but will
   /// be expanded to also take the precalculated diffusion constants /

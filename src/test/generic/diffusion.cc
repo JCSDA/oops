@@ -23,6 +23,8 @@
 #include "atlas/functionspace.h"
 #include "atlas/grid.h"
 #include "atlas/mesh.h"
+#include "atlas/mesh/actions/BuildEdges.h"
+#include "atlas/mesh/actions/BuildXYZField.h"
 #include "atlas/option.h"
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/runtime/Main.h"
@@ -398,6 +400,209 @@ CASE("implicit: very large L (>= nz) remains finite and non-negative") {
                       << " max=" << maxVal << std::endl;
     if (L >= 10.0 * nz) EXPECT(flatness > 0.99);
   }
+}
+
+// -----------------------------------------------------------------------------
+// Horizontal diffusion on an unstructured (NodeColumns) mesh. When no model
+// "area" field is supplied, Diffusion estimates each node's control-volume
+// area from the mesh (median-dual). These tests check that estimate and the
+// resulting kernel.
+// -----------------------------------------------------------------------------
+
+struct UnstructuredGeom {
+  atlas::Grid grid;
+  atlas::grid::Partitioner partitioner;
+  atlas::Mesh mesh;
+  atlas::FunctionSpace functionSpace;
+  atlas::FieldSet fieldset;
+  std::unique_ptr<oops::GeometryData> geom;
+};
+
+// Build a NodeColumns geometry from scattered locations (lonlat laid out
+// [lon0, lat0, lon1, lat1, ...]).
+std::unique_ptr<UnstructuredGeom> makeUnstructuredGeom(const std::vector<double> & lonlat) {
+  auto g = std::make_unique<UnstructuredGeom>();
+  eckit::LocalConfiguration cfg;
+  cfg.set("function space", "NodeColumns");
+  cfg.set("grid.type", "unstructured");
+  cfg.set("grid.xy", lonlat);
+  cfg.set("partitioner", "equal_regions");
+  cfg.set("no point on last task", true);
+  util::setupFunctionSpace(oops::mpi::world(), cfg, g->grid, g->partitioner,
+                           g->mesh, g->functionSpace, g->fieldset);
+  g->geom.reset(new oops::GeometryData(g->functionSpace, g->fieldset,
+                                       true, oops::mpi::world()));
+  return g;
+}
+
+// Hex-packed (triangular) lattice; interior nodes have degree 6.
+std::vector<double> hexLattice(int nx, int ny, double d, double lon0, double lat0) {
+  std::vector<double> p;
+  for (int j = 0; j < ny; ++j) {
+    const double lat = lat0 + j * d * std::sqrt(3.0) / 2.0;
+    const double off = (j % 2) ? d / 2.0 : 0.0;
+    for (int i = 0; i < nx; ++i) { p.push_back(lon0 + off + i * d); p.push_back(lat); }
+  }
+  return p;
+}
+
+// A central hub ringed to degree 8 plus concentric rings, giving the spread of
+// node degrees an irregular correlated-R obs network produces.
+std::vector<double> irregularHub() {
+  std::vector<double> p;
+  auto add = [&](double lon, double lat) { p.push_back(lon); p.push_back(lat); };
+  auto ring = [&](int n, double r, double phase) {
+    for (int k = 0; k < n; ++k) {
+      const double a = 2.0 * M_PI * (k + phase) / n;
+      add(r * std::cos(a), r * std::sin(a));
+    }
+  };
+  add(0.0, 0.0);
+  ring(8, 2.0, 0.00); ring(14, 4.2, 0.30); ring(20, 7.0, 0.15);
+  return p;
+}
+
+// Independent per-node reference: the median-dual area (sum of (cell area)/(n
+// vertices) over incident cells), incident-cell count, incident-edge count, and
+// node xyz, all in the same 3D chordal metric the operator uses.
+struct MeshRef {
+  std::vector<double> dualArea, x, y, z;
+  std::vector<int> cells, edges;
+};
+
+MeshRef analyzeMesh(atlas::Mesh & mesh) {
+  if (!mesh.nodes().has_field("xyz")) atlas::mesh::actions::BuildXYZField()(mesh);
+  try { atlas::mesh::actions::build_edges(mesh); } catch (...) {}
+
+  const int n = mesh.nodes().size();
+  MeshRef r;
+  r.dualArea.assign(n, 0.0); r.cells.assign(n, 0); r.edges.assign(n, 0);
+  r.x.resize(n); r.y.resize(n); r.z.resize(n);
+  const auto xyz = atlas::array::make_view<double, 2>(mesh.nodes().field("xyz"));
+  for (int i = 0; i < n; ++i) { r.x[i] = xyz(i, 0); r.y[i] = xyz(i, 1); r.z[i] = xyz(i, 2); }
+
+  const auto & c2n = mesh.cells().node_connectivity();
+  for (atlas::idx_t c = 0; c < mesh.cells().size(); ++c) {
+    const atlas::idx_t ncols = c2n.cols(c);
+    if (ncols < 3) continue;
+    const atlas::idx_t n0 = c2n(c, 0);
+    double cellArea = 0.0;
+    for (atlas::idx_t t = 1; t + 1 < ncols; ++t) {
+      const atlas::idx_t a = c2n(c, t), b = c2n(c, t + 1);
+      const double ux = r.x[a]-r.x[n0], uy = r.y[a]-r.y[n0], uz = r.z[a]-r.z[n0];
+      const double vx = r.x[b]-r.x[n0], vy = r.y[b]-r.y[n0], vz = r.z[b]-r.z[n0];
+      const double cx = uy*vz-uz*vy, cy = uz*vx-ux*vz, cz = ux*vy-uy*vx;
+      cellArea += 0.5 * std::sqrt(cx*cx + cy*cy + cz*cz);
+    }
+    const double share = cellArea / static_cast<double>(ncols);
+    for (atlas::idx_t v = 0; v < ncols; ++v) {
+      r.dualArea[c2n(c, v)] += share;
+      r.cells[c2n(c, v)]++;
+    }
+  }
+
+  const auto & e2n = mesh.edges().node_connectivity();
+  for (atlas::idx_t e = 0; e < mesh.edges().size(); ++e) {
+    r.edges[e2n(e, 0)]++;
+    r.edges[e2n(e, 1)]++;
+  }
+  return r;
+}
+
+// The per-node area the operator actually computed (no area field supplied).
+std::vector<double> operatorArea(oops::GeometryData & geom) {
+  oops::Diffusion diffusion(geom);
+  const auto v = atlas::array::make_view<double, 1>(diffusion.inverseArea());
+  std::vector<double> a(v.shape(0));
+  for (atlas::idx_t i = 0; i < v.shape(0); ++i) a[i] = (v(i) > 0.0) ? 1.0 / v(i) : 0.0;
+  return a;
+}
+
+CASE("horizontal: estimated node area matches the median-dual reference on an irregular mesh") {
+  auto g = makeUnstructuredGeom(irregularHub());
+  const auto area = operatorArea(*g->geom);
+  auto ref = analyzeMesh(g->mesh);
+
+  int checked = 0, minDeg = 1000, maxDeg = 0;
+  for (size_t i = 0; i < ref.dualArea.size(); ++i) {
+    if (ref.dualArea[i] <= 0.0) continue;
+    // the operator's per-node area equals the independent median-dual reference
+    // regardless of node degree (the area is summed per incident cell, not per edge)
+    EXPECT(std::abs(area[i] - ref.dualArea[i]) < 1e-6 * ref.dualArea[i]);
+    minDeg = std::min(minDeg, ref.cells[i]);
+    maxDeg = std::max(maxDeg, ref.cells[i]);
+    ++checked;
+  }
+  oops::Log::info() << "[hub] nodes checked=" << checked
+                    << " degree range=" << minDeg << ".." << maxDeg << std::endl;
+  EXPECT(checked > 0);
+  EXPECT(minDeg < maxDeg);                   // a real spread of node degrees
+  EXPECT(ref.cells[0] >= 7);                 // hub reaches high degree
+  EXPECT_EQUAL(ref.edges[0], ref.cells[0]);  // and is interior (#edges == #cells)
+}
+
+CASE("horizontal: dirac kernel is stable and matches the Gaussian at a resolved scale") {
+  auto g = makeUnstructuredGeom(hexLattice(21, 21, 2.0, -20.0, -20.0));
+  auto ref = analyzeMesh(g->mesh);
+  const auto fs = g->functionSpace;
+  const int n = static_cast<int>(ref.dualArea.size());
+  auto interior = [&](int i) { return ref.edges[i] == ref.cells[i] && ref.cells[i] == 6; };
+  auto dist = [&](int a, int b) {
+    const double dx = ref.x[a]-ref.x[b], dy = ref.y[a]-ref.y[b], dz = ref.z[a]-ref.z[b];
+    return std::sqrt(dx*dx + dy*dy + dz*dz);
+  };
+
+  // mean interior edge length -> a well-resolved (4-edge) length scale
+  const auto & e2n = g->mesh.edges().node_connectivity();
+  double esum = 0.0; int ecnt = 0;
+  for (atlas::idx_t e = 0; e < g->mesh.edges().size(); ++e) {
+    const int a = e2n(e, 0), b = e2n(e, 1);
+    if (ref.cells[a] == 6 && ref.cells[b] == 6) { esum += dist(a, b); ++ecnt; }
+  }
+  const double L = 4.0 * esum / ecnt;
+
+  // dirac at the interior node nearest the patch centre
+  const auto lonlat = atlas::array::make_view<double, 2>(g->mesh.nodes().lonlat());
+  int p = -1; double best = 1e30;
+  for (int i = 0; i < n; ++i) {
+    if (!interior(i)) continue;
+    const double d = lonlat(i, 0)*lonlat(i, 0) + lonlat(i, 1)*lonlat(i, 1);
+    if (d < best) { best = d; p = i; }
+  }
+  EXPECT(p >= 0);
+
+  oops::Diffusion diffusion(*g->geom);
+  atlas::Field hz = fs.createField<double>(atlas::option::name("hzScales")
+                                           | atlas::option::levels(1));
+  atlas::array::make_view<double, 2>(hz).assign(L);
+  atlas::FieldSet scales; scales.add(hz);
+  diffusion.setParameters(scales);
+
+  atlas::Field fld = fs.createField<double>(atlas::option::name("f") | atlas::option::levels(1));
+  auto v = atlas::array::make_view<double, 2>(fld);
+  v.assign(0.0); v(p, 0) = 1.0;
+  atlas::FieldSet x; x.add(fld);
+  diffusion.multiply(x, oops::Diffusion::Mode::HorizontalOnly);
+  const auto vv = atlas::array::make_view<double, 2>(x.field("f"));
+
+  const double peak = vv(p, 0);
+  EXPECT(peak > 0.0);
+  double maxVal = peak, minVal = peak; int q = -1; double qErr = 1e30;
+  for (int i = 0; i < n; ++i) {
+    if (!interior(i)) continue;
+    maxVal = std::max(maxVal, vv(i, 0));
+    minVal = std::min(minVal, vv(i, 0));
+    const double e = std::abs(dist(p, i) - L);
+    if (i != p && e < qErr) { qErr = e; q = i; }
+  }
+  EXPECT_EQUAL(maxVal, peak);       // peak stays at the dirac
+  EXPECT(minVal >= -0.05 * peak);   // stable: only small explicit ringing, no blow-up
+
+  const double corr = vv(q, 0) / peak;
+  const double target = std::exp(-0.5 * dist(p, q)*dist(p, q) / (L * L));
+  oops::Log::info() << "[dirac] r/L=" << dist(p, q)/L << " corr=" << corr
+                    << " target=" << target << std::endl;
+  EXPECT(std::abs(corr - target) < 0.03);
 }
 
 }  // namespace

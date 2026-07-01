@@ -5,6 +5,7 @@
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
  */
 #include <algorithm>
+#include <cmath>
 #include <set>
 #include <utility>
 #include <vector>
@@ -142,35 +143,46 @@ std::unique_ptr<Diffusion::DerivedGeom> calculateDerivedGeom_NodeColumns(
       v_inv_area(i) = v_area(i, 0) < MIN_LENGTH ? 0.0 : 1.0 / v_area(i, 0);
     }
   } else {
-    // Ugh, the model interface did NOT give us any precomputed area field. Warn
-    // user that diffusion accuracy might be compromised.
+    // No precomputed area field, so estimate each node's control-volume area
+    // from the mesh using the median-dual (barycentric lumped) area: every cell
+    // contributes (cell area)/(n vertices) to each of its nodes. This scales with
+    // node degree and local cell size, and reduces to (edge length)^2 on a
+    // regular quad grid. Owned-node areas are summed from locally-incident cells,
+    // then the halo exchange below copies them onto ghost nodes.
     oops::Log::warning() << "WARNING - oops::Diffusion needs the geometry's area but none is"
-                            " given. Crudely estimating area. Please provide"
-                            " an 'area' field in your geometry." << std::endl;
+                            " given. Estimating it from the mesh (median-dual area)."
+                            " Please provide an 'area' field in your geometry." << std::endl;
 
-    // just get a rough estimate of the the area, it doesn't have to be exact.
-    // For each edge, add its length to the two nodes, take the square of the
-    // average of these distances for all the nodes
-    auto count = fs.createField<int>();
-    auto v_count = atlas::array::make_view<int, 1>(count);
-    v_count.assign(0);
-    v_inv_area.assign(0.0);
-    for (const auto & edge : derivedGeom->edgeGeom) {
-      v_count(edge.nodeA) += 1;
-      v_count(edge.nodeB) += 1;
-      v_inv_area(edge.nodeA) += edge.edgeLength;
-      v_inv_area(edge.nodeB) += edge.edgeLength;
+    auto area = fs.createField<double>();
+    auto v_area = atlas::array::make_view<double, 1>(area);
+    v_area.assign(0.0);
+    const auto xyz = atlas::array::make_view<double, 2>(mesh.nodes().field("xyz"));
+    const auto & cell2node = mesh.cells().node_connectivity();
+    for (atlas::idx_t c = 0; c < mesh.cells().size(); c++) {
+      const atlas::idx_t ncols = cell2node.cols(c);
+      if (ncols < 3) continue;
+      // total cell area by fan-triangulation from the cell's first node
+      const atlas::idx_t n0 = cell2node(c, 0);
+      double cellArea = 0.0;
+      for (atlas::idx_t t = 1; t + 1 < ncols; t++) {
+        const atlas::idx_t n1 = cell2node(c, t);
+        const atlas::idx_t n2 = cell2node(c, t + 1);
+        const double ux = xyz(n1, 0)-xyz(n0, 0), uy = xyz(n1, 1)-xyz(n0, 1);
+        const double uz = xyz(n1, 2)-xyz(n0, 2);
+        const double vx = xyz(n2, 0)-xyz(n0, 0), vy = xyz(n2, 1)-xyz(n0, 1);
+        const double vz = xyz(n2, 2)-xyz(n0, 2);
+        const double cx = uy*vz - uz*vy, cy = uz*vx - ux*vz, cz = ux*vy - uy*vx;
+        cellArea += 0.5 * std::sqrt(cx*cx + cy*cy + cz*cz);
+      }
+      // barycentric lumping: split the cell area equally among its vertices
+      const double share = cellArea / static_cast<double>(ncols);
+      for (atlas::idx_t v = 0; v < ncols; v++) v_area(cell2node(c, v)) += share;
     }
     for (atlas::idx_t i = 0; i < fs.size(); i++) {
-      if (v_count(i) == 0) continue;
-      double v = v_inv_area(i) / v_count(i);
-      v_inv_area(i) = 1.0 / (v * v);
+      v_inv_area(i) = v_area(i) < MIN_LENGTH ? 0.0 : 1.0 / v_area(i);
     }
     derivedGeom->inv_area.set_dirty();
     derivedGeom->inv_area.haloExchange();
-
-    // TODO(Travis) if we stop having models provide area, look into having a
-    // more accurate area estimate.
   }
 
   return derivedGeom;
@@ -309,6 +321,12 @@ std::shared_ptr<Diffusion::DerivedGeom> Diffusion::calculateDerivedGeom(
 
 // --------------------------------------------------------------------------------------
 
+const atlas::Field & Diffusion::inverseArea() const {
+  return derivedGeom_->inv_area;
+}
+
+// --------------------------------------------------------------------------------------
+
 Diffusion::Diffusion(const GeometryData & geometryData,
                      const std::shared_ptr<DerivedGeom> & derivedGeom)
   : geom_(geometryData), derivedGeom_(derivedGeom)
@@ -352,6 +370,7 @@ void Diffusion::setParameters(const atlas::FieldSet & parameters,
     // calculate the actual min number of hz iterations, and the diffusion coefficients (khdt_)
     double minItr = 0;
     const auto v_hzScales = atlas::array::make_view<double, 2>(parameters[HZ_SCALES]);
+    const auto v_inv_area = atlas::array::make_view<double, 1>(derivedGeom_->inv_area);
     khdtLevels_ = v_hzScales.shape(1);
     khdt_.resize(edgeGeom.size(), std::vector<double>(khdtLevels_));
 
@@ -368,14 +387,20 @@ void Diffusion::setParameters(const atlas::FieldSet & parameters,
                             v_hzScales(edgeGeom[e].nodeB, level)) / 2.0;
           khdt_[e][level] = s * s;
 
-          // calculate the minimum number of iterations needed to be computationally stable
-          // on this PE
+          // Min iterations for explicit stability on this PE: the per-step
+          // diffusion number khdt * aspectRatio * inv_area must stay <= 1/4,
+          // which (with khdt = s^2/(2 niter)) gives niter >= 2 s^2 * aspectRatio
+          // * inv_area. Using the true aspectRatio*inv_area rather than assuming
+          // 1/edgeLength^2 keeps it stable on irregular meshes; on a uniform quad
+          // grid the two are equal, so this matches the previous bound.
           const double el = edgeGeom[e].edgeLength;
           if (el <= 0) {
             util::abor1_cpp("oops::Diffusion will not work with grids with degenerate points"
                             " that are not masked out", __FILE__, __LINE__);
           }
-          minItr = std::max(2.0 * (s*s) / (el*el), minItr);
+          const double invAreaMax = std::max(v_inv_area(edgeGeom[e].nodeA),
+                                             v_inv_area(edgeGeom[e].nodeB));
+          minItr = std::max(2.0 * (s*s) * edgeGeom[e].aspectRatio * invAreaMax, minItr);
         }
       }
     }
