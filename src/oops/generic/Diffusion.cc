@@ -10,7 +10,9 @@
 #include <utility>
 #include <vector>
 
+#include "atlas/mesh/actions/BuildCellCentres.h"
 #include "atlas/mesh/actions/BuildEdges.h"
+#include "atlas/mesh/actions/BuildXYZField.h"
 
 #include "oops/base/GeometryData.h"
 #include "oops/generic/Diffusion.h"
@@ -57,14 +59,14 @@ std::unique_ptr<Diffusion::DerivedGeom> calculateDerivedGeom_NodeColumns(
                     " are running with > 1 PE, until oops is updated to use atlas version"
                     " >= 0.37", __FILE__, __LINE__);
   }
+  atlas::mesh::actions::BuildXYZField()(mesh);
+  atlas::mesh::actions::BuildCellCentres()(mesh);
+
   // An empty partition -- a rank that owns no mesh nodes, which can happen for
   // observation-space diffusion on more than one PE -- has no mesh edges. Skip the
   // edge-geometry build on such ranks, but still run the collective inv_area halo
   // exchange below so every rank stays in lockstep.
   if (mesh.edges().size() > 0) {
-    ASSERT(mesh.nodes().has_field("xyz"));
-    ASSERT(mesh.cells().has_field("centre"));
-
     // process the geometry. (Noting that the atlas mesh nodes are the center of
     // our model grid cell) For each pair of connecting nodes we need to calculate
     // the length of the edge connecting two nodes (easy) and the length of the
