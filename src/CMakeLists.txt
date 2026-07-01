@@ -229,6 +229,7 @@ list(
   oops/coupled/ModelAuxCovarianceCoupled.h
   oops/coupled/ModelAuxIncrementCoupled.h
   oops/coupled/ModelCoupled.h
+  oops/coupled/ModelDataCoupled.h
   oops/coupled/StateCoupled.h
   oops/coupled/TraitCoupled.h
   oops/coupled/UtilsCoupled.cc
