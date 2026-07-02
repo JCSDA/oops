@@ -58,9 +58,10 @@ ObsLocalizations<MODEL, OBS>::ObsLocalizations(const eckit::Configuration & conf
   std::vector<eckit::LocalConfiguration> obsconf = config.getSubConfigurations();
   //  loop over ob spaces
   for (size_t jj = 0; jj < obsconf.size(); ++jj) {
+    std::vector<eckit::LocalConfiguration> obsLocConfigs;
     //  retrieve a vector of obs localizations and loop over them
-    std::vector<eckit::LocalConfiguration> obsLocConfigs =
-                        obsconf[jj].getSubConfigurations("obs localizations");
+    if (obsconf[jj].has("obs localizations"))
+      obsLocConfigs = obsconf[jj].getSubConfigurations("obs localizations");
     std::vector<std::unique_ptr<ObsLocalization_> > tmpVector;
     for (size_t oli = 0; oli < obsLocConfigs.size(); ++oli) {
       tmpVector.emplace_back(new ObsLocalization_(obsLocConfigs[oli], obspaces[jj]));
