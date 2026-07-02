@@ -118,6 +118,8 @@ atlas::FieldSet createRandomFieldSet(const eckit::mpi::Comm & comm,
   if (fspace.type() != "PointCloud") {
     globalGhost = fspace.createField<int>(atlas::option::name("ghost")
      | atlas::option::global());
+    auto globalGhostView = atlas::array::make_view<int, 1>(globalGhost);
+    globalGhostView.assign(1);  // initialize to ghost for halo regions
 
     // Gather masks on main processor
     if (fspace.type() == "StructuredColumns") {
