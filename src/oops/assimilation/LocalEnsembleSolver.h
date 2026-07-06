@@ -20,6 +20,8 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
+#include "oops/assimilation/DFSCalculator.h"
 #include "oops/assimilation/SubensembleSplitter.h"
 #include "oops/base/Departures.h"
 #include "oops/base/DeparturesEnsemble.h"
@@ -150,6 +152,7 @@ class LocalEnsembleSolver {
   size_t nsubens_;  ///< no. of subensembles
   std::unique_ptr<oops::SubensembleSplitter> SubensembleSplitter_;  ///< pointer to splitter
 
+  std::unique_ptr<DFSCalculator<OBS>> dfsCalculator_;  /// DFS
   bool useNergerRegulation_;  ///< toggle for Nerger observation localisation regulation
 
   /// Create a mask that excludes observations which will not be assimilated (e.g. failed QC) using
@@ -275,6 +278,23 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
     Log::info() << "RTPS not applied: rtpsCoeff is <=0, rtpsCoeff="
                 << rtps << std::endl;
   }
+
+  // Instantiate the DFS calculator
+  if (config.has("driver")) {
+    const eckit::LocalConfiguration driver(config, "driver");
+    if (driver.getBool("dfs", false)) {
+      const size_t commSize = geometry_.getComm().size();
+      if (commSize != 1) {
+        const std::string e =
+          "DFS estimator is not yet implemented for observations distributed over multiple MPI "
+          "tasks.  Run with one task or set 'driver.dfs' to false.";
+        oops::Log::error() << e << std::endl;
+        throw eckit::NotImplemented(e, Here());
+      }
+      dfsCalculator_ = std::make_unique<DFSCalculator<OBS>>(omb_.nobs());
+    }
+  }
+
   for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
     ObsDataInt_ qcflags(obspaces_[jj], obspaces_[jj].obsvariables());
     qcflags_.push_back(qcflags);
@@ -340,7 +360,6 @@ LocalEnsembleSolver<MODEL, OBS>::computeNergerLocalR(
   return nergerBeta;
 }
 
-
 template <typename MODEL, typename OBS>
 void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
 (const IncrementSet_ & bkg_pert, IncrementSet_ & ana_pert) {
@@ -373,8 +392,20 @@ void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
                             bkg_pert,
                             i,
                             ana_pert);
+    }
   }
-}
+  // Calculate the DFS >>>
+  if (dfsCalculator_) {
+    dfsCalculator_->finalize();
+    Departures_ mask(this->obspaces_);
+    mask.ones();
+    this->applyAssimilatedMask(mask);
+    // DFS per observation block (save in the log file and print on the screen)
+    const auto stats = dfsCalculator_->computeBlockStats(omb_, mask, observersconf_);
+    dfsCalculator_->printBlockStats(stats);
+    // DFS per observation (save in nc file)
+    dfsCalculator_->savePerObservation(omb_, mask, this->obspaces_, "DFS");
+  }
 }
 // -----------------------------------------------------------------------------
 

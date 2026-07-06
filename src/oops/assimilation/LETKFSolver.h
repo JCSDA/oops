@@ -200,6 +200,17 @@ void DeterministicLETKF<MODEL, OBS>::measurementUpdate(const Eigen::VectorXd & l
     this->computeWeights(local_omb_vec, local_Yb_mat_f, R);
   }
   this->applyWeights(bkg_pert, ana_pert, i);
+
+  // Calculate the DFS
+  if (this->dfsCalculator_) {
+    const Eigen::VectorXd local_invVarR_vec = R.local_invVarR();
+
+    this->dfsCalculator_->accumulate(this->omb_,
+                                     locvector,
+                                     local_Yb_mat_f,
+                                     this->Wa_,
+                                     local_invVarR_vec);
+  }
 }
 
 // -----------------------------------------------------------------------------
