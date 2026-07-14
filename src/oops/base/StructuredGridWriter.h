@@ -97,7 +97,7 @@ void writerForPressures(const atlas::FieldSet & fset,
   }
 
   // Define variables
-  int field_dids[3] = {lat_did, lon_did, lev_did};
+  int field_dids[3] = {lev_did, lat_did, lon_did};
   const double missing = util::missingValue<double>();
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     check_nc_code(
@@ -118,11 +118,11 @@ void writerForPressures(const atlas::FieldSet & fset,
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     ASSERT(nz == static_cast<size_t>(fset.field(vars[jvar].name()).shape(1)));
     auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar].name()]);
-    std::vector<double> values(nlats*nlons*nz);
-    for (size_t j = 0; j < nlats; ++j) {
-      for (size_t i = 0; i < nlons; ++i) {
-        for (size_t k = 0; k < nz; ++k) {
-          values[j*nlons*nz + i*nz + k] = varView(j*nlons + i, k);
+    std::vector<double> values(nz*nlats*nlons);
+    for (size_t k = 0; k < nz; ++k) {
+      for (size_t j = 0; j < nlats; ++j) {
+        for (size_t i = 0; i < nlons; ++i) {
+          values[k*nlats*nlons + j*nlons + i] = varView(j*nlons + i, k);
         }
       }
     }
@@ -214,10 +214,10 @@ void writerForLevels(const atlas::FieldSet & fset,
   }
 
   // Define variables
-  int field_dids[3] = {lat_did, lon_did, -1};  // note 3rd element is initialized below
+  int field_dids[3] = {-1, lat_did, lon_did};  // note 1st element is initialized below
   const double missing = util::missingValue<double>();
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
-    field_dids[2] = (isSurfaceVar.at(vars[jvar]) ? sfc_did : lev_did);
+    field_dids[0] = (isSurfaceVar.at(vars[jvar]) ? sfc_did : lev_did);
     check_nc_code(
         nc_def_var(ncid, vars[jvar].name().c_str(), ncvartype, 3, field_dids, &field_vid[jvar]));
     check_nc_code(
@@ -243,11 +243,11 @@ void writerForLevels(const atlas::FieldSet & fset,
   for (size_t jvar = 0; jvar < vars.size(); ++jvar) {
     const size_t var_levs = fset.field(vars[jvar].name()).shape(1);
     auto varView = atlas::array::make_view<double, 2>(fset[vars[jvar].name()]);
-    std::vector<double> values(nlats*nlons*var_levs);
-    for (size_t j = 0; j < nlats; ++j) {
-      for (size_t i = 0; i < nlons; ++i) {
-        for (size_t k = 0; k < var_levs; ++k) {
-          values[j*nlons*var_levs + i*var_levs + k] = varView(j*nlons + i, k);
+    std::vector<double> values(var_levs*nlats*nlons);
+    for (size_t k = 0; k < var_levs; ++k) {
+      for (size_t j = 0; j < nlats; ++j) {
+        for (size_t i = 0; i < nlons; ++i) {
+          values[k*nlats*nlons + j*nlons + i] = varView(j*nlons + i, k);
         }
       }
     }
