@@ -43,8 +43,6 @@ class StochasticLETKF : public DeterministicLETKF<MODEL, OBS> {
   StochasticLETKF(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t,
                   const StateSet_ &, const Variables &);
 
-  Observations_ computeHofX(const StateSet_ &, size_t, bool) override;
-
   /// KF update + posterior inflation at a grid point location (GeometryIterator_)
   void measurementUpdate(const Eigen::VectorXd &,
                          const ObsErrors_ &,
@@ -116,20 +114,6 @@ StochasticLETKF<MODEL, OBS>::StochasticLETKF(ObsSpaces_ & obspaces, const Geomet
     OmbPertDepEns_(obspaces, this->nens_),
     useSVD_(this->svdRequested(config)) {
   Log::trace() << "StochasticLETKF<MODEL, OBS>::create starting" << std::endl;
-  Log::trace() << "StochasticLETKF<MODEL, OBS>::create done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-template <typename MODEL, typename OBS>
-Observations<OBS> StochasticLETKF<MODEL, OBS>::computeHofX(const StateSet_ & ens_xx,
-                                                       size_t iteration, bool readFromFile) {
-  util::Timer timer(classname(), "computeHofX");
-
-  Observations_ yb_mean(this->obspaces_);
-  yb_mean = DeterministicLETKF<MODEL, OBS>::computeHofX(ens_xx, iteration, readFromFile);
-
   // generate observation perturbations with zero mean and
   // compute observation perturbations minus ensemble hofx perturbations
   Departures_ pertDepTmp(this->obspaces_);
@@ -160,8 +144,7 @@ Observations<OBS> StochasticLETKF<MODEL, OBS>::computeHofX(const StateSet_ & ens
     // Now OmbPertDepEns_[i] = dy_i - Y_i - mean(dy_j) forall j in ens
     OmbPertDepEns_.setData(iens, pertDepTmp);
   }
-
-  return yb_mean;
+  Log::trace() << "StochasticLETKF<MODEL, OBS>::create done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

@@ -74,6 +74,9 @@ template <typename OBS> class Observations : public util::Printable {
 /// Perturbations
   void perturb(const ObsErrors_ &);
 
+/// Mask out (set missing) observations for which \p qcflags is nonzero
+  void mask(const ObsDataVec_<int> & qcflags);
+
   std::string info(const std::string & grep = "") const;
   std::string info(const ObsDataVec_<int> &, const std::string & grep = "") const;
 
@@ -195,6 +198,13 @@ void Observations<OBS>::perturb(const ObsErrors_ & Rmat) {
   Rmat.randomize(ypert);
   *this += ypert;
   Log::trace() << "Observations perturbed" << std::endl;
+}
+// -----------------------------------------------------------------------------
+template <typename OBS>
+void Observations<OBS>::mask(const ObsDataVec_<int> & qcflags) {
+  for (size_t ii = 0; ii < obs_.size(); ++ii) {
+    obs_[ii].mask(qcflags[ii]);
+  }
 }
 // -----------------------------------------------------------------------------
 template <typename OBS>

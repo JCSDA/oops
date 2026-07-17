@@ -50,4 +50,5 @@ output:
 
 test:
   reference filename: testoutput/hofx3d_for_getkf.test
+  test output filename: testoutput/hofx3d_for_getkf.out
   float relative tolerance: 1e-3

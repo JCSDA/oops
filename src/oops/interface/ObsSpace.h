@@ -66,6 +66,7 @@ class ObsSpace : public util::Printable,
 // Other
   const std::string & obsname() const {return obsdb_->obsname();}
   bool has(const std::string & name) const {return obsdb_->has(name);}
+  void redistribute(const eckit::Configuration & config) {obsdb_->redistribute(config);}
 
   /// Iterator to the first observation
   ObsIterator_ begin() const;

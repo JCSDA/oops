@@ -52,6 +52,9 @@ class ObsSpaces : public util::Printable,
   /// Append new obs
   void updateObsSpaces(const eckit::Configuration &);
 
+  /// Redistribute the obs
+  void redistribute(const eckit::Configuration &);
+
   /// Access
   std::size_t size() const {return spaces_.size();}
   ObsSpace_ & operator[](const std::size_t ii) {return *spaces_.at(ii);}
@@ -138,6 +141,21 @@ void ObsSpaces<OBS>::updateObsSpaces(const eckit::Configuration & cdaConfig) {
     spaces_[jj]->updateObsSpace(cdaConfig);
   }
   Log::trace() << "ObsSpaces::appendObs done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename OBS>
+void ObsSpaces<OBS>::redistribute(const eckit::Configuration & config) {
+  Log::trace() << "ObsSpaces::redistribute start" << std::endl;
+  std::vector<eckit::LocalConfiguration> subconfigs = config.getSubConfigurations();
+  for (size_t jj = 0; jj < subconfigs.size(); ++jj) {
+    const eckit::LocalConfiguration obsconf(subconfigs[jj].getSubConfiguration("obs space"));
+    if (obsconf.has("redistribution")) {
+      spaces_[jj]->redistribute(obsconf.getSubConfiguration("redistribution"));
+    }
+  }
+  Log::trace() << "ObsSpaces::redistribute done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

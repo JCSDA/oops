@@ -22,11 +22,14 @@
 #include "oops/base/Departures.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
+#include "oops/base/LinearEnsembleObservers.h"
+#include "oops/base/NonlinearEnsembleObservers.h"
 #include "oops/base/Observations.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/base/StateSet.h"
 #include "oops/base/StateSetSaver.h"
 #include "oops/interface/GeometryIterator.h"
+#include "oops/interface/ObsDataVector.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/runs/Forecast.h"
@@ -48,6 +51,7 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
   typedef Increment<MODEL>                 Increment_;
   typedef IncrementSet<MODEL>              IncrementSet_;
   typedef LocalEnsembleSolver<MODEL, OBS>  LocalSolver_;
+  typedef ObsDataVector<OBS, int>          ObsDataInt_;
   typedef ObsSpaces<OBS>                   ObsSpaces_;
   typedef Observations<OBS>                Observations_;
   typedef Model<MODEL>                     Model_;
@@ -120,11 +124,6 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
 
     util::printRunStats("LocalEnsembleDA before solver ctor");
 
-    // set up solver
-    std::unique_ptr<LocalSolver_> solver =
-         LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, *geometry, fullConfig,
-                                                        nens, bkg_mean, incvars);
-
     // test prints for the prior ensemble
     bool do_test_prints = fullConfig.getBool("driver.do test prints", true);
     if (do_test_prints) {
@@ -139,17 +138,33 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     util::printRunStats("LocalEnsembleDA before computeHofX");
 
     // compute H(x)
-    Observations_ yobs(obsdb, "ObsValue");
-    Observations_ yb_mean = solver->computeHofX(ens_xx, 0,
-                              fullConfig.getBool("driver.read HX from disk", false));
-    if (do_test_prints) {
-       Log::test() << "H(x) ensemble background mean: " << std::endl << yb_mean << std::endl;
-    }
-
-    Departures_ ombg(yobs - yb_mean);
-    ombg.save("ombg");
-    if (do_test_prints) {
-       Log::test() << "background y - H(x): " << std::endl << ombg << std::endl;
+    const std::string solverType = fullConfig.getString("local ensemble DA.solver");
+    // GETKF-family solvers need H(x) for the modulated ensemble (vertical localization
+    // eigenvector) perturbations in addition to the plain ensemble perturbations.
+    const bool isModulated = solverType.find("GETKF") != std::string::npos;
+    const bool useLinearObserver = fullConfig.getBool("local ensemble DA.use linear observer",
+                                                       false);
+    // QC flags established here (background, iteration 0) are carried over to the posterior
+    // observer (iteration 1) below, so that an observation excluded from the background
+    // diagnostics/assimilation stays excluded from the posterior ones too, rather than each
+    // ensemble observer independently (and potentially inconsistently) re-deriving its own QC
+    // decisions from a clean slate. They are saved to disk (rather than simply kept in memory)
+    // and immediately released because obsdb.redistribute() below refuses to run while any
+    // ObsDataVector remains attached to the obs space.
+    {
+      std::vector<ObsDataInt_> priorQcFlags;
+      if (useLinearObserver) {
+        LinearEnsembleObservers<MODEL, OBS> ensembleObservers(obsdb, *geometry, fullConfig, nens,
+            isModulated ? &bkg_mean : nullptr, isModulated ? &incvars : nullptr);
+        ensembleObservers.computeHofX(ens_xx, bkg_mean, 0);
+        priorQcFlags = ensembleObservers.qcFlags();
+      } else {
+        NonlinearEnsembleObservers<MODEL, OBS> ensembleObservers(obsdb, *geometry, fullConfig,
+            nens, isModulated ? &bkg_mean : nullptr, isModulated ? &incvars : nullptr);
+        ensembleObservers.computeHofX(ens_xx, bkg_mean, 0);
+        priorQcFlags = ensembleObservers.qcFlags();
+      }
+      for (auto & flags : priorQcFlags) flags.save("PriorQcFlags");
     }
 
     // quit early if running in observer-only mode
@@ -157,6 +172,8 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       obsdb.save();
       return 0;
     }
+
+    obsdb.redistribute(obsConfig);
 
     // print background mean
     if (do_test_prints) {
@@ -177,6 +194,10 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     Log::info() << "Beginning core local solver..." << std::endl;
     util::printRunStats("LocalEnsembleDA before solver", true);
 
+        // set up solver
+    std::unique_ptr<LocalSolver_> solver =
+         LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, *geometry, fullConfig,
+                                                        nens, bkg_mean, incvars);
     solver->measurementUpdate(bkg_pert, ana_pert);
 
     // wait all tasks to finish their solution, so the timing for functions below reports
@@ -308,22 +329,27 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
     // than LETKF background/analysis perturbations.
     // hence one might not expect that oman and omaf are comparable
     if (fullConfig.getBool("driver.do posterior observer", true)) {
+      // read back the background QC flags saved above (see comment there for why they were
+      // saved to disk rather than simply kept around in memory)
+      std::vector<ObsDataInt_> priorQcFlags;
+      for (size_t jj = 0; jj < obsdb.size(); ++jj) {
+        ObsDataInt_ flags(obsdb[jj], obsdb[jj].obsvariables());
+        flags.read("PriorQcFlags");
+        priorQcFlags.push_back(flags);
+      }
       // need to create a posterior solver that stores ana_mean internally.
-      // This is needed if linear observer is used, because it is linearized arround this mean
-      std::unique_ptr<LocalSolver_> posteriorSolver =
-         LocalEnsembleSolverFactory<MODEL, OBS>::create(obsdb, *geometry, fullConfig,
-                                                        nens, ana_mean, incvars);
-      Observations_ ya_mean = posteriorSolver->computeHofX(ens_xx, 1, false);
-      Log::test() << "H(x) ensemble analysis mean: " << std::endl << ya_mean << std::endl;
-
-      // calculate analysis obs departures
-      Departures_ oman(yobs - ya_mean);
-      oman.save("oman");
-      Log::test() << "analysis y - H(x): " << std::endl << oman << std::endl;
-
-      // display overall background/analysis RMS stats
-      Log::test() << "ombg RMS: " << ombg.rms() << std::endl
-                << "oman RMS: " << oman.rms() << std::endl;
+      // This is needed if linear observer is used, because it is linearized arround this mean.
+      // The posterior observer is never modulated, even for GETKF-family solvers.
+      if (useLinearObserver) {
+        LinearEnsembleObservers<MODEL, OBS> ensembleObservers(obsdb, *geometry, fullConfig, nens,
+            nullptr, nullptr, &priorQcFlags);
+        ensembleObservers.computeHofX(ens_xx, ana_mean, 1);
+      } else {
+        NonlinearEnsembleObservers<MODEL, OBS> ensembleObservers(obsdb, *geometry, fullConfig,
+                                                                  nens, nullptr, nullptr,
+                                                                  &priorQcFlags);
+        ensembleObservers.computeHofX(ens_xx, ana_mean, 1);
+      }
     }
 
     // Save the obsspace only if an hofx was calculated
@@ -501,21 +527,38 @@ template <typename MODEL, typename OBS> class LocalEnsembleDA : public Applicati
       patchRadius = fmax(patchRadius, dist);
     }
 
-    // update observations configs with information on patch center and radius
+    // update observations configs with information on patch center and radius.
+    // Only set center/radius on whichever of "distribution"/"redistribution" the obs space's
+    // own config already declares: "distribution" is the original (pre-redistribution-feature)
+    // Halo-type distribution, kept for models/tests that have not opted into the new
+    // observer/solver redistribution machinery (which additionally requires the dataframe
+    // ioda backend); "redistribution" is the new, opt-in mechanism used to re-decompose obs
+    // (e.g. between a separate observer job and this solver job) across patches. Obs spaces
+    // that use neither (e.g. RoundRobin) are left untouched.
     std::vector<eckit::LocalConfiguration> obsConfigs = obsConfig.getSubConfigurations();
 
     if (obsConfigs.size() > 0) {
       for (auto & conf : obsConfigs) {
-        conf.set("obs space.distribution.center", patchCenter);
-        conf.set("obs space.distribution.radius", patchRadius);
+        setPatchGeometry(conf, patchCenter, patchRadius);
       }
 
       eckit::LocalConfiguration tmp;
       tmp.set("observers", obsConfigs);
       obsConfig = tmp.getSubConfiguration("observers");
     } else {
-      obsConfig.set("obs space.distribution.center", patchCenter);
-      obsConfig.set("obs space.distribution.radius", patchRadius);
+      setPatchGeometry(obsConfig, patchCenter, patchRadius);
+    }
+  }
+
+  void setPatchGeometry(eckit::LocalConfiguration & conf, const std::vector<double> & patchCenter,
+                        const double patchRadius) const {
+    if (conf.has("obs space.distribution")) {
+      conf.set("obs space.distribution.center", patchCenter);
+      conf.set("obs space.distribution.radius", patchRadius);
+    }
+    if (conf.has("obs space.redistribution")) {
+      conf.set("obs space.redistribution.center", patchCenter);
+      conf.set("obs space.redistribution.radius", patchRadius);
     }
   }
 

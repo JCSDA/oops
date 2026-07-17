@@ -55,4 +55,5 @@ output mean prior:
 
 test:
   reference filename: testoutput/getkf.test
+  test output filename: testoutput/getkf.out
   float relative tolerance: 1.5e-3

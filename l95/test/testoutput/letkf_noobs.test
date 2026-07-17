@@ -27,6 +27,7 @@ H(x) ensemble background mean:
 Lorenz 95 : No observations
 background y - H(x): 
 Lorenz 95 : No observations
+ombg RMS: 0.0000000000000000e+00
 Background mean :
  Valid time: 2010-01-02T00:00:00Z
  Min=5.2519885916484164e+00, Max=9.5020752396112176e+00, Average=7.7656901572008321e+00
@@ -47,5 +48,4 @@ H(x) ensemble analysis mean:
 Lorenz 95 : No observations
 analysis y - H(x): 
 Lorenz 95 : No observations
-ombg RMS: 0.0000000000000000e+00
 oman RMS: 0.0000000000000000e+00

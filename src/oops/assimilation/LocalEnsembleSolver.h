@@ -95,10 +95,6 @@ class LocalEnsembleSolver {
                       const Variables & incvars);
   virtual ~LocalEnsembleSolver() = default;
 
-  /// computes ensemble H(\p xx), returns mean H(\p xx), saves as hofx \p iteration
-  virtual Observations_ computeHofX(const StateSet_ & xx, size_t iteration,
-                      bool readFromDisk);
-
   /// update background ensemble \p bg to analysis ensemble \p an for all points on this PE
   virtual void measurementUpdate(const IncrementSet_ & bg,
                                  IncrementSet_ & an);
@@ -121,7 +117,6 @@ class LocalEnsembleSolver {
 
   /// accessor to obs localizations
   const ObsLocalizations_ & obsloc() const {return *obsloc_;}
-  bool useLinearObserver() const { return useLinearObserver_; }
 
   /// Enable Nerger et al. 2012 observation localization regulation
   bool useNergerRegulation() const { return useNergerRegulation_; }
@@ -129,14 +124,13 @@ class LocalEnsembleSolver {
  protected:
   const Geometry_  & geometry_;   ///< Geometry associated with the updated states
   const ObsSpaces_ & obspaces_;   ///< ObsSpaces used in the update
+  Observations_ ybmean_;
   Departures_ omb_;               ///< obs - mean(H(x)); set in computeHofX method
   std::unique_ptr<DeparturesEnsemble_> Yb_;   ///< ensemble perturbations in the observation space;
                                               ///< set in computeHofX method
   std::unique_ptr<ObsErrors_>  R_;         ///< observation errors, set in computeHofX method
   std::unique_ptr<Departures_> invVarR_;   ///< inverse observation error variance for assimilated
-                                           ///< observations; set in initializeAssimilatedMask
-  std::vector<ObsDataInt_> qcflags_;  ///< quality control flags
-  std::unique_ptr<ObserversTLAD_> linear_hofx_;  ///< linear observer
+                                           ///< observations
   eckit::LocalConfiguration inflopt_;
   int unperturbedIdx_;  ///< For stochastic filters: ensemble member index where obs are
                         ///< (optionally) unperturbed
@@ -155,53 +149,7 @@ class LocalEnsembleSolver {
   std::unique_ptr<DFSCalculator<OBS>> dfsCalculator_;  /// DFS
   bool useNergerRegulation_;  ///< toggle for Nerger observation localisation regulation
 
-  /// Create a mask that excludes observations which will not be assimilated (e.g. failed QC) using
-  /// a single ensemble member.
-  void initializeAssimilatedMask() {
-    // Inverse variances have missing values where obs have failed QC, though R_
-    // is only valid for a single ensemble member
-    invVarR_ = std::make_unique<Departures_>(R_->inverseVariance());
-  }
-  /// Update departures for assimilated observations by masking with \p mask
-  /// (e.g. nonzero QC flags or missing obs) - should only be done in the
-  /// computeHofX method.
-  void updateAssimilatedMask(const Departures_ & mask) { invVarR_->mask(mask); }
-  /// Apply the assimilated mask to a departures vector \p dep - missing values
-  /// in the mask will become missing in the departures.
   void applyAssimilatedMask(Departures_ & dep) const { dep.mask(*invVarR_); }
-  /// Apply the assimilated mask to a observations vector \p obs - missing
-  /// values in the mask will become missing in the observations.
-  void applyAssimilatedMask(Observations_ & obs) const {
-    for (size_t jobs = 0; jobs < obs.size(); ++jobs) {
-      obs[jobs].mask((*invVarR_)[jobs]);
-    }
-  }
-  /// Apply the non-linear observation operator to the background state \p xx and store the result
-  /// in \p yy. If \ref useLinearObserver() returns true, the observation operator is also
-  /// linearized about the background state \p xx (cf \ref applyLinearToPerturbations).
-  void computeHofX4D(const eckit::Configuration & config, const StateSet_ & xx, Observations_ & yy,
-                     const util::Duration & flength, const util::Duration & default_tstep,
-                     const ObsAux_ & obsaux, const ModelAux_ & moderr,
-                     ObsErrors_ & R, std::vector<ObsDataInt_> & qcflags);
-  /// Runs a linear model on 4D perturbations from the ensemble mean ( \p xx - \ref xbmean_ ) and
-  /// applies a linearized observation operator \ref linear_hofx_ to background departures in the
-  /// ensemble \ref Yb_ at ensemble index \p iens .
-  /// Intended for following the procedure from Shlyaeva, A., & Whitaker, J. S. (2018)
-  /// https://doi.org/10.1029/2018MS001309 where the linearized observation operator is applied to
-  /// ensemble perturbations. In more detail, the obs operator is linearized about the mean state
-  /// (H^tilde in eq. 6) - this happens in \ref computeHofX4D when \ref useLinearObserver() returns
-  /// true. This is applied to the ensemble perturbations from the mean (X) (Eq 6.). The result is
-  /// added to the application of the nonlinear observation operator to the mean state (Eq. 5).
-  void applyLinearToPerturbations(const Increment4D_ & dx, const util::Duration & flength,
-                                  const util::Duration & default_tstep,
-                                  const ObsAuxInc_ & obsauxinc, const ModelAuxInc_ & moderrinc,
-                                  const PostProcessor<Increment_> & posttl,
-                                  const PostProcessorTLAD<MODEL> & posttrajtl,
-                                  Departures_ & tmpDeps);
-  /// Read pre-calculated HofX \p y_mean_xb from disk for each observation ensemble member \p obsens
-  /// of size \p nens at \p iteration.
-  void readHofX(ObsEnsemble_ & obsens, const size_t nens, const size_t iteration,
-                Observations_ & y_mean_xb);
   /// Return true if the config requests SVD for the inverse analysis error covariance
   /// decomposition, false if eigendecomposition is requested. The string can be either
   /// "singular value decomposition" or "svd" (case insensitive) for SVD, and "eigendecomposition"
@@ -220,7 +168,6 @@ class LocalEnsembleSolver {
  private:
   // compute local inverse R vector with optional Nerger regulation
   Departures_ computeNergerLocalR(const Departures_ & locvector) const;
-  bool useLinearObserver_;
 };
 
 // -----------------------------------------------------------------------------
@@ -235,6 +182,7 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
   : geometry_(geometry),
     obspaces_(obspaces),
     omb_(obspaces_),
+    ybmean_(obspaces_),
     inflopt_(config.getSubConfiguration("local ensemble DA.inflation")),
     xbmean_(xbmean),
     incvars_(incvars),
@@ -243,7 +191,6 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
     nsubens_(1) {
   // initialize and print options
 
-  useLinearObserver_ = config.getBool("local ensemble DA.use linear observer", false);
   if (config.has("local ensemble DA.unperturbed obs ensemble member index")) {
     unperturbedIdx_ = config.getInt("local ensemble DA.unperturbed obs ensemble member index");
     if (unperturbedIdx_ < 0 || unperturbedIdx_ >= static_cast<int>(nens)) {
@@ -295,10 +242,31 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
     }
   }
 
-  for (size_t jj = 0; jj < obspaces_.size(); ++jj) {
-    ObsDataInt_ qcflags(obspaces_[jj], obspaces_[jj].obsvariables());
-    qcflags_.push_back(qcflags);
+  ObsEnsemble_ obsens(obspaces_, nens);
+  Observations_ y_mean_xb(obspaces_);
+  for (size_t jj = 0; jj < nens; ++jj) {
+    obsens[jj].read("hofx0_"+std::to_string(jj+1));
   }
+  y_mean_xb.read("hofx_y_mean_xb0");
+  ybmean_ = obsens.mean();
+  Departures_ tmpDeps(this->obspaces_);
+  // initialize Yb_ and obsloc_
+  Yb_ = std::make_unique<DeparturesEnsemble_>(obspaces_, nens);
+  obsloc_ = std::make_unique<ObsLocalizations_>(observersconf_, obspaces_);
+  for (size_t iens = 0; iens < Yb_->size(); ++iens) {
+    tmpDeps = obsens[iens] - ybmean_;
+    // updateAssimilatedMask(tmpDeps);
+    Yb_->setData(iens, tmpDeps);
+  }
+  Observations_ yobs(obspaces_, "ObsValue");
+  omb_ = yobs - ybmean_;
+  R_.reset(new ObsErrors_(this->observersconf_, this->obspaces_));
+  Observations_ obserr(obspaces_, "EffectiveError0");
+  for (size_t jj = 0; jj < R_->size(); ++jj) {
+    (*R_)[jj].update(obserr[jj]);
+  }
+  invVarR_ = std::make_unique<Departures_>(R_->inverseVariance());
+  oops::Log::trace() << "LocalEnsembleSolver created" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -406,251 +374,6 @@ void LocalEnsembleSolver<MODEL, OBS>::measurementUpdate
     // DFS per observation (save in nc file)
     dfsCalculator_->savePerObservation(omb_, mask, this->obspaces_, "DFS");
   }
-}
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void LocalEnsembleSolver<MODEL, OBS>::computeHofX4D(const eckit::Configuration & config,
-                                                    const StateSet_ & xx, Observations_ & yy,
-                                                    const util::Duration & flength,
-                                                    const util::Duration & default_tstep,
-                                                    const ObsAux_ & obsaux,
-                                                    const ModelAux_ & moderr,
-                                                    ObsErrors_ & Rmat,
-                                                    std::vector<ObsDataInt_> & qcflags) {
-  // Setup pseudo model to run on ensemble mean
-  State_ init_xx = xx[0];
-  std::unique_ptr<PseudoModel_> pseudomodel(new PseudoModel_(xx, default_tstep));
-  const Model_ model(std::move(pseudomodel));
-
-  // setup nonlinear postprocessor nonlinear observers
-  PostProcessor<State_> post;
-  Observers_ hofx(this->obspaces_, this->obsconf_);
-
-  // initialize nonlinear model postprocessor
-  hofx.initialize(this->geometry_, obsaux, Rmat, post, config);
-
-  if (useLinearObserver()) {
-    // Set up linear observer
-    linear_hofx_ = std::make_unique<ObserversTLAD_>(obspaces_, obsconf_);
-    // Set up linear postprocessor
-    PostProcessorTLAD<MODEL> posttraj;
-    // add linearized H(x) to the nonlinear model postprocessor
-    linear_hofx_->initializeTraj(this->geometry_, obsaux, posttraj);
-    // create TrajectorySaver with hofx_linear, and enroll in post
-    post.enrollProcessor(new TrajectorySaver<MODEL>(eckit::LocalConfiguration(),
-                                                    this->geometry_, posttraj));
-  }
-
-  // run nonlinear model on the ensemble mean
-  model.forecast(init_xx, moderr, flength, post);
-
-  // compute nonlinear H(x)
-  hofx.finalize(yy, qcflags);
-
-  if (useLinearObserver()) {
-    // set the background state to linearise H about.
-    linear_hofx_->finalizeTraj(qcflags);
-  }
-}
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void LocalEnsembleSolver<MODEL, OBS>::applyLinearToPerturbations(
-    const Increment4D_ & dx, const util::Duration & flength, const util::Duration & default_tstep,
-    const ObsAuxInc_ & obsauxinc, const ModelAuxInc_ & moderrinc,
-    const PostProcessor<Increment_> & posttl, const PostProcessorTLAD<MODEL> & posttrajtl,
-    Departures_ & tmpDeps) {
-  Increment_ init_dx = dx[0];
-  std::unique_ptr<PseudoLinearModel_> pseudolinearmodel =
-        std::make_unique<PseudoLinearModel_>(dx, default_tstep);
-  const LinearModel_ linear_model(std::move(pseudolinearmodel));
-  // run linear model on the ensemble perturbation, compute linear H*dx
-  linear_model.forecastTL(init_dx, moderrinc, flength, posttl, posttrajtl);
-  linear_hofx_->finalizeTL(obsauxinc, tmpDeps);
-}
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-void LocalEnsembleSolver<MODEL, OBS>::readHofX(ObsEnsemble_ & obsens, const size_t nens,
-                                               const size_t iteration,
-                                               Observations_ & y_mean_xb) {
-  for (size_t jj = 0; jj < nens; ++jj) {
-    obsens[jj].read("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
-    Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
-  }
-  y_mean_xb.read("hofx_y_mean_xb"+std::to_string(iteration));
-}
-
-// -----------------------------------------------------------------------------
-template <typename MODEL, typename OBS>
-Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
-                                                   const StateSet_ & ens_xx,
-                                                   size_t iteration,
-                                                   bool readFromDisk) {
-  util::Timer timer(classname(), "computeHofX");
-
-  const size_t nens = ens_xx.ens_size();
-  ObsEnsemble_ obsens(obspaces_, nens);
-  Observations_ y_mean_xb(obspaces_);
-
-  // Initialize R_ anew for each iteration
-  R_.reset(new ObsErrors_(this->observersconf_, this->obspaces_));
-
-  if (readFromDisk) {
-    readHofX(obsens, nens, iteration, y_mean_xb);
-    initializeAssimilatedMask();
-  } else {
-    // compute and save H(x)
-
-    std::vector<util::DateTime> times =
-        useLinearObserver() ? ens_xx.times() : xbmean_.times();
-    util::Duration flength = times[times.size() - 1] - times[0];
-    // default_tstep = 2*observation window is passed to PseudoModel as the default
-    // pseudomodel time step. It is only used when StateSet has a single state, to enable
-    // processing of all observations in the specified window regardless of where in
-    // the time window the state is. Observations in
-    // ( max(winbgn, xx.time - tstep/2); min(winend, xx.time + tstep/2) ] are
-    // processed in H(x).
-    util::Duration default_tstep = (obspaces_.windowEnd() - obspaces_.windowStart()) * 2;
-    const ModelAux_ moderr(geometry_, eckit::LocalConfiguration());
-    const ModelAuxInc_  moderrinc(geometry_, eckit::LocalConfiguration());
-    const ObsAux_  obsaux(obspaces_, observersconf_);
-    const ObsAuxInc_  obsauxinc(obspaces_, observersconf_);
-
-    // set up postprocessors for the linear model run on ensemble perturbations
-    PostProcessor<Increment_> posttl;
-    PostProcessorTLAD<MODEL> posttrajtl;
-
-    // save QC filters, obs bias, ob errors for H(mean(Xb) (H(x_i) are saved separately)
-    eckit::LocalConfiguration config;
-    config.set("save hofx", false);
-    config.set("save qc", true);
-    config.set("save obs errors", true);
-    config.set("save obs bias", true);
-    config.set("iteration", std::to_string(iteration));
-
-    // run the model forecast on the background ensemble mean and optionally linearise the observer
-    // about this trajectory. save obs errors and qc flags for H(mean(Xb))
-    computeHofX4D(config, xbmean_, y_mean_xb, flength, default_tstep, obsaux, moderr,
-                  *R_, qcflags_);
-    y_mean_xb.save("hofx_y_mean_xb"+std::to_string(iteration));
-    // QC flags and Obs errors are set to that of the H(mean(Xb))
-    R_->save("ObsError");
-    initializeAssimilatedMask();
-
-    // save hofx means that hofx will be written out into ObsSpace;
-    // if run computeHofX4D several times with save hofx on,
-    // the hofx will be overwritten,
-    // unless each time specifying iteration differently in the passed config.
-    config.set("save hofx", false);
-    config.set("save qc", false);
-    config.set("save obs errors", false);
-    config.set("save obs bias", false);
-
-    if (useLinearObserver()) {
-      // initialize Yb_ and obsloc_
-      Yb_ = std::make_unique<DeparturesEnsemble_>(obspaces_, nens);
-      obsloc_ = std::make_unique<ObsLocalizations_>(observersconf_, obspaces_);
-      // add linearized H(x) to the linear model postprocessor
-      linear_hofx_->initializeTL(posttrajtl);
-    }
-    Departures_ tmpDeps(this->obspaces_);
-
-    // use temporary objects for QC flags and obs errors for ensemble members
-    // to avoid overwriting the ones from the H(mean(Xb)) calculation
-    std::vector<ObsDataInt_> qcflags;
-    for (size_t jobs = 0; jobs < obspaces_.size(); ++jobs) {
-      ObsDataInt_ flags(obspaces_[jobs], obspaces_[jobs].obsvariables());
-      qcflags.push_back(flags);
-    }
-    ObsErrors_ Rmat(observersconf_, obspaces_);
-
-    for (size_t jj = 0; jj < nens; ++jj) {
-      if (useLinearObserver()) {
-        // Setup PseudoLinearModelIncrement4D to run on ensemble perturbation
-        Increment4D_ dx(geometry_, ens_xx.variables(), times);
-        for (size_t it = 0; it < times.size(); ++it) {
-          dx(it, 0).diff(ens_xx(it, jj), xbmean_[it]);
-        }
-
-        // Approximate H(x_i) (obsens[jj]) around the ensemble mean using linearized model and
-        // linearized observer. Firstly, apply the linearized obs operator to this ensemble member's
-        // background perturbation from the ensemble mean.
-        applyLinearToPerturbations(dx, flength, default_tstep, obsauxinc, moderrinc, posttl,
-                                   posttrajtl, tmpDeps);
-        // Secondly, add this to the ensemble mean in observation space (calculated with the
-        // nonlinear obs operator) giving the approximate H(x_i)
-        updateAssimilatedMask(tmpDeps);
-        Yb_->setData(jj, tmpDeps);
-        obsens[jj] = y_mean_xb;
-        obsens[jj] += Yb_->getData(jj);
-      } else {
-        // These are recalculated for each ensemble member
-        times = ens_xx.times();
-        flength = times[times.size()-1] - times[0];
-        default_tstep = (obspaces_.windowEnd() - obspaces_.windowStart()) * 2;
-
-        const ModelAux_ moderr(geometry_, eckit::LocalConfiguration());
-        const ObsAux_  obsaux(obspaces_, observersconf_);
-
-        // Construct a single-member StateSet and populate it from ens_xx
-        StateSet_ member_xx(geometry_, ens_xx.variables(), times, ens_xx.commTime());
-        for (size_t it = 0; it < times.size(); ++it) {
-          member_xx(it, 0) = ens_xx(it, jj);
-        }
-
-        computeHofX4D(config, member_xx, obsens[jj], flength, default_tstep,
-                      obsaux, moderr, Rmat, qcflags);
-      }
-      Log::test() << "H(x) for member " << jj+1 << ":" << std::endl << obsens[jj] << std::endl;
-      obsens[jj].save("hofx"+std::to_string(iteration)+"_"+std::to_string(jj+1));
-    }
-  }
-  // calculate H(x) ensemble mean
-  Observations_ yb_mean(obsens.mean());
-
-  // treat the special case of nens=1
-  // default option: xbmean_=mean(xb) then yb_mean == y_mean_xb and action below is a tautology
-  // if use control member==true: xbmean_ was read from the controll member,
-  //                              then using H(xbmean_) is expected by downstream applications
-  if (nens == 1) {yb_mean = y_mean_xb;}
-
-  // calculate obs departures
-  Observations_ yobs(obspaces_, "ObsValue");
-  omb_ = yobs - yb_mean;
-  // Need to mask out any missing departures as well as those that have failed QC
-  updateAssimilatedMask(omb_);
-
-  // Calculating observation ensemble perturbations when either HofX is read in or a non-linear
-  // observer is used. When a linear observer is used, observation ensemble perturbations are
-  // implicitly calculated.
-  // Also make sure that obs that have missing values in one ensemble member fail for all
-  // (this is for the case where different QC procedures are done on different
-  // ensemble members).
-  Departures_ tmpDeps(this->obspaces_);
-  if (readFromDisk || (!useLinearObserver())) {
-    // initialize Yb_ and obsloc_
-    Yb_ = std::make_unique<DeparturesEnsemble_>(obspaces_, nens);
-    obsloc_ = std::make_unique<ObsLocalizations_>(observersconf_, obspaces_);
-    for (size_t iens = 0; iens < Yb_->size(); ++iens) {
-      tmpDeps = obsens[iens] - yb_mean;
-      updateAssimilatedMask(tmpDeps);
-      Yb_->setData(iens, tmpDeps);
-    }
-  }
-  // apply assimilated mask to the observation ensemble perturbations
-  for (size_t iens = 0; iens < Yb_->size(); ++iens) {
-    tmpDeps = Yb_->getData(iens);
-    applyAssimilatedMask(tmpDeps);
-    Yb_->setData(iens, tmpDeps);
-  }
-  // apply assimilated mask to the mean departures
-  applyAssimilatedMask(omb_);
-  applyAssimilatedMask(yb_mean);
-
-  // return mean H(x)
-  return yb_mean;
 }
 // -----------------------------------------------------------------------------
 

@@ -118,6 +118,9 @@ list(
   oops/base/DolphChebyshev.cc
   oops/base/DolphChebyshev.h
   oops/base/EnsembleCovariance.h
+  oops/base/EnsembleObserversBase.h
+  oops/base/LinearEnsembleObservers.h
+  oops/base/NonlinearEnsembleObservers.h
   oops/base/FieldSet3D.cc
   oops/base/FieldSet3D.h
   oops/base/FieldSet4D.cc
