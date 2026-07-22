@@ -16,6 +16,7 @@
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsDataVector.h"
 #include "oops/util/Logger.h"
+#include "oops/util/Timer.h"
 
 namespace oops {
 
@@ -64,6 +65,11 @@ template<typename OBS> class DeparturesEnsemble {
   std::size_t nens_;
   /// A vector of serial sizes at each observation space
   std::vector<size_t> serialSizes_;
+  /// Cached member-0 departures, used by packEigen() to compute the serial
+  /// indices of the local observations. The member-0 values are constant
+  /// between setData() calls, so this avoids reconstructing a full-length
+  /// Departures at every geometry point. Invalidated when member 0 changes.
+  std::unique_ptr<Departures_> dep0_;
 };
 // ====================================================================================
 template<typename OBS>
@@ -80,7 +86,9 @@ DeparturesEnsemble<OBS>::DeparturesEnsemble(const ObsSpaces_ & obsdb, const size
 // -----------------------------------------------------------------------------
 template<typename OBS>
 Eigen::MatrixXf DeparturesEnsemble<OBS>::packEigen(const Departures_ & mask) {
-  std::vector<std::vector<size_t>> indices = this->getData(0).maskAndSerialIndices(mask);
+  util::Timer timer("oops::DeparturesEnsemble", "packEigen");
+  if (!dep0_) dep0_.reset(new Departures_(this->getData(0)));
+  const std::vector<std::vector<size_t>> indices = dep0_->maskAndSerialIndices(mask);
 
   size_t myNobs = 0;
   for (size_t ii = 0; ii != indices.size(); ++ii) {
@@ -107,6 +115,7 @@ Eigen::MatrixXf DeparturesEnsemble<OBS>::packEigen(const Departures_ & mask) {
 template<typename OBS>
 void DeparturesEnsemble<OBS>::setData(const size_t imem,
                               const Departures_ & dep) {
+  if (imem == 0) dep0_.reset();
   std::vector<double> valvec;
   for (size_t ii = 0; ii != serialSizes_.size(); ++ii) {
     dep[ii].serialize(valvec);
