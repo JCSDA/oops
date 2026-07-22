@@ -305,6 +305,10 @@ void SequentialEnsembleSolver<MODEL, OBS>::measurementUpdate(const IncrementSet_
       }
 
       // state ensemble update on cached Xas
+      // TODO(Travis) add a check that the vertical coordinate system of
+      // the geometry iterator is compatible with the obs iterator (e.g.
+      // both use pressure, or both use height). Currently no check exists
+      // and mismatched coordinates would silently produce wrong results.
       for (size_t g = 0; g < nGridLocal; ++g) {
         const double localization =
             this->obsloc().computeLocalization(gridPoints[g], y_location);
