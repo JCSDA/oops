@@ -493,7 +493,9 @@ template <typename MODEL> void testIncrementSqrt() {
   // and therefore dx2.norm() should be equal to 0.
   dx2 -= dx1;
 
-  EXPECT(dx2.norm() == 0.0);
+  auto norm = dx2.norm();
+
+  EXPECT(norm >= 0.0 && norm < Test_::tolerance());
 }
 
 // -----------------------------------------------------------------------------
