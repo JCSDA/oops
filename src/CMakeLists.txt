@@ -1105,17 +1105,15 @@ if(BUILD_TESTING)
 
   ecbuild_add_test( TARGET  oops_util_parallelfieldsetio_2PE
                     MPI     2
-                    SOURCES test/util/ParallelFieldSetIO.cc
+                    COMMAND oops_util_parallelfieldsetio_1PE
                     ARGS    "test/testinput/parallelfieldsetio.yaml"
-                    DEPENDS oops_util_parallelfieldsetio_1PE
-                    LIBS    oops )
+                    DEPENDS oops_util_parallelfieldsetio_1PE )
 
   ecbuild_add_test( TARGET  oops_util_parallelfieldsetio_3PE
                     MPI     3
-                    SOURCES test/util/ParallelFieldSetIO.cc
+                    COMMAND oops_util_parallelfieldsetio_1PE
                     ARGS    "test/testinput/parallelfieldsetio.yaml"
-                    DEPENDS oops_util_parallelfieldsetio_1PE
-                    LIBS    oops )
+                    DEPENDS oops_util_parallelfieldsetio_1PE )
 
   ecbuild_add_executable(
     TARGET  oops_util_functionspace_helpers

@@ -56,10 +56,9 @@ ecbuild_add_test( TARGET  oops_coupled_geometry_qg_l95
 
 # Test CoupledGeometry class in parallel
 ecbuild_add_test( TARGET  oops_coupled_geometry_qg_l95_parallel
-                  SOURCES executables/TestCoupledGeometry.cc
+                  COMMAND oops_coupled_geometry_qg_l95
                   ARGS    "testinput/coupledgeometryparallel.yaml"
-                  MPI     2
-                  LIBS    qg lorenz95 )
+                  MPI     2)
 
 # Test CoupledModelAuxControl class
 ecbuild_add_test( TARGET  oops_coupled_modelauxcontrol_qg_l95
@@ -76,10 +75,9 @@ ecbuild_add_test( TARGET  oops_coupled_state_qg_l95
 
 # Test CoupledState class in parallel
 ecbuild_add_test( TARGET  oops_coupled_state_qg_l95_parallel
-                  SOURCES executables/TestCoupledState.cc
+                  COMMAND oops_coupled_state_qg_l95
                   ARGS    "testinput/coupledstateparallel.yaml"
                   MPI     2
-                  LIBS    qg lorenz95
                   TEST_DEPENDS oops_qg_truth oops_l95_3dvar)
 
 # Test CoupledIncrement class
@@ -105,10 +103,9 @@ ecbuild_add_test( TARGET  oops_coupled_model_qg_l95
 
 # Test CoupledModel class
 ecbuild_add_test( TARGET  oops_coupled_model_qg_l95_parallel
-                  SOURCES executables/TestCoupledModel.cc
+                  COMMAND oops_coupled_model_qg_l95
                   ARGS    "testinput/coupledmodelparallel.yaml"
                   MPI     2
-                  LIBS    qg lorenz95
                   TEST_DEPENDS oops_qg_truth oops_l95_3dvar)
 
 # Test CoupledForecast application

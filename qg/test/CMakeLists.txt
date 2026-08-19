@@ -328,9 +328,8 @@ ecbuild_add_test( TARGET  oops_qg_verticallocev
                   TEST_DEPENDS oops_qg_truth )
 
 ecbuild_add_test( TARGET  oops_qg_verticallocev_io
-                  SOURCES executables/TestVerticalLocEV.cc
+                  COMMAND oops_qg_verticallocev
                   ARGS    "testinput/verticallocev_io.yaml"
-                  LIBS    qg
                   TEST_DEPENDS oops_qg_truth oops_qg_verticallocev )
 
 ecbuild_add_test( TARGET  oops_qg_modelauxincrement
@@ -353,15 +352,13 @@ ecbuild_add_test( TARGET  oops_qg_linear_model
                   TEST_DEPENDS oops_qg_truth )
 
 ecbuild_add_test( TARGET  oops_qg_hybrid_linear_model
-                  SOURCES executables/TestLinearModel.cc
+                  COMMAND oops_qg_linear_model
                   ARGS    "testinput/hybrid_linear_model.yaml"
-                  LIBS    qg
                   TEST_DEPENDS oops_qg_gen_hybrid_linear_model_coeffs_with_subtimestep )
 
 ecbuild_add_test( TARGET  oops_qg_hybrid_linear_model_gen_ens
-                  SOURCES executables/TestLinearModel.cc
+                  COMMAND oops_qg_linear_model
                   ARGS    "testinput/hybrid_linear_model_gen_ens.yaml"
-                  LIBS    qg
                   TEST_DEPENDS oops_qg_forecast_5level_pert_heat )
 
 ecbuild_add_test( TARGET oops_qg_locations
@@ -546,10 +543,9 @@ ecbuild_add_test( TARGET  oops_qg_fieldset4D_seq
                   TEST_DEPENDS oops_qg_truth oops_qg_forecast )
 
 ecbuild_add_test( TARGET  oops_qg_fieldset4D_par
+                  COMMAND oops_qg_fieldset4D_seq
                   MPI     3
-                  SOURCES executables/TestFieldSet4D.cc
                   ARGS    "testinput/fieldset4D_par.yaml"
-                  LIBS    qg
                   TEST_DEPENDS oops_qg_truth oops_qg_forecast )
 
 #####################################################################

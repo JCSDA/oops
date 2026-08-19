@@ -359,9 +359,8 @@ ecbuild_add_test( TARGET oops_l95_model
                   TEST_DEPENDS oops_l95_truth )
 
 ecbuild_add_test( TARGET oops_l95_pseudomodel
-                  SOURCES executables/TestModel.cc
+                  COMMAND oops_l95_model
                   ARGS "testinput/pseudomodel.yaml"
-                  LIBS lorenz95
                   TEST_DEPENDS oops_l95_truth )
 
 ecbuild_add_test( TARGET oops_l95_pseudomodel_state4d
@@ -371,9 +370,8 @@ ecbuild_add_test( TARGET oops_l95_pseudomodel_state4d
                   TEST_DEPENDS oops_l95_truth )
 
 ecbuild_add_test( TARGET oops_l95_identitymodel
-                  SOURCES executables/TestModel.cc
+                  COMMAND oops_l95_model
                   ARGS "testinput/identitymodel.yaml"
-                  LIBS lorenz95
                   TEST_DEPENDS oops_l95_truth )
 
 ecbuild_add_test( TARGET oops_l95_increment
