@@ -3,9 +3,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # macro to create a symlink from src to dst
 function(CREATE_SYMLINK src dst)
   foreach (FILENAME ${ARGN})
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E create_symlink
-      ${src}/${FILENAME} ${dst}/${FILENAME}
+    file( CREATE_LINK
+      ${src}/${FILENAME} ${dst}/${FILENAME} SYMBOLIC
     )
   endforeach(FILENAME)
 endfunction(CREATE_SYMLINK)

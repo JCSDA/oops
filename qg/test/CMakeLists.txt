@@ -15,12 +15,12 @@ list( APPEND qg_testinput
   testinput/4dvar_drpfom.yaml
   testinput/4dvar_drplanczos.yaml
   testinput/4dvar_drplanczos_hybrid.yaml
-  testinput/4dvar_forcing.yaml
+  #testinput/4dvar_forcing.yaml  # test is commented out
   testinput/4dvar_hybrid_linear_model.yaml
   testinput/4dvar_ipcg.yaml
   testinput/4dvar_obs_biased.yaml
   testinput/4dvar_rpcg.yaml
-  #testinput/4dvar_saddlepoint.yaml
+  #testinput/4dvar_saddlepoint.yaml  # test is commented out
   testinput/addincrement.yaml
   testinput/addincrement_scaled.yaml
   testinput/analytic_forecast.yaml
@@ -156,11 +156,11 @@ list( APPEND qg_testoutput
   testoutput/4dvar_drpfom.test
   testoutput/4dvar_drplanczos.test
   testoutput/4dvar_drplanczos_hybrid.test
-  testoutput/4dvar_forcing.test
+  #testoutput/4dvar_forcing.test  # test is commented out
   testoutput/4dvar_ipcg.test
   testoutput/4dvar_obs_biased.test
   testoutput/4dvar_rpcg.test
-  #testoutput/4dvar_saddlepoint.test
+  #testoutput/4dvar_saddlepoint.test  # test is commented out
   testoutput/analytic_forecast.test
   testoutput/convertincrement.test
   testoutput/convertincrement_inv.test
@@ -228,17 +228,17 @@ list( APPEND qg_testoutput
 # Create data directory for test input and symlink all files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
 foreach(FILENAME ${qg_testinput})
-    execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+    file( CREATE_LINK
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
+           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} SYMBOLIC )
 endforeach(FILENAME)
 
 # Create data directory for reference output and symlink all files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
 foreach(FILENAME ${qg_testoutput})
-    execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+    file( CREATE_LINK
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
+           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} SYMBOLIC )
 endforeach(FILENAME)
 
 ecbuild_add_resources( TARGET   qg_test_scripts

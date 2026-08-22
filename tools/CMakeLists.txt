@@ -15,16 +15,27 @@ list( APPEND tool_files
 
 foreach(FILENAME IN LISTS tool_files)
     set(_tool ${PROJECT_NAME}_${FILENAME})
+    # Some entries live in a subdirectory (plot/*), so both copies below have to
+    # account for it. `cmake -E copy` used to create the destination directory
+    # implicitly; file(COPY_FILE) does not.
+    get_filename_component(_tool_subdir ${FILENAME} DIRECTORY)
+
     #Install in build-tree
-    execute_process( COMMAND ${CMAKE_COMMAND} -E copy
+    if( _tool_subdir )
+      file( MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${PROJECT_NAME}_${_tool_subdir} )
+    endif()
+    file( COPY_FILE
         ${PROJECT_SOURCE_DIR}/tools/${FILENAME}
-        ${CMAKE_BINARY_DIR}/bin/${_tool} )
+        ${CMAKE_BINARY_DIR}/bin/${_tool} ONLY_IF_DIFFERENT )
     #Install in install-tree
     install(PROGRAMS ${FILENAME} RENAME ${_tool} DESTINATION bin )
 
     #TODO remove this once no packages depend on these tools in their original location.
-    execute_process( COMMAND ${CMAKE_COMMAND} -E copy
+    if( _tool_subdir )
+      file( MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bin/${_tool_subdir} )
+    endif()
+    file( COPY_FILE
         ${PROJECT_SOURCE_DIR}/tools/${FILENAME}
-        ${CMAKE_BINARY_DIR}/bin/${FILENAME} )
+        ${CMAKE_BINARY_DIR}/bin/${FILENAME} ONLY_IF_DIFFERENT )
 endforeach()
 

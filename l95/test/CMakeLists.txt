@@ -265,25 +265,24 @@ list( APPEND l95_testoutput
 # Create Data directory for test input and symlink all files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
 foreach(FILENAME ${l95_test_input})
-    execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+    file( CREATE_LINK
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
+           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} SYMBOLIC )
 endforeach(FILENAME)
 
 # Create Data directory for test input data
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Data)
 foreach(FILENAME ${l95_test_data})
-    execute_process( COMMAND ${CMAKE_COMMAND} -E copy
-           ${CMAKE_CURRENT_SOURCE_DIR}/testdata/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/Data/${FILENAME} )
+    file( COPY_FILE ${CMAKE_CURRENT_SOURCE_DIR}/testdata/${FILENAME}
+          ${CMAKE_CURRENT_BINARY_DIR}/Data/${FILENAME} ONLY_IF_DIFFERENT )
 endforeach(FILENAME)
 
 # Create Data directory for reference output and symlink all files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testoutput)
 foreach(FILENAME ${l95_testoutput})
-    execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+    file( CREATE_LINK
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
+           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} SYMBOLIC )
 endforeach(FILENAME)
 
 # Show in project

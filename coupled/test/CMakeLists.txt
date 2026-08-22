@@ -27,17 +27,17 @@ list( APPEND coupled_testref
 # Create directory for test yamls and symlink all files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testinput)
 foreach(FILENAME ${coupled_testinput})
-    execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+    file( CREATE_LINK
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
+           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} SYMBOLIC )
 endforeach(FILENAME)
 
 # Create directory for test references and symlink all files
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/testref)
 foreach(FILENAME ${coupled_testref})
-    execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink
+    file( CREATE_LINK
            ${CMAKE_CURRENT_SOURCE_DIR}/${FILENAME}
-           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} )
+           ${CMAKE_CURRENT_BINARY_DIR}/${FILENAME} SYMBOLIC )
 endforeach(FILENAME)
 
 # Create Data directory for test output data
