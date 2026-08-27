@@ -150,7 +150,7 @@ CostJo<MODEL, OBS>::CostJo(const eckit::Configuration & joConf, const eckit::mpi
                            const util::TimeWindow & timeWindow,
                            const eckit::mpi::Comm & ctime)
   : conf_(joConf),
-    obspaces_(eckit::LocalConfiguration(joConf, "observers"), comm, timeWindow, ctime),
+    obspaces_(joConf, comm, timeWindow, ctime),
     yobs_(), Rmat_(), observers_(), gradFG_(), obstlad_(), currentConf_()
 {
   observers_.reset(new Observers_(obspaces_, joConf));

@@ -98,7 +98,7 @@ template <typename MODEL, typename OBS> class HofX4D : public Application {
 //  Setup observations
     const eckit::LocalConfiguration oConfig(fullConfig, "observations");
     const eckit::LocalConfiguration obsConfig(oConfig, "observers");
-    ObsSpaces_ obspaces(obsConfig, this->getComm(), timeWindow);
+    ObsSpaces_ obspaces(oConfig, this->getComm(), timeWindow);
     ObsAux_ obsaux(obspaces, obsConfig);
     ObsErrors_ Rmat(obsConfig, obspaces);
 

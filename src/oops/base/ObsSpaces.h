@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
 
 #include "oops/interface/ObsSpace.h"
@@ -31,6 +32,47 @@
 #include "oops/util/TimeWindow.h"
 
 namespace oops {
+
+namespace detail {
+
+// -----------------------------------------------------------------------------
+/// \brief Apply global (default) settings from the section configuration
+///        ("observations") to an individual obs space configuration
+///
+/// \details
+/// For settings that appear directly in the sectionConf, apply these to the
+/// individual obs space in the obsconf configuration.
+///
+/// A setting made on the individual obs space always takes precedence over the
+/// section-level one. For now, we are using this to gloally select between the
+/// ObsGroup and OSDF obs data container, but it could be used for other
+/// settings in the future.
+///
+/// \param sectionConf the "observations" section of the configuration
+/// \param obsconf an individual "obs space" configuration to be updated in place
+inline void applyObsSpaceDefaults(const eckit::Configuration & sectionConf,
+                                  eckit::LocalConfiguration & obsconf) {
+  // ---------------------------------------------------------------------------------
+  // TODO(srh): Once the migration to the OSDF container is complete, remove this block
+  // of code and the "observations.obs data container" option.
+  std::string container;
+  if (sectionConf.get("obs data container", container) &&
+      !obsconf.has("use data frame container")) {
+    if (container == "OSDF") {
+      obsconf.set("use data frame container", true);
+    } else if (container == "ObsGroup") {
+      obsconf.set("use data frame container", false);
+    } else {
+      throw eckit::BadValue("Unknown 'obs data container': " + container +
+                            ", expected 'ObsGroup' or 'OSDF'", Here());
+    }
+  }
+  // ---------------------------------------------------------------------------------
+}
+
+// -----------------------------------------------------------------------------
+
+}  // namespace detail
 
 // -----------------------------------------------------------------------------
 template <typename OBS>
@@ -78,15 +120,36 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
   : spaces_(0), timeWindow_(timeWindow)
 {
   Log::trace() << "ObsSpaces<MODEL, OBS>::ObsSpaces start" << std::endl;
-  std::vector<eckit::LocalConfiguration> subconfigs = conf.getSubConfigurations();
+
+  // "conf" is the whole "observations" section of the configuration, which is a mapping:
+  //
+  //   observations:
+  //     obs data container: OSDF
+  //     observers:
+  //       - obs space: ...
+  //       - obs space: ...
+  //
+  // Settings given directly under "observations:" apply to every obs space in
+  // the section. Note that a bare sequence of observers is not accepted:
+  // the whole section is required, so that the global settings can be seen here.
+  if (!conf.has("observers")) {
+    throw eckit::UserError("The 'observations' section must contain an 'observers' list. "
+                           "ObsSpaces takes the whole 'observations' section, not the "
+                           "'observers' list on its own.", Here());
+  }
+  const std::vector<eckit::LocalConfiguration> subconfigs =
+      conf.getSubConfigurations("observers");
+
   spaces_.reserve(subconfigs.size());
   for (size_t jj = 0; jj < subconfigs.size(); ++jj) {
-    const eckit::LocalConfiguration obsconf(subconfigs[jj].getSubConfiguration("obs space"));
+    eckit::LocalConfiguration obsconf(subconfigs[jj].getSubConfiguration("obs space"));
+    detail::applyObsSpaceDefaults(conf, obsconf);
     auto tmp = std::make_shared<ObsSpace_>(obsconf, comm, timeWindow, time);
     spaces_.push_back(std::move(tmp));
   }
   if (spaces_.empty()) {
-    Log::warning() << "ObsSpaces<MODEL, OBS>::ObsSpaces: no obs spaces created" << std::endl;
+    Log::warning() << "ObsSpaces<MODEL, OBS>::ObsSpaces: no obs spaces created from "
+                   << "configuration: " << conf << std::endl;
   }
   Log::trace() << "ObsSpaces<MODEL, OBS>::ObsSpaces done" << std::endl;
 }
