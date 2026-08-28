@@ -262,6 +262,7 @@ list(
   oops/generic/instantiateModelFactory.h
   oops/generic/LocalizationBase.h
   oops/generic/PseudoLinearModelIncrement4D.h
+  oops/generic/PseudoModel.cc
   oops/generic/PseudoModel.h
   oops/generic/PseudoModelState4D.h
   oops/generic/SimpleLinearModel.h
@@ -421,6 +422,7 @@ list(
   oops/util/ParallelFieldSetIO.cc
   oops/util/ParallelFieldSetIO.h
   oops/util/Printable.h
+  oops/util/PrintAdjTest.cc
   oops/util/PrintAdjTest.h
   oops/util/printRunStats.cc
   oops/util/printRunStats.h

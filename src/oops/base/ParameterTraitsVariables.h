@@ -27,24 +27,13 @@ template <>
 struct ParameterTraits<Variables> {
   static boost::optional<Variables> get(util::CompositePath &path,
                                         const eckit::Configuration &config,
-                                        const std::string& name) {
-    if (config.has(name)) {
-      return Variables(config, name);
-    } else {
-      return boost::none;
-    }
-  }
+                                        const std::string& name);
 
   static void set(eckit::LocalConfiguration &config,
                   const std::string &name,
-                  const Variables &value) {
-    config.set(name, value.variables());
-  }
+                  const Variables &value);
 
-  static ObjectJsonSchema jsonSchema(const std::string &name) {
-    ObjectJsonSchema nameSchema = ParameterTraits<std::vector<std::string>>::jsonSchema("");
-    return ObjectJsonSchema({{name, nameSchema.properties().at("")}});
-  }
+  static ObjectJsonSchema jsonSchema(const std::string &name);
 
   static std::string valueAsJson(const Variables &value);
 };

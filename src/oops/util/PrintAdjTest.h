@@ -16,7 +16,6 @@
 #include <iostream>
 #include <string>
 
-#include "oops/util/formats.h"
 #include "oops/util/Printable.h"
 
 namespace util {
@@ -35,24 +34,6 @@ class PrintAdjTest : public Printable {
   const double& dp2_;
   std::string op_;
 };
-
-// -----------------------------------------------------------------------------
-
-PrintAdjTest::PrintAdjTest(const double& dp1, const double& dp2, std::string op)
-  : dp1_(dp1), dp2_(dp2), op_(op)
-{}
-
-void PrintAdjTest::print(std::ostream & os) const {
-  double dpdiff = std::abs(dp1_-dp2_);
-  os << "  " << op_ << " adjoint test: <" << op_ << " dx1,  dx2>         : "
-             << full_precision(dp1_)        << std::endl
-     << "  " << op_ << " adjoint test: <dx1, " << op_ << "t dx2>         : "
-             << full_precision(dp2_)        << std::endl
-     << "  " << op_ << " adjoint test: difference            : "
-             << full_precision(dpdiff)      << std::endl
-     << "  " << op_ << " adjoint test: normalized difference : "
-             << full_precision(dpdiff/dp1_) << std::endl;
-}
 
 // -----------------------------------------------------------------------------
 

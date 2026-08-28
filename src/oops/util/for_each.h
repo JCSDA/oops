@@ -178,22 +178,9 @@ class ComputeSpectralCoefficientIndex {
  public:
   ComputeSpectralCoefficientIndex(
     atlas::array::LocalView<const int, 1> zonal_wavenumbers,
-    int truncation)
-    : prefix_sum(zonal_wavenumbers.size() + 1),
-      prefix_sum_view(atlas::array::make_view<int, 1>(prefix_sum))
-  {
-    prefix_sum_view.assign(0);
-    for (int jm = 0; jm < zonal_wavenumbers.size(); ++jm) {
-      prefix_sum_view(jm + 1) = prefix_sum_view(jm) + ((truncation + 1) - zonal_wavenumbers(jm));
-    }
-  }
+    int truncation);
 
-  std::pair<atlas::idx_t, atlas::idx_t> operator()(int n, int jm, int m) {
-    auto index = prefix_sum_view[jm] + (n - m);
-    auto real_index = index * 2;
-    auto imag_index = index * 2 + 1;
-    return std::make_pair(real_index, imag_index);
-  }
+  std::pair<atlas::idx_t, atlas::idx_t> operator()(int n, int jm, int m);
  private:
   atlas::array::ArrayT<int> prefix_sum;
   atlas::array::ArrayView<int, 1> prefix_sum_view;

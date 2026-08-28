@@ -24,4 +24,13 @@ namespace oops {
     vals_ = valsIn;
   }
 
+  void LocalIncrement::print(std::ostream & os) const {
+    const size_t numValues = vals_.size();
+    os << "LocalIncrement, size: " << numValues;
+    if (numValues > 0) {
+      os << ", first element: " << vals_[0];
+    }
+    os << std::endl;
+  }
+
 }  // namespace oops

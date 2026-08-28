@@ -31,14 +31,7 @@ class LocalIncrement: public util::Printable {
   LocalIncrement & operator*=(const std::vector<double> &);
 
  private:
-  void print(std::ostream & os) const {
-    const size_t numValues = vals_.size();
-    os << "LocalIncrement, size: " << numValues;
-    if (numValues > 0) {
-      os << ", first element: " << vals_[0];
-    }
-    os << std::endl;
-  }
+  void print(std::ostream & os) const;
   const oops::Variables vars_;      // variables in the object
   std::vector<double> vals_;        // data in flat array
   const std::vector<int> varlens_;  // vector containing nlevs for each variable
