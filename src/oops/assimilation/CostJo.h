@@ -27,6 +27,7 @@
 #include "oops/base/Departures.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/GetValueTLADs.h"
+#include "oops/base/ObsAuxControls.h"
 #include "oops/base/ObsErrors.h"
 #include "oops/base/Observations.h"
 #include "oops/base/Observers.h"
@@ -62,6 +63,7 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   typedef Geometry<MODEL>               Geometry_;
   typedef GetValueTLADs<MODEL, OBS>     GetValueTLADs_;
   typedef State<MODEL>                  State_;
+  typedef ObsAuxControls<OBS>           ObsAuxCtrls_;
   typedef ObsDataVector<OBS, int>       ObsDataInt_;
   typedef ObsErrors<OBS>                ObsErrors_;
   typedef ObsSpaces<OBS>                ObsSpaces_;
@@ -178,7 +180,8 @@ void CostJo<MODEL, OBS>::setPostProc(const CtrlVar_ & xx, const eckit::Configura
   Log::trace() << "CostJo::setPostProc start" << std::endl;
   gradFG_.reset();
   currentConf_.reset(new eckit::LocalConfiguration(conf));
-  observers_->initialize(xx.state().geometry(), xx.obsVar(), *Rmat_, pp, conf);
+  ObsAuxCtrls_ & obsaux = const_cast<ObsAuxCtrls_ &>(xx.obsVar());
+  observers_->initialize(xx.state().geometry(), obsaux, *Rmat_, pp, conf);
   Log::trace() << "CostJo::setPostProc done" << std::endl;
 }
 

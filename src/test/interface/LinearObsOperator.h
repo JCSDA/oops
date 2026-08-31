@@ -317,7 +317,7 @@ template <typename OBS> void testTangentLinear() {
 
     // initialize obs bias from file
     const eckit::LocalConfiguration bconf = obsconf.getSubConfiguration("obs bias");
-    const ObsAuxCtrl_ ybias0(Test_::obspace()[jj], bconf);
+    ObsAuxCtrl_ ybias0(Test_::obspace()[jj], bconf);
     ObsAuxCtrl_ ybias(Test_::obspace()[jj], bconf);
 
     // initialize Obs. Bias Covariance

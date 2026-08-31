@@ -43,7 +43,7 @@ class ObsOperatorBase {
  public:
   virtual ~ObsOperatorBase() {}
 
-  virtual void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, const ObsAuxControl_ & obsaux,
+  virtual void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, ObsAuxControl_ & obsaux,
                            const ObsDataInt_ & qc_flags,
                            ObsVector_ & obsbias, ObsDiags_ & obsdiags) const = 0;
 

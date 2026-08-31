@@ -70,7 +70,7 @@ class ObsOperatorPert : public ObsOperatorBase<OBS>,
   /// \param[in]  obsaux   additional input for computing H(x), e.g. bias correction coefficients
   ///                      or obs operator parameters.
   /// \params[in] qc_flags   quality control flags
-  void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, const ObsAuxControl_ & obsaux,
+  void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, ObsAuxControl_ & obsaux,
                    const ObsDataInt_ & qc_flags,
                    ObsVector_ &, ObsDiags_ &) const;
 
@@ -119,7 +119,7 @@ ObsOperatorPert<OBS>::~ObsOperatorPert() {
 
 template <typename OBS>
 void ObsOperatorPert<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                       const ObsAuxControl_ & aux,
+                                       ObsAuxControl_ & aux,
                                        const ObsDataInt_ & qc_flags,
                                        ObsVector_ &,
                                        ObsDiags_ &) const {

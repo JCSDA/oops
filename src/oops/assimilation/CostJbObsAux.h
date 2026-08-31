@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 
@@ -61,14 +62,24 @@ template<typename MODEL, typename OBS> class CostJbObsAux {
   std::shared_ptr<ObsAuxControls_> bg_;
   eckit::LocalConfiguration innerConf_;
   const ObsAuxControls_ * traj_;
+  std::vector<bool> coldStart_;
+  bool coldStartSynced_;
 };
 
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
 CostJbObsAux<MODEL, OBS>::CostJbObsAux(const ObsSpaces_ & odb, const eckit::Configuration & conf)
-  : B_(odb, conf), bg_(new ObsAuxControls_(odb, conf))
+  : B_(odb, conf), bg_(new ObsAuxControls_(odb, conf)), coldStartSynced_(false)
 {
+  // Record which obs spaces asked for a VarBC cold start, so that the background can be brought
+  // into line with the cold-started first guess once it has been computed (see computeCostTraj).
+  const std::vector<eckit::LocalConfiguration> obsconf = conf.getSubConfigurations();
+  coldStart_.reserve(obsconf.size());
+  for (std::size_t jobs = 0; jobs < obsconf.size(); ++jobs) {
+    const eckit::LocalConfiguration biasconf = obsconf[jobs].getSubConfiguration("obs bias");
+    coldStart_.push_back(biasconf.getBool("cold start.enable", false));
+  }
   Log::trace() << "CostJbObsAux contructed." << std::endl;
 }
 
@@ -87,6 +98,21 @@ void CostJbObsAux<MODEL, OBS>::setPostProcTraj(const CtrlVar_ & traj,
 template<typename MODEL, typename OBS>
 void CostJbObsAux<MODEL, OBS>::computeCostTraj() {
   ASSERT(traj_);
+  // A VarBC cold start replaces zero coefficients with an estimate derived from the uncorrected
+  // departures, and that estimate is what the analysis should be drawn towards. Adopt it as the
+  // background before Jb is evaluated, otherwise Jb would penalize the cold start itself and
+  // pull the coefficients straight back to zero. Done once, on the first outer loop, since the
+  // cold start only ever runs during the first H(x).
+  if (!coldStartSynced_) {
+    for (std::size_t jj = 0; jj < bg_->size() && jj < coldStart_.size(); ++jj) {
+      if (coldStart_[jj]) {
+        (*bg_)[jj] = (*traj_)[jj];
+        Log::info() << "CostJbObsAux: adopted cold-started VarBC coefficients as background "
+                    << "for obs space " << jj << std::endl;
+      }
+    }
+    coldStartSynced_ = true;
+  }
   B_.linearize(*traj_, innerConf_);
   traj_ = nullptr;
 }

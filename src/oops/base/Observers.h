@@ -64,7 +64,7 @@ class Observers {
 
 /// \brief Initializes variables, obs bias, obs filters (could be different for
 /// different iterations
-  void initialize(const Geometry_ &, const ObsAuxCtrls_ &, ObsErrors_ &,
+  void initialize(const Geometry_ &, ObsAuxCtrls_ &, ObsErrors_ &,
                   PostProc_ &, const eckit::Configuration & = eckit::LocalConfiguration());
 
 /// \brief Computes H(x) from the filled in GeoVaLs
@@ -105,7 +105,7 @@ Observers<MODEL, OBS>::Observers(const ObsSpaces_ & obspaces, const eckit::Confi
 // -----------------------------------------------------------------------------
 
 template <typename MODEL, typename OBS>
-void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrls_ & obsaux,
+void Observers<MODEL, OBS>::initialize(const Geometry_ & geom, ObsAuxCtrls_ & obsaux,
                                        ObsErrors_ & Rmat, PostProc_ & pp,
                                        const eckit::Configuration & conf) {
   Log::trace() << "Observers<MODEL, OBS>::initialize start" << std::endl;

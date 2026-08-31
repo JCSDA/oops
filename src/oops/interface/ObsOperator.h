@@ -81,7 +81,7 @@ class ObsOperator : public ObsOperatorBase<OBS>,
   /// \param[out] obsdiags   additional diagnostics output from computing obs operator that is not
   ///                        used in the assimilation, and can be used by ObsFilters.
   /// \param[in] qc_flags  quality control flags
-  void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, const ObsAuxControl_ & obsaux,
+  void simulateObs(const GeoVaLs_ & x_int, ObsVector_ & y, ObsAuxControl_ & obsaux,
                    const ObsDataInt_ & qc_flags,
                    ObsVector_ & obsbias, ObsDiags_ & obsdiags) const;
 
@@ -152,7 +152,7 @@ ObsOperator<OBS>::~ObsOperator() {
 
 template <typename OBS>
 void ObsOperator<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
-                                   const ObsAuxControl_ & aux, const ObsDataInt_ & qc_flags,
+                                   ObsAuxControl_ & aux, const ObsDataInt_ & qc_flags,
                                    ObsVector_ & ybias, ObsDiags_ & ydiag) const {
   Log::trace() << "ObsOperator<OBS>::simulateObs start" << std::endl;
   util::Timer timer(name_, "simulateObs");

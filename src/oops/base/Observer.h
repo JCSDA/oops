@@ -64,7 +64,7 @@ class Observer {
 
 /// \brief Initializes variables, obs bias, obs filter (could be different for
 /// different iterations
-  std::shared_ptr<GetValues_> initialize(const Geometry_ &, const ObsAuxCtrl_ &,
+  std::shared_ptr<GetValues_> initialize(const Geometry_ &, ObsAuxCtrl_ &,
                                          ObsError_ &, const eckit::Configuration &);
 
 /// \brief Computes H(x) from the filled in GeoVaLs
@@ -81,7 +81,7 @@ class Observer {
   std::vector<size_t>               varsizes_;      // Sizes of these variables
   std::unique_ptr<ObsOperatorBase_> obsop_;         // Obs operator
   std::unique_ptr<Locations_>       locations_;     // Obs locations
-  const ObsAuxCtrl_ *               biascoeff_;     // bias coefficients
+  ObsAuxCtrl_ *                     biascoeff_;     // bias coefficients (may be cold-started)
   ObsError_ *                       Rmat_;          // Obs error covariance
   ObsDataFloat_                     obserrfilter_;  // Obs error std dev for processed variables
   // Instances of GetValues. Each receives a list of model variables and a set of paths along which
@@ -135,7 +135,7 @@ Observer<MODEL, OBS>::Observer(const ObsSpace_ & obspace, const eckit::Configura
 // -----------------------------------------------------------------------------
 template <typename MODEL, typename OBS>
 std::shared_ptr<GetValues<MODEL, OBS>>
-Observer<MODEL, OBS>::initialize(const Geometry_ & geom, const ObsAuxCtrl_ & biascoeff,
+Observer<MODEL, OBS>::initialize(const Geometry_ & geom, ObsAuxCtrl_ & biascoeff,
                                  ObsError_ & R, const eckit::Configuration & conf) {
   Log::trace() << "Observer<MODEL, OBS>::initialize start" << std::endl;
 // Save information for finalize

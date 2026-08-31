@@ -91,7 +91,7 @@ template <typename OBS> void testSimulateObs() {
 
     // initialize bias correction
     const eckit::LocalConfiguration bconf = obsConf.getSubConfiguration("obs bias");
-    const ObsAuxCtrl_ ybias(Test_::obspace()[jj], bconf);
+    ObsAuxCtrl_ ybias(Test_::obspace()[jj], bconf);
 
     // initialize geovals
     oops::Variables hopvars = hop.requiredVars();

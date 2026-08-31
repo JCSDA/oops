@@ -181,7 +181,7 @@ class LocalEnsembleSolver {
   /// linearized about the background state \p xx (cf \ref applyLinearToPerturbations).
   void computeHofX4D(const eckit::Configuration & config, const StateSet_ & xx, Observations_ & yy,
                      const util::Duration & flength, const util::Duration & default_tstep,
-                     const ObsAux_ & obsaux, const ModelAux_ & moderr,
+                     ObsAux_ & obsaux, const ModelAux_ & moderr,
                      ObsErrors_ & R, std::vector<ObsDataInt_> & qcflags);
   /// Runs a linear model on 4D perturbations from the ensemble mean ( \p xx - \ref xbmean_ ) and
   /// applies a linearized observation operator \ref linear_hofx_ to background departures in the
@@ -414,7 +414,7 @@ void LocalEnsembleSolver<MODEL, OBS>::computeHofX4D(const eckit::Configuration &
                                                     const StateSet_ & xx, Observations_ & yy,
                                                     const util::Duration & flength,
                                                     const util::Duration & default_tstep,
-                                                    const ObsAux_ & obsaux,
+                                                    ObsAux_ & obsaux,
                                                     const ModelAux_ & moderr,
                                                     ObsErrors_ & Rmat,
                                                     std::vector<ObsDataInt_> & qcflags) {
@@ -515,7 +515,8 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
     util::Duration default_tstep = (obspaces_.windowEnd() - obspaces_.windowStart()) * 2;
     const ModelAux_ moderr(geometry_, eckit::LocalConfiguration());
     const ModelAuxInc_  moderrinc(geometry_, eckit::LocalConfiguration());
-    const ObsAux_  obsaux(obspaces_, observersconf_);
+    // Non-const: H(x) may cold-start VarBC coefficients that have no prior value.
+    ObsAux_  obsaux(obspaces_, observersconf_);
     const ObsAuxInc_  obsauxinc(obspaces_, observersconf_);
 
     // set up postprocessors for the linear model run on ensemble perturbations
@@ -592,7 +593,8 @@ Observations<OBS> LocalEnsembleSolver<MODEL, OBS>::computeHofX(
         default_tstep = (obspaces_.windowEnd() - obspaces_.windowStart()) * 2;
 
         const ModelAux_ moderr(geometry_, eckit::LocalConfiguration());
-        const ObsAux_  obsaux(obspaces_, observersconf_);
+        // Non-const: H(x) may cold-start VarBC coefficients that have no prior value.
+        ObsAux_  obsaux(obspaces_, observersconf_);
 
         // Construct a single-member StateSet and populate it from ens_xx
         StateSet_ member_xx(geometry_, ens_xx.variables(), times, ens_xx.commTime());
