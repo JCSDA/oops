@@ -38,6 +38,17 @@ namespace util {
     return filteredConfig;
   }
 
+  bool isEmpty(const eckit::Configuration & config)
+  {
+    // Print configuration into stringstream, then into string
+    std::stringstream ss;
+    ss << config << std::endl;
+    const std::string str = ss.str();
+
+    // Check if the configuration is empty
+    return str.find("LocalConfiguration[root=()]") != std::string::npos;
+  }
+
   bool isVector(const eckit::Configuration & config)
   {
     // Print configuration into stringstream, then into string
@@ -46,7 +57,7 @@ namespace util {
     const std::string str = ss.str();
 
     // Check if the configuration is a vector of configurations
-    return str.find("LocalConfiguration[root=(") != std::string::npos;
+    return !isEmpty(config) && (str.find("LocalConfiguration[root=(") != std::string::npos);
   }
 
   bool isSubConfig(const eckit::Configuration & config)
@@ -63,12 +74,17 @@ namespace util {
   bool isFinal(const eckit::Configuration & config)
   {
     // Check if the configuration is a final pair
-    return !(isVector(config) || isSubConfig(config));
+    return !(isEmpty(config) || isVector(config) || isSubConfig(config));
   }
 
   void seekAndReplace(eckit::LocalConfiguration & config, const std::string & pattern,
                       const std::string & value_out)
   {
+    // Return if empty pattern
+    if (pattern == "") {
+      return;
+    }
+
     // Check if config is a subconfiguration
     if (isSubConfig(config)) {
       // Get the subconfiguration keys
@@ -145,7 +161,7 @@ namespace util {
             // Reset the value
             config.set(keys[jj], value);
           }
-        } else {
+        } else if (isSubConfig(subConfig)) {
           // The local configuration is itself a subconfiguration
 
           // Call seekAndReplace for a subconfiguration
@@ -202,18 +218,27 @@ namespace util {
           if (isSubConfig(sub1) && isSubConfig(sub2)) {
             eckit::LocalConfiguration sub = mergeConfigs(sub1, sub2);
             config.set(keys1[jj], sub);
-          } else if (isVector(sub1) && isVector(sub2)) {
-            // Merge two vectors
-            std::vector<std::string> strVec1 = config1.getStringVector(keys1[jj]);
-            std::vector<std::string> strVec2 = config2.getStringVector(keys1[jj]);
-            std::vector<std::string> strVec;
-            for (const auto & str : strVec1) {
-              strVec.push_back(str);
+          } else if (isVector(sub1)) {
+            if (isVector(sub2)) {
+               // Merge two vectors
+              std::vector<eckit::LocalConfiguration> subVec;
+              std::vector<eckit::LocalConfiguration> subVec1 =
+                config1.getSubConfigurations(keys1[jj]);
+              std::vector<eckit::LocalConfiguration> subVec2 =
+                config2.getSubConfigurations(keys2[jj]);
+              for (const auto & sub : subVec1) {
+                subVec.push_back(sub);
+              }
+              for (const auto & sub : subVec2) {
+                subVec.push_back(sub);
+              }
+              config.set(keys1[jj], subVec);
+            } else if (isEmpty(sub2)) {
+              // Copy first vector
+              std::vector<eckit::LocalConfiguration> subVec1 =
+                config1.getSubConfigurations(keys1[jj]);
+              config.set(keys1[jj], subVec1);
             }
-            for (const auto & str : strVec2) {
-              strVec.push_back(str);
-            }
-            config.set(keys1[jj], strVec);
           } else if (isFinal(sub1) && isFinal(sub2)) {
             // Keep config1 value
             eckit::LocalConfiguration sub;
