@@ -24,6 +24,7 @@ namespace eckit {
 
 namespace oops {
   class Variables;
+  class SourceProximityPartitioner;
 }
 
 namespace qg {
@@ -39,6 +40,9 @@ class InterpolatorQG : public util::Printable {
   InterpolatorQG(const eckit::Configuration &, const GeometryQG &,
                  const std::vector<double> &, const std::vector<double> &);
   ~InterpolatorQG();
+
+  // Partition target points based on proximity to a source grid point.
+  static oops::SourceProximityPartitioner makeTargetPartitioner(const GeometryQG &);
 
   static void preprocess(StateQG &);
   static void preprocess(IncrementQG &);
@@ -56,7 +60,7 @@ class InterpolatorQG : public util::Printable {
              std::vector<double> &) const;
   void print(std::ostream &) const override;
 
-  const GeometryQG & grid_;;
+  const GeometryQG & geom_;
   const size_t nlocs_;
   std::vector<double> locs_;
 };

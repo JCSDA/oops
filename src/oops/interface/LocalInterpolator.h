@@ -49,6 +49,10 @@ class LocalInterpolator : private util::Printable,
                     const std::vector<double> &, const std::vector<double> &);
   ~LocalInterpolator();
 
+  /// Build the partitioner used to scatter interpolation targets to the MPI partitions
+  /// of the source grid that will be responsible for interpolating them.
+  static auto makeTargetPartitioner(const Geometry_ &);
+
   static void preprocess(State_ &);
   static void preprocess(Increment_ &);
   static void preprocessAD(Increment_ &);
@@ -93,6 +97,17 @@ LocalInterpolator<MODEL>::~LocalInterpolator() {
   util::Timer timer(classname(), "~LocalInterpolator");
   interpolator_.reset();
   Log::trace() << "LocalInterpolator<MODEL>::~LocalInterpolator done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+auto LocalInterpolator<MODEL>::makeTargetPartitioner(const Geometry_ & geom) {
+  if constexpr (IsGenericInterpolator) {
+    return LocalInterpolator_::makeTargetPartitioner(geom.generic());
+  } else {
+    return LocalInterpolator_::makeTargetPartitioner(geom.geometry());
+  }
 }
 
 // -----------------------------------------------------------------------------

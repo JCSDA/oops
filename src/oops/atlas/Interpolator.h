@@ -14,6 +14,7 @@
 
 #include "oops/base/GeometryData.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/SourceProximityPartitioner.h"
 
 
 namespace oops {
@@ -28,6 +29,18 @@ class Interpolator {
                const std::vector<double> & target_lats,
                const std::vector<double> & target_lons);
   virtual ~Interpolator() = default;
+
+  // Partition target points based on proximity to a source grid node.
+  static SourceProximityPartitioner makeTargetPartitioner(const GeometryData & geom) {
+    return makeSourceProximityPartitioner(geom.functionSpace(), geom.comm());
+  }
+
+  // Apply a halo exchange to the atlas::FieldSet before interpolating.
+  // This preprocess action is associated with the use of atlas::FieldSets to
+  // represent the model fields, so shouldn't depend on the interpolator
+  // specialization or internal state.
+  static void preprocess(atlas::FieldSet &);
+  static void preprocessAD(atlas::FieldSet &);
 
   // Implement an Atlas-based interpolation algorithm; must be provided by each
   // derived class.
@@ -67,13 +80,6 @@ class Interpolator {
   void applyAD(const Variables& vars,
                atlas::FieldSet& fields,
                const std::vector<double>& buffer) const;
-
-  // Apply a halo exchange to the atlas::FieldSet before interpolating.
-  // This preprocess action is associated with the use of atlas::FieldSets to
-  // represent the model fields, so shouldn't depend on the interpolator
-  // specialization or internal state.
-  static void preprocess(atlas::FieldSet &);
-  static void preprocessAD(atlas::FieldSet &);
 
   // Transfer the interpolation's output buffer back into a FieldSet.
   // These methods do NOT rely on any internal state of the interpolator, they

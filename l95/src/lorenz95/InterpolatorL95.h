@@ -27,11 +27,21 @@ namespace lorenz95 {
 
 // -----------------------------------------------------------------------------
 
+class RankZeroPartitioner {
+ public:
+  int interpolatingTask(double, double) const { return 0; }
+};
+
+// -----------------------------------------------------------------------------
+
 class InterpolatorL95 : public util::Printable {
  public:
   InterpolatorL95(const eckit::Configuration &, const Resolution &,
                   const std::vector<double> &, const std::vector<double> &);
   ~InterpolatorL95();
+
+  // Lorenz95 runs on a single MPI task, all interpolations occur on rank 0.
+  static RankZeroPartitioner makeTargetPartitioner(const Resolution &) { return {}; }
 
   static void preprocess(StateL95 &);
   static void preprocess(IncrementL95 &);

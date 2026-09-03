@@ -261,6 +261,10 @@ list(
   oops/generic/instantiateLinearModelFactory.h
   oops/generic/instantiateModelFactory.h
   oops/generic/LocalizationBase.h
+  oops/generic/MeshTriangulation.h
+  oops/generic/MeshTriangulation.cc
+  oops/generic/ProximitySearch.cc
+  oops/generic/ProximitySearch.h
   oops/generic/PseudoLinearModelIncrement4D.h
   oops/generic/PseudoModel.cc
   oops/generic/PseudoModel.h
@@ -268,6 +272,8 @@ list(
   oops/generic/SimpleLinearModel.h
   oops/generic/SimpleLinearModelMultiresolution.h
   oops/generic/SimpleLinearModelResidualForm.h
+  oops/generic/SourceProximityPartitioner.cc
+  oops/generic/SourceProximityPartitioner.h
   oops/generic/soar.h
   oops/generic/soar.cc
   oops/generic/UnstructuredInterpolator.h

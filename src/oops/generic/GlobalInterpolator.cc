@@ -20,6 +20,7 @@
 #include "oops/base/GeometryData.h"
 #include "oops/base/Variables.h"
 #include "oops/generic/AtlasInterpolator.h"
+#include "oops/generic/ProximitySearch.h"
 #include "oops/generic/UnstructuredInterpolator.h"
 #include "oops/util/Logger.h"
 
@@ -175,6 +176,12 @@ GlobalInterpolator::GlobalInterpolator(
   mytarget_index_by_task_.resize(ntasks);
   std::vector<std::vector<double>> mytarget_latlon_by_task(ntasks);
 
+  // Fetch the source grid's global node tree once (built collectively here, uniformly across
+  // ranks, before the per-target loop below which can be non-uniform), then use it to find which
+  // task is responsible for interpolating to each target.
+  const ProximitySearch & search = getProximitySearch(source_grid.functionSpace(),
+                                                      source_grid.comm());
+
   // Extract target coordinates, find which task will be responsible for interpolating to each one
   const auto lonlat = atlas::array::make_view<double, 2>(target_fs_.lonlat());
   const auto ghost = atlas::array::make_view<int, 1>(target_fs_.ghost());
@@ -183,7 +190,7 @@ GlobalInterpolator::GlobalInterpolator(
       double lon = lonlat(jj, 0);
       if (lon < 0.0) lon += 360.0;
       const double lat = lonlat(jj, 1);
-      const size_t itask = source_grid.closestTask(lat, lon);
+      const size_t itask = search.taskOwningClosestPoint(lat, lon);
       mytarget_index_by_task_[itask].push_back(jj);
       mytarget_latlon_by_task[itask].push_back(lat);
       mytarget_latlon_by_task[itask].push_back(lon);

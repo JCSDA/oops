@@ -31,6 +31,8 @@
 #include "oops/base/Increment.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
+#include "oops/generic/MeshTriangulation.h"
+#include "oops/generic/ProximitySearch.h"
 #include "oops/util/Logger.h"
 #include "oops/util/missingValues.h"
 #include "oops/util/Timer.h"
@@ -61,7 +63,10 @@ UnstructuredInterpolator::UnstructuredInterpolator(const eckit::Configuration & 
                                                    const std::vector<double> & lats_out,
                                                    const std::vector<double> & lons_out)
   : atlasbase::Interpolator(config, geomData, lats_out, lons_out),
-    geom_(geomData), nout_(0), interp_matrices_{}
+    geom_(geomData),
+    meshTri_(getMeshTriangulation(geomData.functionSpace(), geomData.comm())),
+    proximitySearch_(getProximitySearch(geomData.functionSpace(), geomData.comm())),
+    nout_(0), interp_matrices_{}
 {
   Log::trace() << "UnstructuredInterpolator::UnstructuredInterpolator start" << std::endl;
   util::Timer timer("oops::UnstructuredInterpolator", "UnstructuredInterpolator");
@@ -342,14 +347,14 @@ void UnstructuredInterpolator::computeUnmaskedInterpMatrix(
   for (size_t jloc = 0; jloc < nout_; ++jloc) {
     std::array<int, 3> indices{};
     std::array<double, 3> baryCoords{};
-    const bool validTriangle = geom_.containingTriangleAndBarycentricCoords(
+    const bool validTriangle = meshTri_.containingTriangleAndBarycentricCoords(
         lats_out[jloc], lons_out[jloc], indices, baryCoords);
 
     // Edge case: target point outside of source grid, can occur for regional models
     if (!validTriangle) {
       if (enableRegionalNnFill) {
-        const auto search_result = geom_.closestPointWithinRadius(lats_out[jloc], lons_out[jloc],
-                                                                  regionalNnFillDistance_);
+        const auto search_result = proximitySearch_.closestPointWithinRadius(
+            lats_out[jloc], lons_out[jloc], regionalNnFillDistance_);
         if (search_result.has_value()) {
           // NN extrapolation: full weight on the single nearest source point
           const int index = search_result.value();

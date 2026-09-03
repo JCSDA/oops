@@ -22,6 +22,8 @@
 namespace oops {
 
 class GeometryData;
+class MeshTriangulation;
+class ProximitySearch;
 class Variables;
 
 // -----------------------------------------------------------------------------
@@ -73,6 +75,12 @@ class UnstructuredInterpolator : public atlasbase::Interpolator,
                                  const atlas::array::ArrayView<double, 2> &) const;
 
   const GeometryData & geom_;
+  // Shared mesh/triangulation data for this source geometry, owned by a process-local registry.
+  const MeshTriangulation & meshTri_;
+  // Shared source proximity cache for this source geometry, used by the regional nearest-
+  // neighbour fill (closestPointWithinRadius), owned by a process-local registry.
+  const ProximitySearch & proximitySearch_;
+
   size_t nout_;
   double regionalNnFillDistance_ = 0.0;
 

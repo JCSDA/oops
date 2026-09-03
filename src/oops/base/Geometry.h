@@ -32,18 +32,6 @@ namespace eckit {
 
 namespace oops {
 
-/// \brief Checks whether Geometry has method closestTask. Default: no.
-template<class, class = void>
-struct HasClosestTask
-  : std::false_type {};
-
-/// \brief Checks whether Geometry has method closestTask. Specialization for the case
-///        when it does.
-template<class Geometry>
-struct HasClosestTask<Geometry,
-       cpp17::void_t<decltype(std::declval<Geometry>().closestTask(double(), double()))>>
-  : std::true_type {};
-
 // -----------------------------------------------------------------------------
 /// \brief Geometry class used in oops; subclass of interface class interface::Geometry.
 ///
@@ -72,24 +60,6 @@ class Geometry : public interface::Geometry<MODEL> {
 
   /// Accessor to the MPI communicator for distribution in time
   const eckit::mpi::Comm & timeComm() const {return *timeComm_;}
-
-  /// Returns the MPI task that contains the closest point to the point with
-  /// specified \p lat and \p lon.
-  ///@{
-  /// If MODEL::Geometry has method closestTask implemented, call it.
-  template<class Geom = Geometry_>
-  typename std::enable_if< HasClosestTask<Geom>::value, int>::type
-  closestTask(const double lat, const double lon) const {
-    return this->geom_->closestTask(lat, lon);
-  }
-  /// If MODEL::Geometry doesn't have closestTask implemented,
-  /// use a generic implementation.
-  template<class Geom = Geometry_>
-  typename std::enable_if<!HasClosestTask<Geom>::value, int>::type
-  closestTask(const double lat, const double lon) const {
-    return gdata_.closestTask(lat, lon);
-  }
-  ///@}
 
  private:
   const eckit::mpi::Comm * timeComm_;   /// pointer to the MPI communicator in time

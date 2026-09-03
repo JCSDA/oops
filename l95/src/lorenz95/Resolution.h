@@ -51,7 +51,6 @@ class Resolution : public util::Printable {
   const eckit::mpi::Comm & getComm() const {return comm_;}
   const atlas::FunctionSpace & functionSpace() const {return noFunctionSpace_;}
   const atlas::FieldSet & fields() const {return noFields_;}
-  int closestTask(const double, const double) const { return 0; }
 
  private:
   void print(std::ostream & os) const {os << resol_;}

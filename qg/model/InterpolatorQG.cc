@@ -15,13 +15,21 @@
 #include "model/QgFortran.h"
 #include "model/StateQG.h"
 
+#include "oops/generic/SourceProximityPartitioner.h"
+
 namespace qg {
 
 // -----------------------------------------------------------------------------
 
-InterpolatorQG::InterpolatorQG(const eckit::Configuration &, const GeometryQG & grid,
+oops::SourceProximityPartitioner InterpolatorQG::makeTargetPartitioner(const GeometryQG & geom) {
+  return oops::makeSourceProximityPartitioner(geom.functionSpace(), geom.getComm());
+}
+
+// -----------------------------------------------------------------------------
+
+InterpolatorQG::InterpolatorQG(const eckit::Configuration &, const GeometryQG & geom,
                                const std::vector<double> & lats, const std::vector<double> & lons)
-  : grid_(grid), nlocs_(lats.size()), locs_(2 * nlocs_)
+  : geom_(geom), nlocs_(lats.size()), locs_(2 * nlocs_)
 {
   ASSERT(lats.size() == lons.size());
   for (size_t jj = 0; jj < nlocs_; ++jj) {
@@ -61,7 +69,7 @@ void InterpolatorQG::apply(const oops::Variables & vars, const IncrementQG & dx,
 void InterpolatorQG::apply(const oops::Variables & vars, const FieldsQG & flds,
                            const std::vector<bool> & mask,
                            std::vector<double> & values) const {
-  const size_t nlevs = grid_.levels();
+  const size_t nlevs = geom_.levels();
   ASSERT(mask.size() == nlocs_);
   ASSERT(values.size() == vars.size() * nlevs * nlocs_);
 
@@ -97,7 +105,7 @@ void InterpolatorQG::apply(const oops::Variables & vars, const FieldsQG & flds,
 void InterpolatorQG::applyAD(const oops::Variables & vars, IncrementQG & dx,
                              const std::vector<bool> & mask,
                              const std::vector<double> & values) const {
-  const size_t nlevs = grid_.levels();
+  const size_t nlevs = geom_.levels();
   ASSERT(mask.size() == nlocs_);
   ASSERT(values.size() == vars.size() * nlevs * nlocs_);
 

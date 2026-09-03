@@ -24,7 +24,6 @@
 #include "oops/base/Locations.h"
 #include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/generic/UnstructuredInterpolator.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LocalInterpolator.h"
 #include "oops/util/abor1_cpp.h"
@@ -204,6 +203,8 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
     indices_mt_sm_[jtask].resize(nsms_);
   }
 
+  const auto partitioner = LocalInterpolator_::makeTargetPartitioner(geom);
+
   std::vector<std::vector<double>> coords_mt(ntasks_);
   for (int jsm = 0; jsm < nsms_; ++jsm) {
     const auto & locs = locations.samplingMethod(jsm);
@@ -213,7 +214,7 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
 
     // Assign obs to model-grid processors
     for (size_t jobs = 0; jobs < obstimes.size(); ++jobs) {
-      const int itask = geom.closestTask(obslats[jobs], obslons[jobs]);
+      const int itask = partitioner.interpolatingTask(obslats[jobs], obslons[jobs]);
       indices_mt_sm_[itask][jsm].push_back(jobs);
     }
 
