@@ -170,6 +170,24 @@ ObjectJsonSchema Parameter<T>::jsonSchema() const {
   return schema;
 }
 
+// Parameter is explicitly instantiated for the most commonly used value types in
+// ParameterInstantiations.cc. The declarations below suppress its implicit instantiation
+// in every translation unit including this header.
+extern template class Parameter<bool>;
+extern template class Parameter<int>;
+extern template class Parameter<size_t>;
+extern template class Parameter<int64_t>;
+extern template class Parameter<float>;
+extern template class Parameter<double>;
+extern template class Parameter<std::string>;
+extern template class Parameter<util::DateTime>;
+extern template class Parameter<util::Duration>;
+extern template class Parameter<eckit::LocalConfiguration>;
+extern template class Parameter<std::vector<std::string>>;
+extern template class Parameter<std::vector<int>>;
+extern template class Parameter<std::vector<float>>;
+extern template class Parameter<std::vector<double>>;
+
 }  // namespace oops
 
 #endif  // OOPS_UTIL_PARAMETERS_PARAMETER_H_

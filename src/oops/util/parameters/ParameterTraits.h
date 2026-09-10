@@ -609,6 +609,28 @@ struct ParameterTraits<std::set<int>, std::false_type> {
 // Specializations for types used less frequently should be defined in separate files (see
 // ParameterTraitsScalarOrMap.h for an example).
 
+// The traits templates for the most commonly used value types are explicitly instantiated
+// in ParameterTraits.cc. The declarations below suppress their implicit instantiation in
+// every translation unit including this header. (The named full specializations above, e.g.
+// ParameterTraits<int>, are ordinary classes and need no such treatment.)
+extern template struct GenericParameterTraits<bool>;
+extern template struct GenericParameterTraits<int>;
+extern template struct GenericParameterTraits<size_t>;
+extern template struct GenericParameterTraits<int64_t>;
+extern template struct GenericParameterTraits<float>;
+extern template struct GenericParameterTraits<double>;
+extern template struct GenericParameterTraits<std::string>;
+extern template struct GenericParameterTraits<eckit::LocalConfiguration>;
+extern template struct IntegerParameterTraits<int>;
+extern template struct IntegerParameterTraits<size_t>;
+extern template struct IntegerParameterTraits<int64_t>;
+extern template struct FloatingPointParameterTraits<float>;
+extern template struct FloatingPointParameterTraits<double>;
+extern template struct ParameterTraits<std::vector<std::string>>;
+extern template struct ParameterTraits<std::vector<int>>;
+extern template struct ParameterTraits<std::vector<float>>;
+extern template struct ParameterTraits<std::vector<double>>;
+
 }  // namespace oops
 
 #endif  // OOPS_UTIL_PARAMETERS_PARAMETERTRAITS_H_

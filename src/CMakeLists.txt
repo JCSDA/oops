@@ -503,6 +503,7 @@ list(
   oops/util/parameters/ParameterBase.cc
   oops/util/parameters/ParameterBase.h
   oops/util/parameters/ParameterConstraint.h
+  oops/util/parameters/ParameterInstantiations.cc
   oops/util/parameters/Parameters.cc
   oops/util/parameters/Parameters.h
   oops/util/parameters/ParametersOrConfiguration.h

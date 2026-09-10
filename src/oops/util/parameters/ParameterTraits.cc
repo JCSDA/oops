@@ -42,22 +42,10 @@ class LocalConfigurationEx : public eckit::LocalConfiguration {
 
 }  // namespace
 
-// Specialization for IntegerParameterTraits
-template std::string IntegerParameterTraits<int>::valueAsJson(const int &value);
-
-template std::string IntegerParameterTraits<size_t>::valueAsJson(const size_t &value);
-
-template std::string IntegerParameterTraits<int64_t>::valueAsJson(const int64_t &value);
-
 template <typename T>
 std::string IntegerParameterTraits<T>::valueAsJson(const T &value) {
   return std::to_string(value);
 }
-
-// Specialization for FloatingPointParameterTraits
-template std::string FloatingPointParameterTraits<float>::valueAsJson(const float &value);
-
-template std::string FloatingPointParameterTraits<double>::valueAsJson(const double &value);
 
 template <typename T>
 std::string FloatingPointParameterTraits<T>::valueAsJson(const T &value) {
@@ -142,5 +130,25 @@ std::string ParameterTraits<std::set<int>, std::false_type>::valueAsJson(
       ", ", value.begin(), value.end(), [](int n) { return std::to_string(n); })
     + "]";
 }
+
+// Explicit instantiations of the traits templates for the most commonly used value types,
+// matching the extern template declarations at the end of ParameterTraits.h.
+template struct GenericParameterTraits<bool>;
+template struct GenericParameterTraits<int>;
+template struct GenericParameterTraits<size_t>;
+template struct GenericParameterTraits<int64_t>;
+template struct GenericParameterTraits<float>;
+template struct GenericParameterTraits<double>;
+template struct GenericParameterTraits<std::string>;
+template struct GenericParameterTraits<eckit::LocalConfiguration>;
+template struct IntegerParameterTraits<int>;
+template struct IntegerParameterTraits<size_t>;
+template struct IntegerParameterTraits<int64_t>;
+template struct FloatingPointParameterTraits<float>;
+template struct FloatingPointParameterTraits<double>;
+template struct ParameterTraits<std::vector<std::string>>;
+template struct ParameterTraits<std::vector<int>>;
+template struct ParameterTraits<std::vector<float>>;
+template struct ParameterTraits<std::vector<double>>;
 
 }  // namespace oops

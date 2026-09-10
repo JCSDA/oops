@@ -204,6 +204,24 @@ class OptionalParameter<void> : public ParameterBase {
   bool value_;
 };
 
+// OptionalParameter is explicitly instantiated for the most commonly used value types in
+// ParameterInstantiations.cc. The declarations below suppress its implicit instantiation
+// in every translation unit including this header.
+extern template class OptionalParameter<bool>;
+extern template class OptionalParameter<int>;
+extern template class OptionalParameter<size_t>;
+extern template class OptionalParameter<int64_t>;
+extern template class OptionalParameter<float>;
+extern template class OptionalParameter<double>;
+extern template class OptionalParameter<std::string>;
+extern template class OptionalParameter<util::DateTime>;
+extern template class OptionalParameter<util::Duration>;
+extern template class OptionalParameter<eckit::LocalConfiguration>;
+extern template class OptionalParameter<std::vector<std::string>>;
+extern template class OptionalParameter<std::vector<int>>;
+extern template class OptionalParameter<std::vector<float>>;
+extern template class OptionalParameter<std::vector<double>>;
+
 }  // namespace oops
 
 #endif  // OOPS_UTIL_PARAMETERS_OPTIONALPARAMETER_H_

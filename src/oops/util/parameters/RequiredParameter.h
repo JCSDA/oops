@@ -159,6 +159,24 @@ ObjectJsonSchema RequiredParameter<T>::jsonSchema() const {
   return schema;
 }
 
+// RequiredParameter is explicitly instantiated for the most commonly used value types in
+// ParameterInstantiations.cc. The declarations below suppress its implicit instantiation
+// in every translation unit including this header.
+extern template class RequiredParameter<bool>;
+extern template class RequiredParameter<int>;
+extern template class RequiredParameter<size_t>;
+extern template class RequiredParameter<int64_t>;
+extern template class RequiredParameter<float>;
+extern template class RequiredParameter<double>;
+extern template class RequiredParameter<std::string>;
+extern template class RequiredParameter<util::DateTime>;
+extern template class RequiredParameter<util::Duration>;
+extern template class RequiredParameter<eckit::LocalConfiguration>;
+extern template class RequiredParameter<std::vector<std::string>>;
+extern template class RequiredParameter<std::vector<int>>;
+extern template class RequiredParameter<std::vector<float>>;
+extern template class RequiredParameter<std::vector<double>>;
+
 }  // namespace oops
 
 #endif  // OOPS_UTIL_PARAMETERS_REQUIREDPARAMETER_H_
