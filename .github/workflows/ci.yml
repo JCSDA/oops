@@ -18,14 +18,14 @@ jobs:
     runs-on: jedi-self-hosted-ext
     env:
       NAMESPACE: pr-${{ github.event.number }}
-      MOBB_CI_PR_BODY_OUT: mobb-ci-gh-pr-body.out
+      MOBB_CI_PR_BODY_OUT: mobb-ci-gh-pr-${{ github.event.number }}-body.out
       REPO: ${{ github.event.repository.name }}
       TIMEOUT_MINUTE: 301
 
     steps:
       - name: Cleanup (pre)
         run: |
-          rm -fr "./${NAMESPACE}"
+          rm -fr "./${NAMESPACE}" "./${MOBB_CI_PR_BODY_OUT}"
 
       - name: Checkout
         uses: actions/checkout@v5
@@ -72,4 +72,4 @@ jobs:
         timeout-minutes: ${{ fromJSON(env.TIMEOUT_MINUTE) }}
 
       - name: Cleanup (post)
-        run: rm -fr "./${NAMESPACE}"
+        run: rm -fr "./${NAMESPACE}" "./${MOBB_CI_PR_BODY_OUT}"
