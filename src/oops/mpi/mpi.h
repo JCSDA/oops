@@ -10,19 +10,21 @@
 
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "atlas/field.h"
 
 #include "eckit/exception/Exceptions.h"
 #include "eckit/mpi/Comm.h"
 
 #include "oops/base/Variables.h"
 #include "oops/util/Timer.h"
+
+namespace atlas {
+class FieldSet;
+}  // namespace atlas
 
 namespace util {
 class DateTime;
