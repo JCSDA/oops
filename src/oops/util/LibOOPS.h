@@ -40,6 +40,7 @@ class LibOOPS : public eckit::system::Library {
   eckit::Channel& debugChannel() const override;
 
   eckit::Channel& traceChannel() const;
+  eckit::Channel& warningChannel() const;
   eckit::Channel& statsChannel() const;
   eckit::Channel& testChannel() const;
 
@@ -61,6 +62,7 @@ class LibOOPS : public eckit::system::Library {
   mutable std::unique_ptr<eckit::Channel> debugChannel_;
 
   mutable std::unique_ptr<eckit::Channel> traceChannel_;
+  mutable std::unique_ptr<eckit::Channel> warningChannel_;
   mutable std::unique_ptr<eckit::Channel> statsChannel_;
   mutable std::unique_ptr<eckit::Channel> testChannel_;
 
@@ -72,6 +74,7 @@ class LibOOPS : public eckit::system::Library {
   std::string predebug_;
   bool trace_;
   std::string pretrace_;
+  std::string prewarning_;
   std::string prestat_;
   bool validate_parameters_;
 

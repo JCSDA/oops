@@ -74,6 +74,7 @@ LibOOPS::LibOOPS() : Library("oops"),
                      info_(false), preinfo_(""),
                      debug_(false), predebug_("OOPS_DEBUG"),
                      trace_(false), pretrace_("OOPS_TRACE"),
+                     prewarning_("OOPS_WARNING"),
                      prestat_("OOPS_STATS"),
                      validate_parameters_(false) {
 }
@@ -200,6 +201,9 @@ void LibOOPS::finalise(bool finaliseMPI) {
     // Destroy info channel last after other channels have flushed all output
     infoChannel_.reset(new eckit::Channel());
 
+    // Destroy the warning channel, which wraps eckit::Log::warn().
+    warningChannel_.reset(new eckit::Channel());
+
     if (finaliseMPI) eckit::mpi::finaliseAllComms();
 }
 
@@ -226,6 +230,15 @@ eckit::Channel& LibOOPS::traceChannel() const {
     traceChannel_.reset(new eckit::Channel());
   }
   return *traceChannel_;
+}
+
+eckit::Channel& LibOOPS::warningChannel() const {
+  // use pre-main channel if library was not initialized
+  if (!initialised_) {return eckit::Log::warning();}
+  if (warningChannel_) {return *warningChannel_;}
+  warningChannel_.reset(new eckit::Channel(
+    new eckit::PrefixTarget(prewarning_, new eckit::OStreamTarget(eckit::Log::warning()))));
+  return *warningChannel_;
 }
 
 eckit::Channel& LibOOPS::statsChannel() const {
