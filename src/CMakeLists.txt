@@ -251,6 +251,8 @@ list(
   oops/generic/GlobalInterpolator.cc
   oops/generic/GlobalInterpolator.h
   oops/generic/HtlmCalculator.h
+  oops/generic/HtlmCalculatorCore.cc
+  oops/generic/HtlmCalculatorCore.h
   oops/generic/HtlmEnsemble.h
   oops/generic/HtlmRegularization.cc
   oops/generic/HtlmRegularization.h

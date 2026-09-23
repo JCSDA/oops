@@ -1,0 +1,280 @@
+/*
+ * (C) Copyright 2022-2026 UCAR.
+ * (C) Crown copyright 2022-2023 Met Office.
+ *
+ * This software is licensed under the terms of the Apache Licence Version 2.0
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ */
+
+#include "oops/generic/HtlmCalculatorCore.h"
+
+#include <Eigen/Dense>
+
+#include <algorithm>
+#include <limits>
+#include <string>
+#include <utility>
+
+#include "atlas/array.h"
+#include "atlas/array/ArrayView.h"
+#include "atlas/array/MakeView.h"
+#include "atlas/array/Range.h"
+
+#include "eckit/config/Configuration.h"
+#include "eckit/config/LocalConfiguration.h"
+#include "eckit/exception/Exceptions.h"
+
+#include "oops/base/Variables.h"
+#include "oops/generic/HtlmRegularization.h"
+#include "oops/util/Timer.h"
+
+namespace oops {
+
+namespace {
+const char * const timerClassname = "oops::HtlmCalculator";
+}  // namespace
+
+// -----------------------------------------------------------------------------
+
+class HtlmCalculatorCore::Workspace {
+ public:
+  Workspace(const eckit::Configuration & config,
+            const Variables & updateVars,
+            const atlas::idx_t nLevels,
+            const atlas::idx_t influenceSize,
+            const atlas::idx_t ensembleSize,
+            const atlas::FieldSet & rmsVals,
+            const std::vector<atlas::idx_t> & owned,
+            const atlas::FieldSet & regularizationFieldSet);
+
+  void setOfCoeffs(const std::vector<atlas::FieldSet> & linearEnsemble,
+                   const std::vector<atlas::FieldSet> & linearErrors,
+                   atlas::FieldSet & coeffsFSet) const;
+
+ private:
+  void singularValueDecomposition(
+      const atlas::idx_t, const atlas::array::Range &,
+      const std::vector<std::vector<atlas::array::ArrayView<const double, 2>>> &,
+      const std::vector<atlas::array::ArrayView<const double, 1>> &) const;
+  void compute(const atlas::idx_t, const atlas::idx_t, const atlas::array::Range &,
+               const std::vector<std::vector<atlas::array::ArrayView<const double, 2>>> &,
+               const std::vector<atlas::array::ArrayView<const double, 1>> &,
+               std::vector<atlas::array::ArrayView<double, 3>> &) const;
+
+  const Variables & updateVars_;
+  const atlas::idx_t nLevels_;
+  const atlas::idx_t influenceSize_;
+  const atlas::idx_t halfInfluenceSize_;
+  const atlas::idx_t ensembleSize_;
+  const atlas::idx_t vectorSize_;
+  const std::vector<atlas::idx_t> & owned_;
+  const atlas::FieldSet rmsVals_;
+  mutable Eigen::MatrixXd M_;
+  mutable Eigen::VectorXd linearErrorVector_;
+  mutable Eigen::BDCSVD<Eigen::MatrixXd> SVD_;
+  std::unique_ptr<HtlmRegularization> regularization_;
+  // note recipMaxCondNum_ has a default value of -1 when unspecified, this cuts down on the
+  // the needed number of if statements for adaptive regularization by inverting the inequality
+  // comparison to check if the condintion number is too high. That is the the recip of the
+  // condition number will always be positive and no adaption is done if the max in negative.
+  const double recipMaxCondNum_;
+  const double minSingVal_;
+};
+
+// -----------------------------------------------------------------------------
+
+HtlmCalculatorCore::Workspace::Workspace(const eckit::Configuration & config,
+                                         const Variables & updateVars,
+                                         const atlas::idx_t nLevels,
+                                         const atlas::idx_t influenceSize,
+                                         const atlas::idx_t ensembleSize,
+                                         const atlas::FieldSet & rmsVals,
+                                         const std::vector<atlas::idx_t> & owned,
+                                         const atlas::FieldSet & regularizationFieldSet)
+: updateVars_(updateVars), nLevels_(nLevels), influenceSize_(influenceSize),
+  halfInfluenceSize_(influenceSize_ / 2), ensembleSize_(ensembleSize),
+  vectorSize_(influenceSize_ * updateVars_.size()), owned_(owned), rmsVals_(rmsVals),
+  M_(vectorSize_, ensembleSize_), linearErrorVector_(ensembleSize_),
+  SVD_(vectorSize_, vectorSize_, Eigen::ComputeThinU),
+  recipMaxCondNum_(1.0 / config.getDouble("regularization.max condition number", -1)),
+  minSingVal_(config.getDouble("regularization.min singular value", 0.0)) {
+  // Check max condition number is > 1
+  if (recipMaxCondNum_ >= 1.0) {
+    throw eckit::UserError("HtlmCalculator: regularization max condition number must be > 1");
+  }
+  // Set up regularization, can be empty
+  const eckit::LocalConfiguration regConfig = config.getSubConfiguration("regularization");
+  if (!regConfig.has("parts")) {
+    regularization_ = std::make_unique<HtlmRegularization>(regConfig);
+  } else {
+    regularization_ = std::make_unique<HtlmRegularizationComponentDependent>(
+      regConfig, regularizationFieldSet);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void HtlmCalculatorCore::Workspace::setOfCoeffs(const std::vector<atlas::FieldSet> & linearEnsemble,
+                                                const std::vector<atlas::FieldSet> & linearErrors,
+                                                atlas::FieldSet & coeffsFSet) const {
+  // Loop over grid points and levels, and at each:
+  // - form the preconditioned matrix of influencing components across each ensemble member, M;
+  // - compute the singular value decomposition of M(M^T);
+  // - for each variable, compute vectors of coefficients and store in coeffsFSet.
+  // Generally the regions of influence are centred on the level of interest, expect near the bottom
+  // and top, where they are the bottom-most/top-most (influenceSize_) levels. The loop over k is
+  // therefore split at the ends to avoid repeating the same SVD multiple times.
+
+  // Pre-calculate views
+  std::vector<std::vector<atlas::array::ArrayView<const double, 2>>>
+    linearEnsembleViews(ensembleSize_);
+  for (atlas::idx_t m = 0; m < ensembleSize_; ++m) {
+    linearEnsembleViews[m].reserve(updateVars_.size());
+    for (size_t v = 0; v < updateVars_.size(); ++v) {
+      linearEnsembleViews[m].emplace_back(atlas::array::make_view<const double, 2>(
+          linearEnsemble[m][updateVars_[v].name()]));
+    }
+  }
+
+  std::vector<std::vector<atlas::array::ArrayView<const double, 2>>>
+    linearErrorsViews(ensembleSize_);
+  for (atlas::idx_t m = 0; m < ensembleSize_; ++m) {
+    linearErrorsViews[m].reserve(updateVars_.size());
+    for (size_t v = 0; v < updateVars_.size(); ++v) {
+      linearErrorsViews[m].emplace_back(atlas::array::make_view<const double, 2>(
+          linearErrors[m][updateVars_[v].name()]));
+    }
+  }
+
+  std::vector<atlas::array::ArrayView<double, 3>> coeffsViews;
+  coeffsViews.reserve(updateVars_.size());
+  for (size_t v = 0; v < updateVars_.size(); ++v) {
+    coeffsViews.emplace_back(atlas::array::make_view<double, 3>
+      (coeffsFSet[updateVars_[v].name()]));
+  }
+
+  std::vector<atlas::array::ArrayView<const double, 1>> rmsViews;
+  rmsViews.reserve(updateVars_.size());
+  for (size_t v = 0; v < updateVars_.size(); ++v) {
+    rmsViews.emplace_back(atlas::array::make_view<const double, 1>
+      (rmsVals_[updateVars_[v].name()]));
+  }
+
+  for (auto i : owned_) {
+    atlas::array::Range range(0, influenceSize_);
+    singularValueDecomposition(i, range, linearEnsembleViews, rmsViews);
+    for (auto k = 0; k < halfInfluenceSize_; k++) {
+      compute(i, k, range, linearErrorsViews, rmsViews, coeffsViews);
+    }
+    for (auto k = halfInfluenceSize_; k < nLevels_ - halfInfluenceSize_; k++) {
+      range = atlas::array::Range(k - halfInfluenceSize_, k + halfInfluenceSize_ + 1);
+      singularValueDecomposition(i, range, linearEnsembleViews, rmsViews);
+      compute(i, k, range, linearErrorsViews, rmsViews, coeffsViews);
+    }
+    range = atlas::array::Range(nLevels_ - influenceSize_, nLevels_);
+    singularValueDecomposition(i, range, linearEnsembleViews, rmsViews);
+    for (auto k = nLevels_ - halfInfluenceSize_; k < nLevels_; k++) {
+      compute(i, k, range, linearErrorsViews, rmsViews, coeffsViews);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+void HtlmCalculatorCore::Workspace::singularValueDecomposition(
+  const atlas::idx_t i,
+  const atlas::array::Range & range,
+  const std::vector<std::vector<atlas::array::ArrayView<const double, 2>>> & linearEnsembleViews,
+  const std::vector<atlas::array::ArrayView<const double, 1>> & rmsViews)const {
+  util::Timer timer(timerClassname, "singularValueDecomposition");
+  // M is a matrix where each column forms a vector of (no. variables) segments, each of length
+  // influenceSize_, and each column is taken from one ensemble member
+  for (size_t v = 0; v < updateVars_.size(); v++) {
+    auto rms = rmsViews[v].slice(range);
+    for (auto m = 0; m < ensembleSize_; m++) {
+      const auto values = linearEnsembleViews[m][v].slice(i, range);
+      for (auto s = 0; s < influenceSize_; s++) {
+        // Values are normalized by typical magnitudes (from rmsVals_) as preconditioning
+        M_(v * influenceSize_ + s, m) = values(s) / rms[s];
+      }
+    }
+  }
+  SVD_.compute(M_ * M_.transpose());
+}
+
+// -----------------------------------------------------------------------------
+
+void HtlmCalculatorCore::Workspace::compute(
+  const atlas::idx_t i,
+  const atlas::idx_t k,
+  const atlas::array::Range & range,
+  const std::vector<std::vector<atlas::array::ArrayView<const double, 2>>> & linearErrorsViews,
+  const std::vector<atlas::array::ArrayView<const double, 1>> & rmsViews,
+  std::vector<atlas::array::ArrayView<double, 3>> & coeffsViews) const {
+  util::Timer timer(timerClassname, "compute");
+  for (size_t v = 0; v < updateVars_.size(); ++v) {
+    const auto & var = updateVars_[v];
+    // Produce VectorXd of linear errors at var, i, k for each ensemble member
+    for (auto m = 0; m < ensembleSize_; m++) {
+      linearErrorVector_(m, 0)
+        = linearErrorsViews[m][v](i, k);
+    }
+
+    // Add regularization value to singular values
+    // TODO(Tom): change regularization to use variables
+    Eigen::ArrayXd singVals = SVD_.singularValues().array()
+                                    + regularization_->getRegularizationValue(var.name(), i, k);
+    const double maxSingVal = singVals.maxCoeff();
+    const double minSingVal = singVals.minCoeff();
+    const double recipCondNum = minSingVal/maxSingVal;
+    if (recipCondNum < recipMaxCondNum_) {
+      const double newRegVal = (recipMaxCondNum_ * maxSingVal-minSingVal) / (1 - recipMaxCondNum_);
+      singVals += newRegVal;
+    }
+
+    // Compute vector of coeffs for var at i, k, assigning directly into FieldSet
+    const double tol = std::max(minSingVal_,
+      singVals.matrix().norm() * std::numeric_limits<double>::epsilon());
+    Eigen::Map<Eigen::VectorXd> coeffsMap(
+      &coeffsViews[v](i, k, 0), vectorSize_);
+    coeffsMap.noalias() = SVD_.matrixU()
+      * ((singVals > tol).select(singVals.inverse(), 0.0)).matrix().asDiagonal()
+      * SVD_.matrixU().transpose() * M_ * linearErrorVector_;
+    // (equation 26 in https://doi.org/10.1175/MWR-D-20-0088.1)
+
+    // Un-normalize to account for preconditioning
+    for (size_t v2 = 0; v2 < updateVars_.size(); v2++) {
+      auto rms = rmsViews[v2].slice(range);
+      for (auto s = 0; s < influenceSize_; s++) {
+        coeffsMap(v2 * influenceSize_ + s, 0) /= rms[s];
+      }
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Forwarding shell
+// -----------------------------------------------------------------------------
+
+HtlmCalculatorCore::HtlmCalculatorCore(const eckit::Configuration & config,
+                                       const Variables & updateVars,
+                                       const atlas::idx_t nLevels,
+                                       const atlas::idx_t influenceSize,
+                                       const atlas::idx_t ensembleSize,
+                                       const atlas::FieldSet & rmsVals,
+                                       const std::vector<atlas::idx_t> & owned,
+                                       const atlas::FieldSet & regularizationFieldSet)
+: impl_(std::make_unique<Workspace>(config, updateVars, nLevels, influenceSize, ensembleSize,
+                                    rmsVals, owned, regularizationFieldSet)) {}
+
+HtlmCalculatorCore::~HtlmCalculatorCore() = default;
+
+void HtlmCalculatorCore::setOfCoeffs(const std::vector<atlas::FieldSet> & linearEnsemble,
+                                     const std::vector<atlas::FieldSet> & linearErrors,
+                                     atlas::FieldSet & coeffsFSet) const {
+  impl_->setOfCoeffs(linearEnsemble, linearErrors, coeffsFSet);
+}
+
+// -----------------------------------------------------------------------------
+
+}  // namespace oops
