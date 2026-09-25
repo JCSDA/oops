@@ -55,6 +55,16 @@ const std::vector<std::string> getTestData(const eckit::Configuration & conf) {
   return conf.getStringVector("string");
 }
 
+template <>
+const std::vector<bool> getTestData(const eckit::Configuration &conf) {
+  const std::vector<int> int_vector = conf.getIntVector("bool");
+  std::vector<bool> bool_vector;
+  for (int v : int_vector) {
+    bool_vector.push_back(v != 0);  // false = 0, true = 1
+  }
+  return bool_vector;
+}
+
 // -----------------------------------------------------------------------------------------------
 template <typename T>
 void testAllGatherv() {
@@ -70,6 +80,22 @@ void testAllGatherv() {
 
   oops::mpi::allGatherv(comm, values);
   EXPECT_EQUAL(values, expectedResult);
+}
+
+template <typename T>
+void testAllGathervSendReceive() {
+  const eckit::Configuration &conf = TestEnvironment::config();
+  const eckit::mpi::Comm &comm = oops::mpi::world();
+  std::vector<T> recv;
+
+  const size_t rank = comm.rank();
+  const eckit::LocalConfiguration localConf(conf, "local" + std::to_string(rank));
+  std::vector<T> values = getTestData<T>(localConf);
+
+  const eckit::LocalConfiguration globalConf(conf, "global");
+  const std::vector<T> &expectedResult = getTestData<T>(globalConf);
+  oops::mpi::allGatherv(comm, values, recv);
+  EXPECT_EQUAL(recv, expectedResult);
 }
 
 // -----------------------------------------------------------------------------------------------
@@ -111,8 +137,20 @@ CASE("mpi/mpi/allGathervDateTime") {
   testAllGatherv<util::DateTime>();
 }
 // -----------------------------------------------------------------------------------------------
-CASE("mpi/mpi/allGathervInt") {
+CASE("mpi/mpi/allGathervString") {
   testAllGatherv<std::string>();
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/allGathervBool") {
+  testAllGatherv<bool>();
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/allGathervSendReceiveInt") {
+  testAllGathervSendReceive<int>();
+}
+// -----------------------------------------------------------------------------------------------
+CASE("mpi/mpi/allGathervSendReceiveBool") {
+  testAllGathervSendReceive<bool>();
 }
 // -----------------------------------------------------------------------------------------------
 CASE("mpi/mpi/SendReceive") {

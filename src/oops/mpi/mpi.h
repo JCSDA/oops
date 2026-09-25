@@ -13,6 +13,7 @@
 #include <Eigen/Core>
 
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -198,25 +199,46 @@ void allGathervUsingSerialize(const eckit::mpi::Comm &comm, CIter first, CIter l
 ///
 /// This operation gathers data from all tasks and delivers the combined data to all tasks.
 ///
-/// \tparam T must be a type for which there exists a specialization of eckit::mpi::Data::Type.
+/// \tparam T must be either bool or a type for which there exists a
+/// specialization of eckit::mpi::Data::Type.
 ///
 /// \param[in] comm
 ///   Communicator.
 /// \param[inout] x
 ///   On input, data owned by this task that need to be delivered to all other tasks. On output,
 ///   combined data received from all tasks (concatenated in the order of increasing task ranks).
+
 template <typename T>
-void allGatherv(const eckit::mpi::Comm & comm, std::vector<T> &x) {
+void allGatherv(const eckit::mpi::Comm &comm, std::vector<T> &x) {
+  // Special handling for bool vectors since vector<bool> is not a standard
+  // container and does not have a proper data() method which allGatherv needs
+  // to access the underlying data.
+  if constexpr (std::is_same<T, bool>::value) {
+    std::vector<char> boolAsBytes(x.begin(), x.end());
+    allGatherv(comm, boolAsBytes);
+    x.assign(boolAsBytes.begin(), boolAsBytes.end());
+  } else {
     eckit::mpi::Buffer<T> buffer(comm.size());
     comm.allGatherv(x.begin(), x.end(), buffer);
     x = std::move(buffer.buffer);
+  }
 }
 
 template <typename T>
-void allGatherv(const eckit::mpi::Comm & comm, const std::vector<T> & send, std::vector<T> & recv) {
+void allGatherv(const eckit::mpi::Comm &comm, const std::vector<T> &send,
+                std::vector<T> &recv) {
+  // Special handling for bool vectors since vector<bool> is not a standard
+  // container and does not have a proper data() method which allGatherv needs
+  // to access the underlying data.
+  if constexpr (std::is_same<T, bool>::value) {
+    std::vector<char> boolAsBytes(send.begin(), send.end());
+    allGatherv(comm, boolAsBytes);
+    recv.assign(boolAsBytes.begin(), boolAsBytes.end());
+  } else {
     eckit::mpi::Buffer<T> buffer(comm.size());
     comm.allGatherv(send.begin(), send.end(), buffer);
     recv = std::move(buffer.buffer);
+  }
 }
 
 // ------------------------------------------------------------------------------------------------
