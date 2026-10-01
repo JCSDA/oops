@@ -36,6 +36,8 @@ class ObsTestsFixture : private boost::noncopyable {
   /// accessors to observation window
   static const util::TimeWindow & timeWindow() {return *getInstance().timeWindow_;}
   /// accessor to a jj-th obs type config
+  /// The returned configuration carries the global defaults (if any) that the
+  /// ObsSpaces constructor applied.
   static eckit::LocalConfiguration & config(size_t jj) {return getInstance().configs_.at(jj);}
   /// accessor to a all obs spaces
   static ObsSpaces_ & obspace()        {return *getInstance().ospaces_;}
@@ -76,7 +78,6 @@ class ObsTestsFixture : private boost::noncopyable {
               << "list of individual 'obs space' specs is a deprecated format. " << std::endl
               << "WARNING: Please nest the list of 'obs space' specs under an "
               << "'observations.observers:' key " << std::endl;
-      obsconfig.set("observers", configs_);
       // Transform the sequence form into the mapping form for the subsequent
       // ObsSpaces constructor. Temporarily allow for the "obs data container"
       // option to be set at the top level of the test YAML (ie, sibling to
@@ -86,6 +87,17 @@ class ObsTestsFixture : private boost::noncopyable {
       if (conf.get("obs data container", obsDataContainer))
         obsconfig.set("obs data container", obsDataContainer);
     }
+
+    // Fold the global defaults into the configs_ data member, and build
+    // the ObsSpace instances from those copies. This keeps the configurations
+    // in configs_ in sync with the constructed ObsSpace instances.
+    for (eckit::LocalConfiguration & observerConf : configs_) {
+      if (!observerConf.has("obs space")) continue;
+      eckit::LocalConfiguration obsSpaceConf(observerConf, "obs space");
+      oops::detail::applyObsSpaceDefaults(obsconfig, obsSpaceConf);
+      observerConf.set("obs space", obsSpaceConf);
+    }
+    obsconfig.set("observers", configs_);
 
     ospaces_.reset(new ObsSpaces_(obsconfig, *getCommPointerInstance(), *timeWindow_));
   }
