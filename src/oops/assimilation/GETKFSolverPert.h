@@ -44,8 +44,6 @@ class StochasticGETKF : public DeterministicGETKF<MODEL, OBS> {
   StochasticGETKF(ObsSpaces_ &, const Geometry_ &, const eckit::Configuration &, size_t,
                   const StateSet_ &, const Variables &);
 
-  Observations_ computeHofX(const StateSet_ &, size_t, bool) override;
-
   /// entire KF update (computeWeights+applyWeights) for a grid point GeometryIterator_
   void measurementUpdate(const Eigen::VectorXd &,
                          const ObsErrors_ &,
@@ -120,19 +118,6 @@ StochasticGETKF<MODEL, OBS>::StochasticGETKF(ObsSpaces_ & obspaces, const Geomet
     eivec_(this->nanal_, this->nanal_),
     useSVD_(this->svdRequested(config)) {
   Log::trace() << "StochasticGETKF<MODEL, OBS>::create starting" << std::endl;
-  Log::trace() << "StochasticGETKF<MODEL, OBS>::create done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL, typename OBS>
-Observations<OBS> StochasticGETKF<MODEL, OBS>::computeHofX(const StateSet_ & ens_xx,
-                                                           size_t iteration, bool readFromFile) {
-  util::Timer timer(classname(), "computeHofX");
-
-  Observations_ yb_mean(this->obspaces_);
-  yb_mean = DeterministicGETKF<MODEL, OBS>::computeHofX(ens_xx, iteration, readFromFile);
-
   // generate observation perturbations with zero mean and
   // store in Yb_ observation perturbations minus original ensemble hofx
   // perturbations to be consistent with omb used in Kalman gain calculation
@@ -165,7 +150,7 @@ Observations<OBS> StochasticGETKF<MODEL, OBS>::computeHofX(const StateSet_ & ens
     (this->Yb_)->setData(iens, pertDepTmp);
   }
 
-  return yb_mean;
+  Log::trace() << "StochasticGETKF<MODEL, OBS>::create done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -179,7 +164,7 @@ void StochasticGETKF<MODEL, OBS>::computeWeights(const Eigen::VectorXd & dy,
   util::Timer timer(classname(), "computeWeights");
   const float infl = this->inflopt_.getFloat("mult", 1.0);
 
-oops::stoETKF_computeWeights(dy.cast<float>(), Yb, YbOrig,
+  oops::stoETKF_computeWeights(dy.cast<float>(), Yb, YbOrig,
                                R, infl, useSVD_, this->Wa_);
 }
 

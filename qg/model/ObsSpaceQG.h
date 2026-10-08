@@ -78,6 +78,9 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   /// Append new obs
   void updateObsSpace(const eckit::Configuration &);
 
+  /// Redistribute the obs - zero operation for this ObsSpace
+  void redistribute(const eckit::Configuration & config) {}
+
   /// interface with Fortran
   const F90odb & toFortran() const {return key_;}
 

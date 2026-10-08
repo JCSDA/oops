@@ -56,6 +56,8 @@ class ObsTable : public oops::ObsSpaceBase,
   void getdb(const std::string &, std::vector<float> &) const;
   void getdb(const std::string &, std::vector<double> &) const;
 
+  void redistribute(const eckit::Configuration & config) {}
+
   bool has(const std::string & col) const;
   void generateDistribution(const eckit::Configuration &);
   void random(std::vector<double> &) const;
