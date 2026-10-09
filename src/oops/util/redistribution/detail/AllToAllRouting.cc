@@ -17,9 +17,8 @@ namespace detail {
 
 AllToAllRouting::AllToAllRouting(const std::vector<int> sendCounts,
                                  const std::vector<int> recvCounts) :
-  sendCounts_(sendCounts), recvCounts_(recvCounts),
-  sendDispls_(sendCounts.size(), 0),
-  recvDispls_(recvCounts.size(), 0)
+  sendCounts_(sendCounts), sendDispls_(sendCounts.size(), 0),
+  recvCounts_(recvCounts), recvDispls_(recvCounts.size(), 0)
 {
   ASSERT(sendCounts_.size() == recvCounts_.size());
 
