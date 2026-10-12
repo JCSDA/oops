@@ -22,7 +22,9 @@
 namespace oops {
 
 /// Checks each cost function term is not negative, infinite, or NaN.
-void checkQuadraticCostFunction(const double costJb, const double costJoJc);
+/// If \p allowNegative is true (e.g. FSOI), only checks for infinite or NaN values.
+void checkQuadraticCostFunction(const double costJb, const double costJoJc,
+                                const bool allowNegative = false);
 /// Prints to Log::info gradient reduction \p grad and normalized gradient reduction \p norm
 /// for iteration \p iteration
 void printNormReduction(int iteration, const double & grad, const double & norm);

@@ -18,9 +18,10 @@
 
 namespace oops {
 
-void checkQuadraticCostFunction(const double costJb, const double costJoJc) {
-  auto checkValid = [](const std::string & costname, const double J) {
-    if (J < 0) {
+void checkQuadraticCostFunction(const double costJb, const double costJoJc,
+                                const bool allowNegative) {
+  auto checkValid = [allowNegative](const std::string & costname, const double J) {
+    if (J < 0 && !allowNegative) {
       std::stringstream sserr;
       sserr << costname << " is negative (" << J << ")";
       throw eckit::BadValue(sserr.str(), Here());

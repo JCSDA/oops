@@ -53,9 +53,13 @@ template<typename MODEL, typename OBS> class DRMinimizer : public Minimizer<MODE
   typedef RinvHMatrix<MODEL, OBS>         RinvH_;
 
  public:
-  explicit DRMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_(), costJ0Jb_(0) {}
+  explicit DRMinimizer(const CostFct_ & J): Minimizer_(J), J_(J), gradJb_(), costJ0Jb_(0),
+                                            fsoi_(false) {}
   ~DRMinimizer() {}
   const std::string classname() const override = 0;
+
+ protected:
+  bool isFSOI() const {return fsoi_;}
 
  private:
   CtrlInc_ * doMinimize(const eckit::Configuration &) override;
@@ -68,6 +72,7 @@ template<typename MODEL, typename OBS> class DRMinimizer : public Minimizer<MODE
   std::unique_ptr<CtrlInc_> gradJb_;
   std::vector<CtrlInc_> dxh_;
   double costJ0Jb_;
+  bool fsoi_;
 };
 
 // =============================================================================
@@ -104,7 +109,8 @@ DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 // dx_i = x_i - x_{i-1}; dx_1 = x_1 - x_b
   CtrlInc_ rhs(J_.jb());
   CtrlInc_ dx0(rhs);
-  if (config.has("fsoi")) {
+  fsoi_ = config.has("fsoi");
+  if (fsoi_) {
     const eckit::LocalConfiguration FcSensitivityConfig(config, "fsoi.input forecast sensitivity");
     rhs.read(FcSensitivityConfig);
     dx0 = rhs;
@@ -129,7 +135,7 @@ DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
 // Set J[0] = 0.5 (x_i - x_b)^T B^{-1} (x_i - x_b) + 0.5 d^T R^{-1} d
   const double costJ0Jb = costJ0Jb_;
   const double costJ0JoJc = J_.getCostJoJc();
-  checkQuadraticCostFunction(costJ0Jb, costJ0JoJc);
+  checkQuadraticCostFunction(costJ0Jb, costJ0JoJc, fsoi_);
 
 // Solve the linear system
   double reduc = this->solve(*dx, dxh, rhs, B, HtRinvH, *gradJb_,
@@ -149,7 +155,7 @@ DRMinimizer<MODEL, OBS>::doMinimize(const eckit::Configuration & config) {
     CtrlInc_ dxhtmp(dx->geometry(), dxh_[jouter-1]);
     costJ0Jb_ += dot_product(*dx, dxhtmp);
   }
-  checkQuadraticCostFunction(costJ0Jb_, costJ0JoJc);
+  checkQuadraticCostFunction(costJ0Jb_, costJ0JoJc, fsoi_);
 
   if (config.has("fsoi")) {
     Log::info() << classname() << " Entering Observation Sensitivity Calculation" << std::endl;
