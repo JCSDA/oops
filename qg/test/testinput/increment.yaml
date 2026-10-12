@@ -5,7 +5,7 @@ geometry:
 other geometry:
   nx: 20
   ny: 10
-  depths: [5000.0]
+  depths: [4800.0, 5000.0]
 inc variables: [x]
 increment test:
  date: 2009-12-31T00:00:00Z

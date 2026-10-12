@@ -83,6 +83,7 @@ real(kind_real) :: pcoeff
 call f_conf%get_or_die("nx",self%nx)
 call f_conf%get_or_die("ny",self%ny)
 self%nz = f_conf%get_size("depths")
+if (self%nz <= 1) call abor1_ftn('At least two levels are required')
 
 ! Allocation
 allocate(depths(self%nz))
