@@ -23,6 +23,7 @@
 #include "eckit/log/Log.h"
 #include "eckit/log/OStreamTarget.h"
 #include "eckit/log/PrefixTarget.h"
+#include "eckit/log/TimeStampTarget.h"
 #include "eckit/utils/Translator.h"
 
 #include "oops/mpi/mpi.h"
@@ -73,7 +74,7 @@ LibOOPS::LibOOPS() : Library("oops"),
                      initialised_(false), rank_(0), test_(false),
                      info_(false), preinfo_(""),
                      debug_(false), predebug_("OOPS_DEBUG"),
-                     trace_(false), pretrace_("OOPS_TRACE"),
+                     trace_(false), pretrace_("OOPS_TRACE"), logTimeStamps_(false),
                      prewarning_("OOPS_WARNING"),
                      prestat_("OOPS_STATS"),
                      validate_parameters_(false) {
@@ -118,6 +119,9 @@ void LibOOPS::initialise() {
   if (id > 0) debug_ = info_;
   if (id < 0) debug_ = true;
   predebug_ += "[" + std::to_string(rank_) + "]";
+
+  const int itimestamp = getEnv("OOPS_LOG_TIMESTAMPS", 0);
+  logTimeStamps_ = itimestamp != 0;
 
   const int vp = getEnv("VALIDATE_PARAMETERS", 0);
   if (vp != 0) validate_parameters_ = true;
@@ -224,8 +228,14 @@ eckit::Channel& LibOOPS::traceChannel() const {
   if (!initialised_) {return eckit::Log::info();}
   if (traceChannel_) {return *traceChannel_;}
   if (trace_) {
-    traceChannel_.reset(new eckit::Channel(
-      new eckit::PrefixTarget(pretrace_, new eckit::OStreamTarget(eckit::Log::info()))));
+    if (logTimeStamps_) {
+      traceChannel_.reset(new eckit::Channel(
+        new eckit::TimeStampTarget(pretrace_.c_str(),
+                                   new eckit::OStreamTarget(eckit::Log::info()))));
+    } else {
+      traceChannel_.reset(new eckit::Channel(
+        new eckit::PrefixTarget(pretrace_, new eckit::OStreamTarget(eckit::Log::info()))));
+    }
   } else {
     traceChannel_.reset(new eckit::Channel());
   }
@@ -271,11 +281,13 @@ eckit::Channel& LibOOPS::infoChannel() const {
   // use pre-main channel if library was not initialized
   if (!initialised_) {return eckit::Log::info();}
   if (infoChannel_) {return *infoChannel_;}
-  if (rank_ == 0) {
-    return eckit::Log::info();
-  } else if (info_ && rank_ > 0) {
-    infoChannel_.reset(new eckit::Channel(
-      new eckit::PrefixTarget(preinfo_, new eckit::OStreamTarget(eckit::Log::info()))));
+  if (rank_ == 0 || (info_ && rank_ > 0)) {
+    if (logTimeStamps_) {
+      infoChannel_.reset(new eckit::Channel(new eckit::TimeStampTarget(preinfo_.c_str())));
+    } else {
+      infoChannel_.reset(new eckit::Channel(
+        new eckit::PrefixTarget(preinfo_, new eckit::OStreamTarget(eckit::Log::info()))));
+    }
   } else {
     infoChannel_.reset(new eckit::Channel());
   }
@@ -288,7 +300,11 @@ eckit::Channel& LibOOPS::debugChannel() const {
   if (!initialised_) {return eckit::Log::info();}
   if (debugChannel_) {return *debugChannel_;}
   if (debug_) {
-    debugChannel_.reset(new eckit::Channel(new eckit::PrefixTarget(predebug_)));
+    if (logTimeStamps_) {
+      debugChannel_.reset(new eckit::Channel(new eckit::TimeStampTarget(predebug_.c_str())));
+    } else {
+      debugChannel_.reset(new eckit::Channel(new eckit::PrefixTarget(predebug_)));
+    }
   } else {
     debugChannel_.reset(new eckit::Channel());
   }

@@ -74,6 +74,7 @@ class LibOOPS : public eckit::system::Library {
   std::string predebug_;
   bool trace_;
   std::string pretrace_;
+  bool logTimeStamps_;
   std::string prewarning_;
   std::string prestat_;
   bool validate_parameters_;
