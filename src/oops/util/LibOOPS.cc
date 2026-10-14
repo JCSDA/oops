@@ -20,16 +20,22 @@
 #include <string>
 #include <vector>
 
+#include "atlas/library/git_sha1.h"
+#include "atlas/library/version.h"
+#include "eckit/eckit_version.h"
 #include "eckit/log/Log.h"
 #include "eckit/log/OStreamTarget.h"
 #include "eckit/log/PrefixTarget.h"
 #include "eckit/log/TimeStampTarget.h"
+#include "eckit/system/LibraryManager.h"
 #include "eckit/utils/Translator.h"
+#include "fckit/fckit.h"
 
 #include "oops/mpi/mpi.h"
 #include "oops/util/IntSetParser.h"
 #include "oops/util/LibOOPS.h"
 #include "oops/util/Logger.h"
+#include "oops/util/oops_library_info.h"
 #include "oops/util/signal_trap.h"
 
 #ifdef ENABLE_GPTL
@@ -43,28 +49,28 @@ namespace oops {
 
 //------------------------------------------------------------------------------
 
-  bool getEnv(const std::string& env, bool default_value) {
-    if (::getenv(env.c_str()))
-      {return eckit::Translator<std::string, bool>()(::getenv(env.c_str()));}
-    return default_value;
-  }
+bool getEnv(const std::string& env, bool default_value) {
+  if (::getenv(env.c_str()))
+    {return eckit::Translator<std::string, bool>()(::getenv(env.c_str()));}
+  return default_value;
+}
 
-  int getEnv(const std::string& env, int default_value) {
-    if (::getenv(env.c_str()))
-      {return eckit::Translator<std::string, int>()(::getenv(env.c_str()));}
-    return default_value;
-  }
+int getEnv(const std::string& env, int default_value) {
+  if (::getenv(env.c_str()))
+    {return eckit::Translator<std::string, int>()(::getenv(env.c_str()));}
+  return default_value;
+}
 
-  std::vector<int> getEnvList(const std::string& env, std::vector<int> default_value) {
-    if (::getenv(env.c_str())) {
-      const std::string pelist(::getenv(env.c_str()));
-      const std::set<int> pes = parseIntSet(pelist);
-      std::vector<int> info_pes;
-      std::copy(pes.begin(), pes.end(), std::back_inserter(info_pes));
-      return info_pes;
-    }
-    return default_value;
+std::vector<int> getEnvList(const std::string& env, std::vector<int> default_value) {
+  if (::getenv(env.c_str())) {
+    const std::string pelist(::getenv(env.c_str()));
+    const std::set<int> pes = parseIntSet(pelist);
+    std::vector<int> info_pes;
+    std::copy(pes.begin(), pes.end(), std::back_inserter(info_pes));
+    return info_pes;
   }
+  return default_value;
+}
 
 //------------------------------------------------------------------------------
 
@@ -87,6 +93,7 @@ LibOOPS& LibOOPS::instance() {
   return liboops;
 }
 
+//------------------------------------------------------------------------------
 /** Initialization of MPI and dependent variables.
  * To be called in `main()` by constructor of `oops::Run`.  This method initializes MPI and
  * associated variables that must be initialized after static-init time, and only once `eckit::Main`
@@ -142,6 +149,7 @@ void LibOOPS::initialise() {
   initialised_ = true;
 }
 
+//------------------------------------------------------------------------------
 /** Add a rank-dependent tee file
  * To be called in `main()` by constructor of `oops::Run` when the outputfile argument is specified
  */
@@ -155,6 +163,8 @@ void LibOOPS::teeOutput(const std::string & fileprefix) {
   eckit::Log::addFile(teefile);
 }
 
+//------------------------------------------------------------------------------
+
 void LibOOPS::testReferenceInitialise(const eckit::Configuration & testConf) {
   // testStream_ is used by TestReference for comparing test output
   // with a reference file
@@ -165,6 +175,7 @@ void LibOOPS::testReferenceInitialise(const eckit::Configuration & testConf) {
   }
 }
 
+//------------------------------------------------------------------------------
 /** Clears logs and finalises MPI (unless \p finaliseMPI is false).
  * To be called in on leaving `main()` by the destructor of `oops::Run`.
  */
@@ -211,17 +222,25 @@ void LibOOPS::finalise(bool finaliseMPI) {
     if (finaliseMPI) eckit::mpi::finaliseAllComms();
 }
 
+//------------------------------------------------------------------------------
+
 const void* LibOOPS::addr() const {return this;}
 
-std::string LibOOPS::version() const {return "0.0.0";}
+//------------------------------------------------------------------------------
+
+std::string LibOOPS::version() const {return oops_version();}
+
+//------------------------------------------------------------------------------
 
 std::string LibOOPS::gitsha1(unsigned int count) const {
-  std::string sha1("");
+  std::string sha1 = oops_git_sha1();
   if (sha1.empty()) {
     return "not available";
   }
   return sha1.substr(0, std::min(count, 40u));
 }
+
+//------------------------------------------------------------------------------
 
 eckit::Channel& LibOOPS::traceChannel() const {
   // use pre-main channel if library was not initialized
@@ -242,6 +261,8 @@ eckit::Channel& LibOOPS::traceChannel() const {
   return *traceChannel_;
 }
 
+//------------------------------------------------------------------------------
+
 eckit::Channel& LibOOPS::warningChannel() const {
   // use pre-main channel if library was not initialized
   if (!initialised_) {return eckit::Log::warning();}
@@ -250,6 +271,8 @@ eckit::Channel& LibOOPS::warningChannel() const {
     new eckit::PrefixTarget(prewarning_, new eckit::OStreamTarget(eckit::Log::warning()))));
   return *warningChannel_;
 }
+
+//------------------------------------------------------------------------------
 
 eckit::Channel& LibOOPS::statsChannel() const {
   if (statsChannel_) {return *statsChannel_;}
@@ -261,6 +284,8 @@ eckit::Channel& LibOOPS::statsChannel() const {
   }
   return *statsChannel_;
 }
+
+//------------------------------------------------------------------------------
 
 eckit::Channel& LibOOPS::testChannel() const {
   // use pre-main channel if library was not initialized
@@ -276,6 +301,8 @@ eckit::Channel& LibOOPS::testChannel() const {
   testChannel_->precision(std::numeric_limits<double>::digits10+1);
   return *testChannel_;
 }
+
+//------------------------------------------------------------------------------
 
 eckit::Channel& LibOOPS::infoChannel() const {
   // use pre-main channel if library was not initialized
@@ -295,6 +322,8 @@ eckit::Channel& LibOOPS::infoChannel() const {
   return *infoChannel_;
 }
 
+//------------------------------------------------------------------------------
+
 eckit::Channel& LibOOPS::debugChannel() const {
   // use pre-main channel if library was not initialized
   if (!initialised_) {return eckit::Log::info();}
@@ -309,6 +338,23 @@ eckit::Channel& LibOOPS::debugChannel() const {
     debugChannel_.reset(new eckit::Channel());
   }
   return *debugChannel_;
+}
+
+// -----------------------------------------------------------------------------
+
+void LibOOPS::libinfo(std::ostream & os) const {
+  os << " -------------------------------------------------------------------- " << std::endl;
+  util::oops_library_info(os);
+  os << " -------------------------------------------------------------------- " << std::endl;
+  os << " Dependencies: \n";
+  os << "  atlas " << atlas::library::version()
+     << "  git-sha1: " << atlas::library::git_sha1(40) << "\n"
+     << "   " << eckit::system::LibraryManager::lookup("atlas") << "\n\n";
+  os << "  eckit " << eckit_version() << "  git-sha1: " << eckit_git_sha1() << "\n"
+     << "   " << eckit::system::LibraryManager::lookup("eckit") << "\n\n";
+  os << "  fckit " << FCKIT_VERSION << "  git-sha1: " << FCKIT_GIT_SHA1 << "\n"
+     << "   " << eckit::system::LibraryManager::lookup("fckit") << "\n";
+  os << " -------------------------------------------------------------------- " << std::endl;
 }
 
 // -----------------------------------------------------------------------------

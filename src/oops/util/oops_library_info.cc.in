@@ -1,0 +1,36 @@
+/*
+ * (C) Copyright 2026 UCAR
+ *
+ * This software is licensed under the terms of the Apache Licence Version 2.0
+ * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+ *
+ */
+
+#include "oops/util/oops_library_info.h"
+
+#include <ostream>
+#include <string>
+
+namespace util {
+void oops_library_info(std::ostream & os) {
+  os << "OOPS version: " << "@oops_VERSION@" << "  git-sha1: " << "@oops_GIT_SHA1@" << std::endl;
+  os << "Build:" << std::endl;
+  os << "  Build type      : " << "@CMAKE_BUILD_TYPE@" << '\n';
+  os << "  OS              : " << "@CMAKE_SYSTEM@"
+                               << " (" << "@EC_OS_NAME@.@EC_OS_BITS@" << ")" << '\n';
+  os << "  C compiler      : " << "@CMAKE_C_COMPILER_ID@" << " "
+                               << "@CMAKE_C_COMPILER_VERSION@" << '\n';
+  os << "  C++ compiler    : " << "@CMAKE_CXX_COMPILER_ID@" << " "
+                               << "@CMAKE_CXX_COMPILER_VERSION@" << '\n';
+  os << "  Fortran compiler: " << "@CMAKE_Fortran_COMPILER_ID@" << " "
+                               << "@CMAKE_Fortran_COMPILER_VERSION@" << '\n';
+  os << "  MPI library     : " << "@MPI_mpi_LIBRARY@" << '\n';
+}
+
+}  // namespace util
+
+extern "C" {
+const char * oops_version()  {return "@oops_VERSION@";}
+const char * oops_git_sha1() {return "@oops_GIT_SHA1@";}
+}
+

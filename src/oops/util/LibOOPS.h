@@ -50,12 +50,18 @@ class LibOOPS : public eckit::system::Library {
   void finalise(bool finaliseMPI = true);
   bool validateParameters() const {return validate_parameters_;}
 
+/// Print human readable informations
+  friend std::ostream & operator<< (std::ostream & os, const LibOOPS & self) {
+    self.libinfo(os);
+    return os;
+  }
+
  protected:
   const void* addr() const override;
 
   std::string version() const override;
 
-  std::string gitsha1(unsigned int count) const override;
+  std::string gitsha1(unsigned int count = 40) const override;
 
   bool initialised_;
   mutable std::unique_ptr<eckit::Channel> infoChannel_;
@@ -82,6 +88,9 @@ class LibOOPS : public eckit::system::Library {
   // TestReferece associated member variables
   std::stringstream testStream_;
   TestReference testReference_;
+
+ private:
+  void libinfo(std::ostream &) const;
 };
 
 // -----------------------------------------------------------------------------

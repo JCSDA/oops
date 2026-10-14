@@ -130,6 +130,8 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
     Log::info() << "Configuration input file is: " << infilepathname << std::endl;
     Log::info() << "Full configuration is:"  << *config_ << std::endl;
   }
+
+  Log::info() << std::endl << LibOOPS::instance() << std::endl;
 }
 
 // -----------------------------------------------------------------------------

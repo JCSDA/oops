@@ -9,8 +9,11 @@ function(CREATE_SYMLINK src dst)
   endforeach(FILENAME)
 endfunction(CREATE_SYMLINK)
 
+configure_file( oops/util/oops_library_info.cc.in  oops/util/oops_library_info.cc )
+
 list(
   APPEND oops_src_files
+  ${CMAKE_CURRENT_BINARY_DIR}/oops/util/oops_library_info.cc
   oops/assimilation/BMatrix.h
   oops/assimilation/CMatrix.h
   oops/assimilation/ControlIncrement.h
@@ -430,6 +433,7 @@ list(
   oops/util/ObjectCounter.h
   oops/util/ObjectCountHelper.cc
   oops/util/ObjectCountHelper.h
+  oops/util/oops_library_info.h
   oops/util/ParallelFieldSetIO.cc
   oops/util/ParallelFieldSetIO.h
   oops/util/Printable.h
