@@ -20,6 +20,7 @@
 #include "oops/base/Departures.h"
 #include "oops/base/ObsSpaces.h"
 #include "oops/interface/ObsError.h"
+#include "oops/interface/ObsVector.h"
 #include "oops/util/ConfigFunctions.h"  // for vectoriseAndFilter
 #include "oops/util/Printable.h"
 
@@ -33,6 +34,7 @@ class ObsErrors : public util::Printable,
   typedef Departures<OBS>                Departures_;
   typedef ObsError<OBS>                  ObsError_;
   typedef ObsSpaces<OBS>                 ObsSpaces_;
+  typedef ObsVector<OBS>                 ObsVector_;
 
  public:
   static const std::string classname() {return "oops::ObsErrors";}
@@ -60,6 +62,9 @@ class ObsErrors : public util::Printable,
 
 /// Save obs errors
   void save(const std::string &) const;
+
+/// Read obs errors from the specified group
+  void read(const std::string &);
 
   /// returns inverse of observation error variance
   Departures_ inverseVariance() const;
@@ -167,6 +172,16 @@ template <typename OBS>
 void ObsErrors<OBS>::save(const std::string & name) const {
   for (const auto & err : err_) {
     err.save(name);
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename OBS>
+void ObsErrors<OBS>::read(const std::string & name) {
+  for (size_t jj = 0; jj < err_.size(); ++jj) {
+    const ObsVector_ obserr(os_[jj], name);
+    err_[jj].update(obserr);
   }
 }
 

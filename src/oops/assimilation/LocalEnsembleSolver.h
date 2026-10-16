@@ -260,10 +260,7 @@ LocalEnsembleSolver<MODEL, OBS>::LocalEnsembleSolver(ObsSpaces_ & obspaces,
   Observations_ yobs(obspaces_, "ObsValue");
   omb_ = yobs - ybmean_;
   R_.reset(new ObsErrors_(this->observersconf_, this->obspaces_));
-  Observations_ obserr(obspaces_, "EffectiveError0");
-  for (size_t jj = 0; jj < R_->size(); ++jj) {
-    (*R_)[jj].update(obserr[jj]);
-  }
+  R_->read("EffectiveError0");
   invVarR_ = std::make_unique<Departures_>(R_->inverseVariance());
   // Also exclude any observations with missing departures/H(x) values
   invVarR_->mask(omb_);

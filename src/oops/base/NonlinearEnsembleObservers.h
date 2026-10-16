@@ -100,8 +100,8 @@ void NonlinearEnsembleObservers<MODEL, OBS>::computeHofX(const StateSet_ & ens_x
                       *this->R_, this->qcflags_);
   y_mean_xb.save("hofx_y_mean_xb"+std::to_string(iteration));
 
-  // QC flags and Obs errors are set to that of the H(mean(Xb))
-  this->R_->save("ObsError");
+  // Set the assimilated mask from the QC flags of H(mean(Xb)). The matching obs errors are
+  // already saved by the observer as EffectiveError<iteration>.
   this->initializeAssimilatedMask();
 
   // save hofx means that hofx will be written out into ObsSpace;

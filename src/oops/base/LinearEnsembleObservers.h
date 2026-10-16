@@ -172,8 +172,8 @@ void LinearEnsembleObservers<MODEL, OBS>::computeHofX(const StateSet_ & ens_xx,
   linear_hofx_->finalizeTraj(this->qcflags_);
   y_mean_xb.save("hofx_y_mean_xb"+std::to_string(iteration));
 
-  // QC flags and Obs errors are set to that of the H(mean(Xb))
-  this->R_->save("ObsError");
+  // Set the assimilated mask from the QC flags of H(mean(Xb)). The matching obs errors are
+  // already saved by the observer as EffectiveError<iteration>.
   this->initializeAssimilatedMask();
 
   // add linearized H(x) to the linear model postprocessor
