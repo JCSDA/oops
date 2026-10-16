@@ -30,6 +30,9 @@ void multiplyFieldSet(atlas::FieldSet &,
                       const double);
 void multiplyFieldSets(atlas::FieldSet &,
                        const atlas::FieldSet &);
+void axpyFieldSet(atlas::FieldSet &,
+                  const double,
+                  const atlas::FieldSet &);
 double dotProductFields(const atlas::Field &,
                         const atlas::Field &,
                         const eckit::mpi::Comm &);

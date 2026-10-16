@@ -142,6 +142,29 @@ void multiplyFieldSets(atlas::FieldSet & fset,
 
 // -----------------------------------------------------------------------------
 
+void axpyFieldSet(atlas::FieldSet & fsety,
+                  const double a,
+                  const atlas::FieldSet & fsetx) {
+  oops::Log::trace() << "axpyFieldSet starting" << std::endl;
+
+  // Loop over fields
+  for (auto & fieldy : fsety) {
+    atlas::Field fieldx = fsetx.field(fieldy.name());
+    util::for_each_value(
+      util::IndexRange::include_halo,  // atlas 0.43 will enable excluding for all FunctionSpaces
+      [=](const double fieldx, double & fieldy) { fieldy += a*fieldx; },
+      fieldx,
+      fieldy);
+
+    // If either term in the sum is out-of-date, then the result will be out-of-date
+    fieldy.set_dirty(fieldx.dirty() || fieldy.dirty());
+  }
+
+  oops::Log::trace() << "axpyFieldSet done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
 double dotProductFields(const atlas::Field & field1,
                         const atlas::Field & field2,
                         const eckit::mpi::Comm & comm) {

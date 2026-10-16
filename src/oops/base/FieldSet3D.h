@@ -99,6 +99,8 @@ class FieldSet3D : public util::Serializable,
   double dot_product_with(const FieldSet3D &, const Variables &) const;
   double norm(const Variables &) const;
   void sqrt();
+  void axpy(const double &,
+            const FieldSet3D &);
 
   /// Read / write
   void read(const atlas::FunctionSpace &,

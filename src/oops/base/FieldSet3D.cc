@@ -255,6 +255,14 @@ void FieldSet3D::sqrt() {
 
 // -----------------------------------------------------------------------------
 
+void FieldSet3D::axpy(const double & a,
+                      const FieldSet3D & fsetx) {
+  util::axpyFieldSet(fset_, a, fsetx.fset_);
+}
+
+
+// -----------------------------------------------------------------------------
+
 void FieldSet3D::read(const atlas::FunctionSpace & fspace,
                       const Variables & vars,
                       const eckit::LocalConfiguration & conf) {
