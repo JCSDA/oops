@@ -44,9 +44,14 @@ namespace detail {
 /// individual obs space in the obsconf configuration.
 ///
 /// A setting made on the individual obs space always takes precedence over the
-/// section-level one. For now, we are using this to gloally select between the
-/// ObsGroup and OSDF obs data container, but it could be used for other
-/// settings in the future.
+/// section-level one. The section-level settings currently recognized are:
+///
+///   "obs data container" -> "use data frame container"
+///       Globally select between the ObsGroup and OSDF obs data container.
+///
+///   "max io pool size" -> "io pool.max pool size"
+///       Globally set the maximum number of MPI tasks in the io pool used to read
+///       and write the obs files.
 ///
 /// \param sectionConf the "observations" section of the configuration
 /// \param obsconf an individual "obs space" configuration to be updated in place
@@ -68,6 +73,16 @@ inline void applyObsSpaceDefaults(const eckit::Configuration & sectionConf,
     }
   }
   // ---------------------------------------------------------------------------------
+
+  int maxIoPoolSize;
+  if (sectionConf.get("max io pool size", maxIoPoolSize) &&
+      !obsconf.has("io pool.max pool size")) {
+    if (maxIoPoolSize < 1) {
+      throw eckit::BadValue("Invalid 'max io pool size': " + std::to_string(maxIoPoolSize) +
+                            ", expected a positive integer", Here());
+    }
+    obsconf.set("io pool.max pool size", maxIoPoolSize);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -128,6 +143,7 @@ ObsSpaces<OBS>::ObsSpaces(const eckit::Configuration & conf, const eckit::mpi::C
   //
   //   observations:
   //     obs data container: OSDF
+  //     max io pool size: 8
   //     observers:
   //       - obs space: ...
   //       - obs space: ...
