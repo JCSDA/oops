@@ -35,6 +35,7 @@ list(
   oops/assimilation/CostJo.h
   oops/assimilation/CostPert.h
   oops/assimilation/CostTermBase.h
+  oops/assimilation/DFSCalculator.h
   oops/assimilation/DRGMRESRMinimizer.h
   oops/assimilation/DRIPCGMinimizer.h
   oops/assimilation/DRMinimizer.h
