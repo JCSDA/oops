@@ -57,10 +57,28 @@ class LocalInterpolator : private util::Printable,
   static void preprocess(Increment_ &);
   static void preprocessAD(Increment_ &);
 
+  /// \brief Interpolate the requested variables to the target locations.
+  ///
+  /// The `std::vector<bool>` argument is a per-target mask: targets whose entry is false
+  /// are not interpolated.
+  ///
+  /// \warning Masked-out targets are left *unmodified* in the buffer; `apply` accumulates
+  /// into the buffer rather than writing all of it. Callers may therefore seed the buffer
+  /// with values they wish to preserve, and implementations must not overwrite masked-out
+  /// entries -- not even with a missing value. oops::GetValues depends on this when
+  /// observations span several time sub-windows: each state updates only the targets
+  /// inside its own sub-window and must leave the rest as an earlier state wrote them.
+  /// An implementation that writes every target instead loses those observations silently,
+  /// surfacing as a wrong cost function rather than as a failure.
   void apply(const Variables &, const State_ &,
              const std::vector<bool> &, std::vector<double> &) const;
+  /// \copydoc apply
   void apply(const Variables &, const Increment_ &,
              const std::vector<bool> &, std::vector<double> &) const;
+  /// \brief Adjoint of apply.
+  ///
+  /// \warning As for `apply`, masked-out targets must not contribute; the adjoint
+  /// sensitivity of a masked-out target is zero.
   void applyAD(const Variables &, Increment_ &,
                const std::vector<bool> &, const std::vector<double> &) const;
 

@@ -195,6 +195,39 @@ void testLocalInterpolator(
     }
   }
 
+  // Contract check: oops::atlasbase::Interpolator::apply states that buffer entries for a
+  // masked-out target must not be written to, so that successive calls with different masks
+  // can fill in different portions of one buffer. This test verifies this.
+  //
+  // oops::GetValues depends on it: it processes one model state at a time, masking out the
+  // observations outside that state's time sub-window, and the values those observations
+  // received from an earlier state must survive. An interpolator that writes every target --
+  // even writing missingValue -- discards them, which surfaces much later as lost
+  // observations and a wrong cost function rather than as a crash.
+  {
+    const double sentinel = -12345.0;
+    auto masked_vals = std::vector(nb_target * nb_levels, sentinel);
+    auto target_mask = std::vector(nb_target, false);
+    for (size_t jj = 0; jj < nb_target; jj += 2) {
+      target_mask[jj] = true;
+    }
+
+    interpolator->apply(vars, source_fields, target_mask, masked_vals);
+
+    for (size_t jj = 0; jj < nb_target; ++jj) {
+      for (size_t jlev = 0; jlev < nb_levels; ++jlev) {
+        const double value = masked_vals[nb_levels * jj + jlev];
+        if (target_mask[jj]) {
+          // Guards against the masked-out check passing vacuously, e.g. if apply() did
+          // nothing at all.
+          EXPECT(value != sentinel);
+        } else {
+          EXPECT(value == sentinel);
+        }
+      }
+    }
+  }
+
   // Now test the adjoint
 
   // Set up a random field on the target grid
