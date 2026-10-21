@@ -269,7 +269,11 @@ list(
   oops/generic/IdentityModel.h
   oops/generic/instantiateLinearModelFactory.h
   oops/generic/instantiateModelFactory.h
+  oops/generic/InterpolationCache.cc
+  oops/generic/InterpolationCache.h
   oops/generic/LocalizationBase.h
+  oops/generic/MaskedVectorFieldSet.cc
+  oops/generic/MaskedVectorFieldSet.h
   oops/generic/MeshTriangulation.h
   oops/generic/MeshTriangulation.cc
   oops/generic/ProximitySearch.cc

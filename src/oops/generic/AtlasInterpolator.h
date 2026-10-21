@@ -7,17 +7,15 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "atlas/field/FieldSet.h"
 #include "atlas/functionspace/FunctionSpace.h"
 #include "atlas/interpolation/Interpolation.h"
-
 #include "eckit/config/Configuration.h"
-
 #include "oops/atlas/Interpolator.h"
 #include "oops/base/GeometryData.h"
+#include "oops/generic/InterpolationCache.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
 
@@ -29,87 +27,53 @@ class AtlasInterpolator : public atlasbase::Interpolator,
                           public util::Printable,
                           private util::ObjectCounter<AtlasInterpolator> {
  public:
-  /// Class name string.
+  /// \brief Class name string.
   static std::string classname() { return "oops::AtlasInterpolator"; }
 
-  /// Construct interpolator from GeometryData and target lat-lons.
+  /// \brief Construct interpolator from GeometryData and target lat-lons.
   AtlasInterpolator(const eckit::Configuration& conf,
                     const GeometryData& geomData,
                     const std::vector<double>& targetLats,
                     const std::vector<double>& targetLons);
 
-  /// Destructor.
-  ~AtlasInterpolator();
-
   using atlasbase::Interpolator::apply;
   using atlasbase::Interpolator::applyAD;
 
-  /// Interpolate Variables from source fields to target fields.
+  /// \brief Interpolate Variables from source fields to target fields.
   void apply(const Variables& variables, const atlas::FieldSet& sourceFieldSet,
              const std::vector<bool>& mask,
              std::vector<double>& targetFieldsVec) const override;
 
-  /// Adjoint of interpolation from source to target fields.
+  /// \brief Adjoint of interpolation from source to target fields.
   void applyAD(const Variables& variables, atlas::FieldSet& sourceFieldSet,
                const std::vector<bool>& mask,
                const std::vector<double>& targetFieldVec) const override;
 
- protected:
-  /// Apply pre-processing to sourceFields (overridable)
-  virtual void preProcessFields(atlas::FieldSet& sourceFields) const;
-
-  /// Apply pre-processing adjoint to sourceFields (overridable)
-  virtual void preProcessFieldsAD(atlas::FieldSet& sourceFields) const;
-
-  /// Apply post-processing to targetFields (overridable)
-  virtual void postProcessFields(atlas::FieldSet& targetFields,
-                                 const std::vector<bool>& mask) const;
-
-  /// Apply post-processing adjoint to targetFields (overridable)
-  virtual void postProcessFieldsAD(atlas::FieldSet& targetFields,
-                                   const std::vector<bool>& mask) const;
-
-  /// Copy source fields in Variables to new FieldSet (overridable).
-  virtual atlas::FieldSet copySourceFields(
+ private:
+  /// \brief Collect handles to source fields in Variables into a new FieldSet.
+  atlas::FieldSet copySourceFieldHandles(
       const Variables& variables, const atlas::FieldSet& sourceFields) const;
 
-  /// Create target FieldSet to match source FieldSet (overridable).
-  virtual atlas::FieldSet createTargetFields(
-      const Variables& variables,
+  /// \brief Create target FieldSet to match source FieldSet.
+  atlas::FieldSet createTargetFields(
       const atlas::FunctionSpace& targetFunctionSpace,
       const atlas::FieldSet& sourceFields) const;
 
-  /// Create Variables object for interpolation call (overridable).
-  virtual Variables createInterpVariables(const Variables& inputVariables)
-      const;
+  /// \brief Copy interpolation target field set to target field vector.
+  void copyData(const atlas::FieldSet& targetFieldSet,
+               const std::vector<bool>& mask,
+               std::vector<double>& targetFieldVec) const;
 
-  /// Set all values in a field to zero.
-  static void zeroField(atlas::Field& field);
+  /// \brief Copy target field vector to target field set.
+  void copyDataAD(atlas::FieldSet& targetFieldSet,
+                 const std::vector<bool>& mask,
+                 const std::vector<double>& targetFieldVec) const;
 
-  /// Get or make an interpolation object using targetLonLats and mask.
-  const atlas::Interpolation& getInterp(const std::vector<bool>& mask) const;
-
- private:
+  /// \brief Print object information.
   void print(std::ostream& os) const override;
 
-  // Get the total number of elements to write to the target vector.
-  size_t getTotalElements(const Variables& variables,
-                          const atlas::FieldSet& inputFields) const;
-
-  // FunctionSpace from Geometry.
-  atlas::FunctionSpace sourceFunctionSpace_{};
-
-  // map of interpolation objects.
-  // Mutable keyword required as we need to construct an interpolation object if
-  // it doesn't already exist.
-  mutable std::unordered_map<std::vector<bool>, atlas::Interpolation>
-      interpMap_{};
-
-  // Vector of lon lats from constructor.
-  std::vector<atlas::PointLonLat> targetLonLats_{};
-
-  // Atlas Interpolation method config.
-  eckit::LocalConfiguration interpMethod_;
+  // Lazily builds and caches atlas::Interpolation objects, keyed by mask.
+  InterpolationCache interpolationCache_;
 };
 
 }  // namespace oops
