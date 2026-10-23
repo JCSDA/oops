@@ -36,7 +36,6 @@ class VariableChangeCoupled : public util::Printable {
 
   /// Perform transforms
   void changeVar(State_ &, const oops::Variables &) const;
-  void changeVarInverse(State_ &, const oops::Variables &) const;
 
  private:
   void print(std::ostream &) const override;
@@ -71,17 +70,6 @@ void VariableChangeCoupled<MODEL1, MODEL2>::changeVar(State_ & xx,
   std::vector<Variables> splitvars = splitVariables(vars, availableVars_);
   varchg1_->changeVar(xx.state1(), splitvars[0]);
   varchg2_->changeVar(xx.state2(), splitvars[1]);
-}
-
-// -----------------------------------------------------------------------------
-
-template <typename MODEL1, typename MODEL2>
-void VariableChangeCoupled<MODEL1, MODEL2>::changeVarInverse(State_ & xx,
-                                            const oops::Variables & vars) const {
-  // decide what variables are provided by what model
-  std::vector<Variables> splitvars = splitVariables(vars, availableVars_);
-  varchg1_->changeVarInverse(xx.state1(), splitvars[0]);
-  varchg2_->changeVarInverse(xx.state2(), splitvars[1]);
 }
 
 // -----------------------------------------------------------------------------

@@ -44,9 +44,7 @@ class LinearVariableChangeCoupled {
 
   void changeVarTraj(const StateCoupled_ &, const Variables &);
   void changeVarTL(IncrementCoupled_ &, const Variables &) const;
-  void changeVarInverseTL(IncrementCoupled_ &, const Variables &) const;
   void changeVarAD(IncrementCoupled_ &, const Variables &) const;
-  void changeVarInverseAD(IncrementCoupled_ &, const Variables &) const;
 
  private:
   std::unique_ptr<LinearVariableChange<MODEL1>> chvar1_;
@@ -95,18 +93,6 @@ void LinearVariableChangeCoupled<MODEL1, MODEL2>::changeVarTL(
 
 // -----------------------------------------------------------------------------
 template<typename MODEL1, typename MODEL2>
-void LinearVariableChangeCoupled<MODEL1, MODEL2>::changeVarInverseTL(
-    IncrementCoupled_ & dx, const Variables & vars) const {
-  Log::trace() << "LinearVariableChangeCoupled::changeVarInverseTL starting" << std::endl;
-  util::Timer timer(classname(), "changeVarInverseTL");
-  std::vector<Variables> splitvars = splitVariables(vars, availableVars_);
-  chvar1_->changeVarInverseTL(dx.increment1(), splitvars[0]);
-  chvar2_->changeVarInverseTL(dx.increment2(), splitvars[1]);
-  Log::trace() << "LinearVariableChangeCoupled::changeVarInverseTL done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-template<typename MODEL1, typename MODEL2>
 void LinearVariableChangeCoupled<MODEL1, MODEL2>::changeVarAD(
     IncrementCoupled_ & dx, const Variables & vars) const {
   Log::trace() << "LinearVariableChangeCoupled::changeVarAD starting" << std::endl;
@@ -115,18 +101,6 @@ void LinearVariableChangeCoupled<MODEL1, MODEL2>::changeVarAD(
   chvar1_->changeVarAD(dx.increment1(), splitvars[0]);
   chvar2_->changeVarAD(dx.increment2(), splitvars[1]);
   Log::trace() << "LinearVariableChangeCoupled::changeVarAD done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-template<typename MODEL1, typename MODEL2>
-void LinearVariableChangeCoupled<MODEL1, MODEL2>::changeVarInverseAD(
-    IncrementCoupled_ & dx, const Variables & vars) const {
-  Log::trace() << "LinearVariableChangeCoupled::changeVarInverseAD starting" << std::endl;
-  util::Timer timer(classname(), "changeVarInverseAD");
-  std::vector<Variables> splitvars = splitVariables(vars, availableVars_);
-  chvar1_->changeVarInverseAD(dx.increment1(), splitvars[0]);
-  chvar2_->changeVarInverseAD(dx.increment2(), splitvars[1]);
-  Log::trace() << "LinearVariableChangeCoupled::changeVarInverseAD done" << std::endl;
 }
 
 }  // namespace oops

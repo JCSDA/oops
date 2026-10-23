@@ -10,7 +10,6 @@ variable change tests:
   state:
     date: 2009-12-31T00:00:00Z
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
-  tolerance inverse: 1.0e-8
 - variable change:
     input variables: [q]
     output variables: [x]
@@ -18,24 +17,6 @@ variable change tests:
     date: 2009-12-31T00:00:00Z
     filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
     state variables: [q]
-  tolerance inverse: 1.0e-8
-- variable change:
-    input variables: [x]
-    output variables: [q]
-  inverse first: true
-  state:
-    date: 2009-12-31T00:00:00Z
-    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
-    state variables: [q]
-  tolerance inverse: 1.0e-8
-- variable change:
-    input variables: [q]
-    output variables: [x]
-  inverse first: true
-  state:
-    date: 2009-12-31T00:00:00Z
-    filename: Data/truth.fc.2009-12-15T00:00:00Z.P16D.nc
-  tolerance inverse: 1.0e-8
 
 #test:
 #  reference filename: testoutput/variable_change.test

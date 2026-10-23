@@ -86,6 +86,7 @@ class ModelSpaceCovarianceBase {
   int fullInverseIterations_;
   double fullInverseAccuracy_;
   std::vector<std::unique_ptr<LinearVariableChange_>> linVarChg_;
+  std::vector<std::unique_ptr<LinearVariableChange_>> invLinVarChg_;
   std::unique_ptr<Variables> anaVars_;
   std::string timername_;
 };
@@ -192,6 +193,8 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & reso
   fullInverseIterations_ = conf.getInt("full inverse iterations", 10);
   fullInverseAccuracy_ = conf.getDouble("full inverse accuracy", 1.0e-3);
   const eckit::LocalConfiguration cvconf = conf.getSubConfiguration("linear variable change");
+  eckit::LocalConfiguration invcvconf =
+        conf.getSubConfiguration("inverse linear variable change");
   if (!cvconf.empty()) {
     if (cvconf.has("input variables")) {
       BVars_.reset(new Variables(cvconf, "input variables"));
@@ -204,6 +207,21 @@ ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase(const Geometry_ & reso
     for (size_t jt = 0; jt < fg.size(); ++jt) {
       linVarChg_.push_back(std::make_unique<LinearVariableChange_>(resol, cvconf));
       linVarChg_[jt]->changeVarTraj(fg[jt], *anaVars_);
+    }
+    // If there is an inverse linear variable change configuration, set up
+    // inverses (for use in inverseMultiply)
+    if (!invcvconf.empty()) {
+      // Overwrite the inverse linear variable change variables configuration
+      // silently to the correct configuration.
+      // TODO(someone): Remove this once model interfaces are handling
+      // variable changes consistently without the need for input/output variables
+      // specified in yaml.
+      invcvconf.set("input variables", anaVars_->variables());
+      invcvconf.set("output variables", BVars_->variables());
+      for (size_t jt = 0; jt < fg.size(); ++jt) {
+        invLinVarChg_.push_back(std::make_unique<LinearVariableChange_>(resol, invcvconf));
+        invLinVarChg_[jt]->changeVarTraj(fg[jt], *BVars_);
+      }
     }
   }
   Log::trace() << "ModelSpaceCovarianceBase<MODEL>::ModelSpaceCovarianceBase done" << std::endl;
@@ -274,10 +292,18 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment4D_ & dxi,
   } else {
     if (linVarChg_.size() > 0) {
       ASSERT(linVarChg_.size() == dxi.size());
+      if (invLinVarChg_.size() != linVarChg_.size()) {
+        Log::error() << "ModelSpaceCovarianceBase::inverseMultiply: linear variable "
+                     << "change specified, but not an inverse linear variable change."
+                     << std::endl << "Specify inverse linear variable change or use "
+                     << "'full inverse: true' to compute the inverse." << std::endl;
+        throw eckit::BadParameter("ModelSpaceCovarianceBase::inverseMultiply failed: "
+                                  "missing inverse linear variable change", Here());
+      }
       // Copy input increment and apply inverse variable change (K^{-1})
       Increment4D_ dxiTemp(dxi);
       for (size_t jt = 0; jt < dxiTemp.size(); ++jt) {
-        linVarChg_[jt]->changeVarInverseTL(dxiTemp[jt], *BVars_);
+        invLinVarChg_[jt]->changeVarTL(dxiTemp[jt], *anaVars_);
       }
 
       // Create temporary output increment
@@ -288,7 +314,7 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment4D_ & dxi,
 
       // Apply adjoint inverse variable change (K^T^{-1})
       for (size_t jt = 0; jt < dxoTemp.size(); ++jt) {
-        linVarChg_[jt]->changeVarInverseAD(dxoTemp[jt], *anaVars_);
+        invLinVarChg_[jt]->changeVarAD(dxoTemp[jt], *BVars_);
       }
 
       // Copy to output increment

@@ -17,6 +17,9 @@ cost function:
     ensemble transform:
       input variables:  [x]
       output variables: [q]
+    inverse ensemble transform:
+      input variables:  [q]
+      output variables: [x]
     localization:
       horizontal_length_scale: 4.0e6
       localization method: QG

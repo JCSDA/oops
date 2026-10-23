@@ -18,6 +18,7 @@ assimilation:
       filename: Data/forecast.ens.0.2009-12-31T00:00:00Z.P1D.nc
       state variables: [x, q]
     background error:
+      full inverse: true
       covariance model: QgError
       horizontal_length_scale: 2.2e6
       maximum_condition_number: 1.0e6

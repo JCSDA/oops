@@ -42,8 +42,6 @@ class VariableChange : public util::Printable,
 
   /// change state variables to those specified in the Variables parameter
   void changeVar(State_ &, const Variables &) const;
-  ///  changeVarInverse is no longer needed but remains for legacy code
-  void changeVarInverse(State_ &, const Variables &) const;
 
  private:
   void print(std::ostream &) const override;
@@ -81,16 +79,6 @@ void VariableChange<MODEL>::changeVar(State_ & xx, const Variables & vars) const
   util::Timer timer(classname(), "changeVar");
   chvar_->changeVar(xx.state(), vars);
   Log::trace() << "VariableChange<MODEL>::changeVar done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void VariableChange<MODEL>::changeVarInverse(State_ & xx, const Variables & vars) const {
-  Log::trace() << "VariableChange<MODEL>::changeVarInverse starting" << std::endl;
-  util::Timer timer(classname(), "changeVarInverse");
-  chvar_->changeVarInverse(xx.state(), vars);
-  Log::trace() << "VariableChange<MODEL>::changeVarInverse done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

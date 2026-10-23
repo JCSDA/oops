@@ -36,7 +36,6 @@ class IdChangeVariable : public util::Printable {
 
   IdChangeVariable(const eckit::Configuration &, const Resolution &) {}
   void changeVar(StateL95 &, const oops::Variables &) const {}
-  void changeVarInverse(StateL95 &, const oops::Variables &) const {}
 
  private:
   void print(std::ostream & os) const override {os << "IdChangeVariable";}

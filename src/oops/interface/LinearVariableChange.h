@@ -46,9 +46,7 @@ class LinearVariableChange {
 
   void changeVarTraj(const State_ &, const Variables &);
   void changeVarTL(Increment_ &, const Variables &) const;
-  void changeVarInverseTL(Increment_ &, const Variables &) const;
   void changeVarAD(Increment_ &, const Variables &) const;
-  void changeVarInverseAD(Increment_ &, const Variables &) const;
 
  private:
   void print(std::ostream &) const;
@@ -86,16 +84,6 @@ void LinearVariableChange<MODEL>::changeVarTL(Increment_ & dx, const Variables &
   chvar_->changeVarTL(dx.increment(), vars);
   Log::trace() << "LinearVariableChange<MODEL>::changeVarTL done" << std::endl;
 }
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void LinearVariableChange<MODEL>::changeVarInverseTL(Increment_ & dx,
-                                                     const Variables & vars) const {
-  Log::trace() << "LinearVariableChange<MODEL>::changeVarInverseTL starting" << std::endl;
-  util::Timer timer(classname(), "changeVarInverseTL");
-  chvar_->changeVarInverseTL(dx.increment(), vars);
-  Log::trace() << "LinearVariableChange<MODEL>::changeVarInverseTL done" << std::endl;
-}
 
 // -----------------------------------------------------------------------------
 
@@ -105,17 +93,6 @@ void LinearVariableChange<MODEL>::changeVarAD(Increment_ & dx, const Variables &
   util::Timer timer(classname(), "changeVarAD");
   chvar_->changeVarAD(dx.increment(), vars);
   Log::trace() << "LinearVariableChange<MODEL>::changeVarAD done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-void LinearVariableChange<MODEL>::changeVarInverseAD(Increment_ & dx,
-                                                     const Variables & vars) const {
-  Log::trace() << "LinearVariableChange<MODEL>::changeVarInverseAD starting" << std::endl;
-  util::Timer timer(classname(), "changeVarInverseAD");
-  chvar_->changeVarInverseAD(dx.increment(), vars);
-  Log::trace() << "LinearVariableChange<MODEL>::changeVarInverseAD done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

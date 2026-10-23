@@ -61,6 +61,7 @@ class EnsembleCovariance : public ModelSpaceCovarianceBase<MODEL>,
 
   std::unique_ptr<IncrementSet<MODEL>> ens_;
   std::vector<std::unique_ptr<LinearVariableChange_>> ensTrans_;
+  std::vector<std::unique_ptr<LinearVariableChange_>> ensTransInverse_;
   Variables ensTransInputVars_;
   Variables ensTransOutputVars_;
   std::unique_ptr<Localization_> loc_;
@@ -90,7 +91,9 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
 
   // Setup ensemble transform
   if (conf.has("ensemble transform")) {
+    ASSERT(conf.has("inverse ensemble transform"));
     const eckit::LocalConfiguration confEns(conf, "ensemble transform");
+    const eckit::LocalConfiguration confEnsInv(conf, "inverse ensemble transform");
 
     // Define localization variables as ensemble transform input variables
     // If missing, default is vars (ensemble variables)
@@ -109,7 +112,9 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
     // Set trajectories
     for (size_t jt = 0; jt < fg.size(); ++jt) {
       ensTrans_.push_back(std::make_unique<LinearVariableChange_>(resol, confEns));
+      ensTransInverse_.push_back(std::make_unique<LinearVariableChange_>(resol, confEnsInv));
       ensTrans_[jt]->changeVarTraj(fg[jt], ensTransOutputVars_);
+      ensTransInverse_[jt]->changeVarTraj(fg[jt], ensTransOutputVars_);
     }
   }
 
@@ -140,7 +145,7 @@ EnsembleCovariance<MODEL>::EnsembleCovariance(const Geometry_ & resol, const Var
 
         // Apply ensemble transform inverse
         if (ensTrans_.size() > 0) {
-          ensTrans_[jt]->changeVarInverseTL((*ens_)(jt, jm), ensTransInputVars_);
+          ensTransInverse_[jt]->changeVarTL((*ens_)(jt, jm), ensTransInputVars_);
         }
       }
     }

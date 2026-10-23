@@ -25,7 +25,6 @@ list( APPEND qg_testinput
   testinput/addincrement_scaled.yaml
   testinput/analytic_forecast.yaml
   testinput/convertincrement.yaml
-  testinput/convertincrement_inv.yaml
   testinput/convertstate.yaml
   testinput/dfi.yaml
   testinput/diffstates.yaml
@@ -163,7 +162,6 @@ list( APPEND qg_testoutput
   #testoutput/4dvar_saddlepoint.test  # test is commented out
   testoutput/analytic_forecast.test
   testoutput/convertincrement.test
-  testoutput/convertincrement_inv.test
   testoutput/convertstate.test
   testoutput/addincrement.test
   testoutput/addincrement_scaled.test
@@ -975,12 +973,6 @@ ecbuild_add_test( TARGET oops_qg_addincrement_scaled
 ecbuild_add_test( TARGET oops_qg_convertincrement
                   OMP    2
                   ARGS testinput/convertincrement.yaml
-                  COMMAND qg_convertincrement.x
-                  TEST_DEPENDS oops_qg_diffstates )
-
-ecbuild_add_test( TARGET oops_qg_convertincrement_inv
-                  OMP    2
-                  ARGS testinput/convertincrement_inv.yaml
                   COMMAND qg_convertincrement.x
                   TEST_DEPENDS oops_qg_diffstates )
 

@@ -39,9 +39,7 @@ class IdChangeVarTLADL95: public util::Printable {
 
 /// Perform linear transforms
   void changeVarTL(IncrementL95 &, const oops::Variables &) const {}
-  void changeVarInverseTL(IncrementL95 &, const oops::Variables &) const {}
   void changeVarAD(IncrementL95 &, const oops::Variables &) const {}
-  void changeVarInverseAD(IncrementL95 &, const oops::Variables &) const {}
 
   void changeVarTraj(const StateL95 &, const oops::Variables &) {}
 

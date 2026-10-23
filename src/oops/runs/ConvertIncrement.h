@@ -87,11 +87,7 @@ template <typename MODEL> class ConvertIncrement : public Application {
         LinearVariableChange_ lvc(resol2, linCVconf);
         Variables varout(linCVconf, "output variables");
         lvc.changeVarTraj(xTrajBg, varout);
-        if (linCVconf.getBool("do inverse", false)) {
-          lvc.changeVarInverseTL(dx, varout);
-        } else {
-          lvc.changeVarTL(dx, varout);
-        }
+        lvc.changeVarTL(dx, varout);
       }
 
 //    Write state

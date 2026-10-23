@@ -45,12 +45,10 @@ template <typename MODEL> class ConvertState : public Application {
     // Setup change of variable
     std::unique_ptr<VariableChange_> vc;
     oops::Variables varout;
-    bool inverse = false;
     const eckit::LocalConfiguration chconf = fullConfig.getSubConfiguration("variable change");
     if (chconf.has("output variables")) {
       vc.reset(new VariableChange_(chconf, resol2));
       varout = Variables(chconf, "output variables");
-      inverse = chconf.getBool("do inverse", false);
     }
 
 //  List of input and output states
@@ -74,11 +72,7 @@ template <typename MODEL> class ConvertState : public Application {
       if (vc) {
           // Create variable change
         oops::Variables varin = xx.variables();
-        if (inverse) {
-          vc->changeVarInverse(xx, varout);
-        } else {
-          vc->changeVar(xx, varout);
-        }
+        vc->changeVar(xx, varout);
         Log::test() << "Variable transform: " << *vc << std::endl;
         Log::test() << "Variable change from: " << varin << std::endl;
         Log::test() << "Variable change to: " << varout << std::endl;
