@@ -714,7 +714,7 @@ ecbuild_add_test( TARGET oops_qg_3dvar_single-obs_loc_3d_inflation_field
                   OMP 2
                   ARGS testinput/3dvar_single-obs_loc_3d_inflation_field.yaml
                   COMMAND  qg_4dvar.x
-                  TEST_DEPENDS oops_qg_forecast oops_qg_make_single-obs_3d oops_qg_gen_ens_pert_B )
+                  TEST_DEPENDS oops_qg_forecast oops_qg_make_single-obs_3d oops_qg_gen_ens_pert_B oops_qg_uniform_field_inflation )
 
 ecbuild_add_test( TARGET oops_qg_3dvar_single-obs_loc_3d_inflation_value
                   OMP 2

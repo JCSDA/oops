@@ -869,7 +869,7 @@ ecbuild_add_test( TARGET oops_l95_letkf_nerger_localization
                   COMMAND l95_letkf.x
                   ARGS testinput/letkf_nerger_localization.yaml
                   OMP 2
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
 ecbuild_add_test( TARGET test_l95_letkf_gsi
                   COMMAND l95_letkf.x
@@ -952,7 +952,7 @@ ecbuild_add_test( TARGET oops_l95_getkf_offline_hofx_one_member
 ecbuild_add_test( TARGET test_l95_sequential_enkf
                   COMMAND l95_letkf.x
                   ARGS testinput/sequential_enkf.yaml
-                  TEST_DEPENDS test_l95_makeobs3d test_l95_genenspert )
+                  TEST_DEPENDS oops_l95_makeobs3d oops_l95_genenspert )
 
 ecbuild_add_test( TARGET test_l95_sequential_enkf_noobs
                   COMMAND l95_letkf.x
