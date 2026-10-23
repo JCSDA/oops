@@ -91,7 +91,11 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
  private:
 /// time-interpolation helper: adds contribution from this time to running total
   void incInterpValues(const util::DateTime &, const std::vector<bool> &,
-                       int, int, const std::vector<double> &, std::vector<double>::iterator &);
+                       int, int, const std::vector<double> &, std::vector<double> &);
+/// helpers to move between the per-sampling-method values_ot_sm_ and the per-task MPI buffers
+  void allocateValues(const std::vector<size_t> &);
+  void packSendBuffers();
+  void unpackSendBuffers(const std::vector<size_t> &);
 
   const eckit::mpi::Comm & comm_;
   const int ntasks_;
@@ -133,6 +137,14 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   // sampling method. "Model owning task" described by "mt" suffix.
   std::vector<std::vector<std::vector<size_t>>> indices_mt_sm_;
 
+  // The interpolation results, per obs-owning task per sampling method. Each LocalInterpolator
+  // writes into its own vector in place on every time step; the vectors are concatenated into
+  // send_buffers_ (or split from it, for the adjoint) only once per window, at the MPI exchange.
+  std::vector<std::vector<std::vector<double>>> values_ot_sm_;
+  // Linear time interpolation needs each step's interpolated values separately from the running
+  // time-weighted sum in values_ot_sm_, so it interpolates into this persistent scratch instead.
+  std::vector<std::vector<std::vector<double>>> tinterp_scratch_ot_sm_;
+
   std::vector<std::vector<double>> send_buffers_;
   std::vector<std::vector<double>> recv_buffers_;
   std::vector<eckit::mpi::Request> send_reqs_;
@@ -158,7 +170,7 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
     geolevels_sm_(nsms_), linlevels_sm_(nsms_),
     varsizes_sm_(nsms_), linsizes_sm_(nsms_),
     interp_ot_sm_(ntasks_), times_ot_sm_(ntasks_),
-    indices_mt_sm_(ntasks_),
+    indices_mt_sm_(ntasks_), values_ot_sm_(ntasks_), tinterp_scratch_ot_sm_(ntasks_),
     send_buffers_(), recv_buffers_(), send_reqs_(), recv_reqs_(),
     levelsTopDown_(geom.levelsAreTopDown())
 {
@@ -201,6 +213,8 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
     interp_ot_sm_[jtask].resize(nsms_);
     times_ot_sm_[jtask].resize(nsms_);
     indices_mt_sm_[jtask].resize(nsms_);
+    values_ot_sm_[jtask].resize(nsms_);
+    tinterp_scratch_ot_sm_[jtask].resize(nsms_);
   }
 
   const auto partitioner = LocalInterpolator_::makeTargetPartitioner(geom);
@@ -301,6 +315,73 @@ void GetValues<MODEL, OBS>::preprocessAD(Increment_ & dx) {
 }
 
 // -----------------------------------------------------------------------------
+//  Buffer helpers
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void GetValues<MODEL, OBS>::allocateValues(const std::vector<size_t> & sizes_sm) {
+  const double missing = util::missingValue<double>();
+  for (int jtask = 0; jtask < ntasks_; ++jtask) {
+    for (int jsm = 0; jsm < nsms_; ++jsm) {
+      ASSERT(values_ot_sm_[jtask][jsm].empty());
+      const size_t nobs = times_ot_sm_[jtask][jsm].size();
+      values_ot_sm_[jtask][jsm].assign(nobs * sizes_sm[jsm], missing);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void GetValues<MODEL, OBS>::packSendBuffers() {
+  ASSERT(send_buffers_.empty());
+  send_buffers_.resize(ntasks_);
+  for (int jtask = 0; jtask < ntasks_; ++jtask) {
+    if (nsms_ == 1) {
+      send_buffers_[jtask] = std::move(values_ot_sm_[jtask][0]);
+    } else {
+      size_t buffer_size = 0;
+      for (int jsm = 0; jsm < nsms_; ++jsm) {
+        buffer_size += values_ot_sm_[jtask][jsm].size();
+      }
+      send_buffers_[jtask].reserve(buffer_size);
+      for (int jsm = 0; jsm < nsms_; ++jsm) {
+        send_buffers_[jtask].insert(send_buffers_[jtask].end(),
+                                    values_ot_sm_[jtask][jsm].begin(),
+                                    values_ot_sm_[jtask][jsm].end());
+      }
+    }
+    // Leave values_ot_sm_ empty (and its memory released) until the next window
+    for (int jsm = 0; jsm < nsms_; ++jsm) {
+      values_ot_sm_[jtask][jsm] = std::vector<double>();
+      tinterp_scratch_ot_sm_[jtask][jsm] = std::vector<double>();
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+void GetValues<MODEL, OBS>::unpackSendBuffers(const std::vector<size_t> & sizes_sm) {
+  ASSERT(send_buffers_.size() == static_cast<size_t>(ntasks_));
+  for (int jtask = 0; jtask < ntasks_; ++jtask) {
+    if (nsms_ == 1) {
+      ASSERT(send_buffers_[jtask].size() == times_ot_sm_[jtask][0].size() * sizes_sm[0]);
+      values_ot_sm_[jtask][0] = std::move(send_buffers_[jtask]);
+    } else {
+      auto position = send_buffers_[jtask].cbegin();
+      for (int jsm = 0; jsm < nsms_; ++jsm) {
+        const size_t size = times_ot_sm_[jtask][jsm].size() * sizes_sm[jsm];
+        values_ot_sm_[jtask][jsm].assign(position, std::next(position, size));
+        std::advance(position, size);
+      }
+      ASSERT(position == send_buffers_[jtask].cend());
+    }
+    send_buffers_[jtask] = std::vector<double>();
+  }
+}
+
+// -----------------------------------------------------------------------------
 //  Forward methods (called from nonlinear run)
 // -----------------------------------------------------------------------------
 
@@ -309,22 +390,19 @@ void GetValues<MODEL, OBS>::initialize(const util::Duration & tstep) {
   Log::trace() << "GetValues::initialize start" << std::endl;
   util::Timer timer("oops::GetValues", "initialize");
 
-  const double missing = util::missingValue<double>();
-
-  ASSERT(send_buffers_.empty());
-  send_buffers_.resize(ntasks_);
-  for (int jtask = 0; jtask < ntasks_; ++jtask) {
-    size_t buffer_size = 0;
-    for (int jsm = 0; jsm < nsms_; ++jsm) {
-      const size_t nobs = times_ot_sm_[jtask][jsm].size();
-      buffer_size += nobs * varsizes_sm_[jsm];
-    }
-    send_buffers_[jtask].resize(buffer_size, missing);
-  }
-
   // no need to do time interpolation if there is only one subwindow
   doLinearTimeInterpolation_ = requestLinearTimeInterpolation_ && (tstep < timeWindow_.length());
   halfWidth_ = doLinearTimeInterpolation_ ? tstep : tstep/2;
+
+  ASSERT(send_buffers_.empty());
+  allocateValues(varsizes_sm_);
+  if (doLinearTimeInterpolation_) {
+    for (int jtask = 0; jtask < ntasks_; ++jtask) {
+      for (int jsm = 0; jsm < nsms_; ++jsm) {
+        tinterp_scratch_ot_sm_[jtask][jsm].resize(values_ot_sm_[jtask][jsm].size());
+      }
+    }
+  }
 
   Log::trace() << "GetValues::initialize done" << std::endl;
 }
@@ -336,8 +414,8 @@ void GetValues<MODEL, OBS>::incInterpValues(
                     const util::DateTime & tCurrent, const std::vector<bool> & mask,
                     const int jtask,
                     const int jsm,
-                    const std::vector<double> & tmp_buffer,
-                    std::vector<double>::iterator & buffer_position)
+                    const std::vector<double> & stepValues,
+                    std::vector<double> & values)
 {
   Log::trace() << "GetValues::incInterpValues start" << std::endl;
 
@@ -349,8 +427,9 @@ void GetValues<MODEL, OBS>::incInterpValues(
   const double dt = static_cast<double>(halfWidth_.toSeconds());
 
 // Compute and add time weighted contribution from the input interpolated values
-  auto & lhs_ptr = buffer_position;  // alias to a more helpful name within this scope
-  auto rhs_ptr = tmp_buffer.begin();
+  ASSERT(values.size() == stepValues.size());
+  auto lhs_ptr = values.begin();
+  auto rhs_ptr = stepValues.begin();
   const int nb_obs = times_ot_sm_[jtask][jsm].size();
   for (size_t jf = 0; jf < geovars_sm_[jsm].size(); ++jf) {
     const int nb_levs = geolevels_sm_[jsm][jf];
@@ -398,8 +477,8 @@ void GetValues<MODEL, OBS>::incInterpValues(
     std::advance(rhs_ptr, step);
   }
 
-  ASSERT(lhs_ptr == send_buffers_[jtask].end());
-  ASSERT(rhs_ptr == tmp_buffer.end());
+  ASSERT(lhs_ptr == values.end());
+  ASSERT(rhs_ptr == stepValues.end());
 
   Log::trace() << "GetValues::incInterpValues done" << std::endl;
 }
@@ -415,29 +494,17 @@ void GetValues<MODEL, OBS>::process(const State_ & xx) {
     const util::TimeWindow timeSubWindow =
       timeWindow_.createSubWindow(xx.validTime(), halfWidth_);
 
-    auto buffer_position = send_buffers_[jtask].begin();
-
     for (int jsm = 0; jsm < nsms_; ++jsm) {
       // Mask obs outside time slot
       const std::vector<bool> mask =
         timeSubWindow.createTimeMask(times_ot_sm_[jtask][jsm]);
 
-      const size_t nobs = times_ot_sm_[jtask][jsm].size();
-      const size_t size = nobs * varsizes_sm_[jsm];
-
-      // TODO(FH): refactor LocalInterpolator interface to write in-place into send_buffers_,
-      //           using some sort of a view like gsl::span. This will avoid the allocation
-      //           of tmp_buffer and copy from tmp_buffer to send_buffers_.
-      std::vector<double> tmp_buffer(buffer_position,
-                                     std::next(buffer_position, size));
-      interp_ot_sm_[jtask][jsm]->apply(geovars_sm_[jsm], xx, mask, tmp_buffer);
-
       if (doLinearTimeInterpolation_) {
-        // call below will advance buffer_position
-        incInterpValues(xx.validTime(), mask, jtask, jsm, tmp_buffer, buffer_position);
+        std::vector<double> & stepValues = tinterp_scratch_ot_sm_[jtask][jsm];
+        interp_ot_sm_[jtask][jsm]->apply(geovars_sm_[jsm], xx, mask, stepValues);
+        incInterpValues(xx.validTime(), mask, jtask, jsm, stepValues, values_ot_sm_[jtask][jsm]);
       } else {
-        std::copy(tmp_buffer.begin(), tmp_buffer.end(), buffer_position);
-        std::advance(buffer_position, size);
+        interp_ot_sm_[jtask][jsm]->apply(geovars_sm_[jsm], xx, mask, values_ot_sm_[jtask][jsm]);
       }
     }
   }
@@ -451,6 +518,8 @@ template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::finalize() {
   Log::trace() << "GetValues::finalize start" << std::endl;
   util::Timer timer("oops::GetValues", "finalize");
+
+  packSendBuffers();
 
 // Allocate receive buffers and non blocking receive of interpolated values
   ASSERT(recv_buffers_.empty());
@@ -554,18 +623,8 @@ void GetValues<MODEL, OBS>::initializeTL(const util::Duration & tstep) {
   Log::trace() << "GetValues::initializeTL start" << std::endl;
   util::Timer timer("oops::GetValues", "initializeTL");
 
-  const double missing = util::missingValue<double>();
-
   ASSERT(send_buffers_.empty());
-  send_buffers_.resize(ntasks_);
-  for (int jtask = 0; jtask < ntasks_; ++jtask) {
-    size_t buffer_size = 0;
-    for (int jsm = 0; jsm < nsms_; ++jsm) {
-      const size_t nobs = times_ot_sm_[jtask][jsm].size();
-      buffer_size += nobs * linsizes_sm_[jsm];
-    }
-    send_buffers_[jtask].resize(buffer_size, missing);
-  }
+  allocateValues(linsizes_sm_);
   halfWidth_ = tstep/2;
   geovalsTL_ = true;
 
@@ -584,23 +643,10 @@ void GetValues<MODEL, OBS>::processTL(const Increment_ & dx) {
     const util::TimeWindow timeSubWindow =
       timeWindow_.createSubWindow(dx.validTime(), halfWidth_);
 
-    auto buffer_position = send_buffers_[jtask].begin();
-
     for (int jsm = 0; jsm < nsms_; ++jsm) {
       const std::vector<bool> mask =
         timeSubWindow.createTimeMask(times_ot_sm_[jtask][jsm]);
-
-      const size_t nobs = times_ot_sm_[jtask][jsm].size();
-      const size_t size = nobs * linsizes_sm_[jsm];
-
-      // TODO(FH): refactor LocalInterpolator interface to write in-place into send_buffers_,
-      //           using some sort of a view like gsl::span. This will avoid the allocation
-      //           of tmp_buffer and copy from tmp_buffer to send_buffers_.
-      std::vector<double> tmp_buffer(buffer_position,
-                                     std::next(buffer_position, size));
-      interp_ot_sm_[jtask][jsm]->apply(linvars_sm_[jsm], dx, mask, tmp_buffer);
-      std::copy(tmp_buffer.begin(), tmp_buffer.end(), buffer_position);
-      std::advance(buffer_position, size);
+      interp_ot_sm_[jtask][jsm]->apply(linvars_sm_[jsm], dx, mask, values_ot_sm_[jtask][jsm]);
     }
   }
 
@@ -613,6 +659,8 @@ template <typename MODEL, typename OBS>
 void GetValues<MODEL, OBS>::finalizeTL() {
   Log::trace() << "GetValues::finalizeTL start" << std::endl;
   util::Timer timer("oops::GetValues", "finalizeTL");
+
+  packSendBuffers();
 
 // Allocate receive buffers and non blocking receive of interpolated values
   ASSERT(recv_buffers_.empty());
@@ -717,6 +765,11 @@ void GetValues<MODEL, OBS>::initializeAD() {
   Log::trace() << "GetValues::initializeAD start" << std::endl;
   util::Timer timer("oops::GetValues", "initializeAD");
   send_buffers_.clear();
+  for (int jtask = 0; jtask < ntasks_; ++jtask) {
+    for (int jsm = 0; jsm < nsms_; ++jsm) {
+      values_ot_sm_[jtask][jsm] = std::vector<double>();
+    }
+  }
   Log::trace() << "GetValues::initializeAD done" << std::endl;
 }
 
@@ -732,22 +785,10 @@ void GetValues<MODEL, OBS>::processAD(Increment_ & dx) {
     const util::TimeWindow timeSubWindow =
       timeWindow_.createSubWindow(dx.validTime(), halfWidth_);
 
-    auto buffer_position = send_buffers_[jtask].begin();
-
     for (int jsm = 0; jsm < nsms_; ++jsm) {
       const std::vector<bool> mask =
         timeSubWindow.createTimeMask(times_ot_sm_[jtask][jsm]);
-
-      const size_t nobs = times_ot_sm_[jtask][jsm].size();
-      const size_t size = nobs * linsizes_sm_[jsm];
-
-      // TODO(FH): refactor LocalInterpolator interface to write in-place into send_buffers_,
-      //           using some sort of a view like gsl::span. This will avoid the allocation
-      //           of tmp_buffer and copy from send_buffers_ to tmp_buffer.
-      const std::vector<double> tmp_buffer(buffer_position,
-                                           std::next(buffer_position, size));
-      interp_ot_sm_[jtask][jsm]->applyAD(linvars_sm_[jsm], dx, mask, tmp_buffer);
-      std::advance(buffer_position, size);
+      interp_ot_sm_[jtask][jsm]->applyAD(linvars_sm_[jsm], dx, mask, values_ot_sm_[jtask][jsm]);
     }
   }
 
@@ -773,6 +814,7 @@ void GetValues<MODEL, OBS>::finalizeAD(const util::Duration & tstep) {
     ASSERT(itask >=0 && itask < ntasks_);
   }
   send_reqs_.clear();
+  unpackSendBuffers(linsizes_sm_);
 
 // (Adjoint of) Allocate receive buffers and non blocking receive of interpolated values
 // i.e. deallocate buffers (after making sure data has been sent)
