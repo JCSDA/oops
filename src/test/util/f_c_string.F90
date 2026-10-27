@@ -17,6 +17,7 @@ use fckit_log_module, only : fckit_log
 
 implicit none
 private
+public :: c_test_push_string_vector
 
 integer, parameter :: max_string = 60
 

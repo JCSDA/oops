@@ -18,6 +18,8 @@ use fckit_log_module, only : fckit_log
 implicit none
 external abor1_ftn
 private
+public :: c_test_uniform_double, c_test_uniform_int, c_test_uniform_real, &
+          c_test_normal_real, c_test_normal_double, c_test_uniform_long
 
 integer, parameter :: max_string = 800
 

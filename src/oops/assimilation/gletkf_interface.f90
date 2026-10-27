@@ -11,6 +11,7 @@ module gletkf_interface
   implicit none
 
   private
+  public :: letkf_core_c
 
 contains
   !------------------------------------------------------------------------------

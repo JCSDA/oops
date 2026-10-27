@@ -18,6 +18,7 @@ use fckit_log_module, only : fckit_log
 implicit none
 external abor1_ftn
 private
+public :: c_test_vars_interface
 
 integer, parameter :: var_length = 10
 integer, parameter :: max_string = 800
