@@ -102,44 +102,25 @@ variational:
             exp: 3dvar.coupledqg2.iter1
             type: in
 
-final:
-  increment:
-    geometry:
-      QG:
-        nx: 40
-        ny: 20
-        depths: [4500.0, 5500.0]
-      QG 2:
-        nx: 40
-        ny: 20
-        depths: [4500.0, 5500.0]
-      QG variables: [x, z]
-      QG 2 variables: [q, u, v]
-    
-    output:
-      state component:
-        QG:
-          datadir: Data
-          date: 2010-01-01T12:00:00Z
-          exp: 3dvar.increment.coupled1
-          type: in
-        QG 2:
-          datadir: Data
-          date: 2010-01-01T12:00:00Z
-          exp: 3dvar.increment.coupled2
-          type: in
-        analysis variables: [x, u, v]
 output:
-  QG:
-    datadir: Data
-    exp: 3dvar.coupled1
-    frequency: PT6H
-    type: an
-  QG 2:
-    datadir: Data
-    exp: 3dvar.coupled2
-    frequency: PT6H
-    type: an
+  increment:
+    QG:
+      datadir: Data
+      exp: 3dvar.coupled1
+      type: in
+    QG 2:
+      datadir: Data
+      exp: 3dvar.coupled2
+      type: in
+  analysis:
+    QG:
+      datadir: Data
+      exp: 3dvar.coupled1
+      type: an
+    QG 2:
+      datadir: Data
+      exp: 3dvar.coupled2
+      type: an
 
 test:
   reference filename: testref/var_qg_qg.test

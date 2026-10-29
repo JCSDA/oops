@@ -63,15 +63,20 @@ variational:
         f: 8.0
         tstep: PT1H30M
       variable change: Identity
-final:
   prints:
     frequency: PT1H30M
 output:
-  datadir: Data
-  exp: 4dvar_drplanclmp
-  first: PT3H
-  frequency: PT06H
-  type: an
+  analysis:
+    datadir: Data
+    exp: 4dvar_drplanclmp
+    first: PT3H
+    frequency: PT6H
+    type: an
+  increment:
+    datadir: Data
+    exp: 4dvar_drplanclmp
+    times: ['2010-01-02T00:00:00Z']
+    type: in
 
 test:
   reference filename: testoutput/4dvar_drplanclmp.test

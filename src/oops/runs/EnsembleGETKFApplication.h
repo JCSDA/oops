@@ -20,7 +20,6 @@
 #include "oops/base/PostProcessor.h"
 #include "oops/base/StateSet.h"
 #include "oops/base/StateSetSaver.h"
-#include "oops/base/StructuredGridPostProcessor.h"
 
 #include "eckit/config/YAMLConfiguration.h"
 #include "eckit/exception/Exceptions.h"

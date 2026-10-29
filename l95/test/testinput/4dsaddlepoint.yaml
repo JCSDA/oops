@@ -56,20 +56,6 @@ variational:
       trajectory:
         f: 8.0
         tstep: PT1H30M
-      variable change: Identity
-    online diagnostics:
-      write increment: true
-      increment:
-        state component:
-          states:
-          - datadir: Data
-            exp: 4dsaddlepoint.iter1
-            date: 2010-01-01T03:00:00Z
-            type: in
-          - datadir: Data
-            exp: 4dsaddlepoint.iter1
-            date: 2010-01-01T15:00:00Z
-            type: in
   - ninner: 30
     gradient norm reduction: 1.0e-10
     geometry:
@@ -80,30 +66,21 @@ variational:
       trajectory:
         f: 8.0
         tstep: PT1H30M
-      variable change: Identity
-final:
   prints:
     frequency: PT1H30M
-  increment:
-    geometry:
-      resol: 40
-    output:
-      state component:
-        states:
-        - datadir: Data
-          date: 2010-01-01T03:00:00Z
-          exp: 4dsaddlepoint
-          type: in
-        - datadir: Data
-          date: 2010-01-01T15:00:00Z
-          exp: 4dsaddlepoint
-          type: in
 output:
-  datadir: Data
-  exp: 4dsaddlepoint
-  first: PT0H
-  frequency: PT12H
-  type: an
+  increment:
+    datadir: Data
+    exp: 4dsaddlepoint
+    first: PT0H
+    frequency: PT12H
+    type: in
+  analysis:
+    datadir: Data
+    exp: 4dsaddlepoint
+    first: PT0H
+    frequency: PT12H
+    type: an
 
 test:
   reference filename: testoutput/4dsaddlepoint.test

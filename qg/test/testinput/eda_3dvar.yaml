@@ -1,4 +1,5 @@
 files:
+- "testinput/eda_3dvar_1.yaml"
 - "testinput/eda_3dvar_2.yaml"
 
 test:

@@ -56,25 +56,22 @@ assimilation:
           state component:
             datadir: Data
             date: 2010-01-01T12:00:00Z
-            exp: eda_3dvar_control_pert.mem__mem_pad__
+            exp: eda_3dvar_control_pert.iter1.mem__mem_pad__
             type: in
-      prints: {}
-  final:
+  output:
     increment:
       geometry:
         nx: 40
         ny: 20
         depths: [4500.0, 5500.0]
-      output:
-        state component:
-          datadir: Data
-          exp: eda_3dvar_control_pert.mem__mem_pad___full_increment
-          type: in
-    prints: {}
-  output:
-    datadir: Data
-    exp: mem__mem_pad__.eda_3dvar_control_pert
-    type: an
+      state component:
+        datadir: Data
+        exp: eda_3dvar_control_pert.mem__mem_pad__
+        type: in
+    analysis:
+      datadir: Data
+      exp: mem__mem_pad__.eda_3dvar_control_pert
+      type: an
 
 template:
   pattern with zero padding: __mem_pad__

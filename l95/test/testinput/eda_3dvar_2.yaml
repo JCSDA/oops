@@ -40,7 +40,8 @@ variational:
     ninner: 10
     gradient norm reduction: 1e-10
 output:
-  datadir: Data
-  exp: eda_3dvar.mem002
-  frequency: PT6H
-  type: an
+  analysis:
+    datadir: Data
+    exp: eda_3dvar.mem002
+    frequency: PT6H
+    type: an

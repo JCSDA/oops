@@ -402,7 +402,7 @@ StructuredGridWriter<MODEL>::StructuredGridWriter(
 : conf_(conf),
   comm_(sourceGeometry.getComm()),
   sourceGeometry_(sourceGeometry),
-  vars_(conf, "variables to output"),
+  vars_(conf, "variables"),
   bottomLevel_(conf.getBool("bottom model level", false)),
   modelLevelsAreTopDown_(sourceGeometry.levelsAreTopDown())
 {

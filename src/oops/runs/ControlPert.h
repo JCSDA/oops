@@ -209,6 +209,7 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 
 //  Retrieve individual members' configurations for variational DA
     eckit::LocalConfiguration varConf(memberConf, "variational");
+    eckit::LocalConfiguration outConf(memberConf, "output");
 
 //  Make sure that block minimizers are not used as ControlPert does not support them
     std::string minName;
@@ -231,77 +232,49 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 
       // Update the "variational" section of the Pert members' configuration accordingly
       varConf.set("iterations", iterconfsPert);
-      memberConf.set("variational", varConf);
     }
 
 //  Perform incremental variational assimilation
 //  xxMember starts as the control background
 //  It is updated within CostPert to reflect the pert member analysis
-    int iouter = IncrementalAssimilation<MODEL, OBS>(xxMember, *J, varConf);
+    eckit::LocalConfiguration noOut;  // control-pert has its own I/O
+    int iouter = IncrementalAssimilation<MODEL, OBS>(xxMember, *J, varConf, noOut, mymember == 0);
 
 //  Compute the full analysis increment
     ControlIncrement<MODEL, OBS> dx(J->jb());
     ControlVariable<MODEL, OBS> xxPert(J->jb().getBackground());
     dx.diff(xxMember, xxPert);
 
-//  Retrieve individual members' configurations for the final run of J->evaluate
-    eckit::LocalConfiguration finalConfig(memberConf, "final");
-    finalConfig.set("total iterations", iouter);
-
-//  Set the iteration count (so that the correct QC information can be retrieved from the ODB
-//  in ufo::ObsBiasCovariance::linearize), and update the member's configuration accordingly
-    memberConf.set("final", finalConfig);
-
 //  Save the full analysis increment if desired
-    if (finalConfig.has("increment")) {
-      const eckit::LocalConfiguration incConfig(finalConfig, "increment");
-      const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
-      Geometry<MODEL> incGeom(incGeomConfig,
-                              dx.states().geometry().getComm(),
-                              dx.states().commTime());
-      ControlIncrement<MODEL, OBS> dxOutput(incGeom, dx);
-      const eckit::LocalConfiguration incOutConfig(incConfig, "output");
-      dxOutput.write(incOutConfig);
-    }
-
-    if (finalConfig.has("increment to structured grid")) {
-      const eckit::LocalConfiguration incLatlonConf(finalConfig, "increment to structured grid");
-      ControlIncrement<MODEL, OBS> dxOutput(dx);
-      const StructuredGridWriter<MODEL> latlon(incLatlonConf, dxOutput.states().geometry());
-      for (size_t jtime = 0; jtime < dxOutput.states().size(); ++jtime) {
-        latlon.interpolateAndWrite(dxOutput.states()[jtime], xxMemAnalysis.states()[jtime]);
+    ASSERT(!outConf.has("increment to structured grid"));  // TODO(yt): remove
+    if (outConf.has("increment")) {
+      eckit::LocalConfiguration incConfig(outConf, "increment");
+      std::vector<eckit::LocalConfiguration> incouts;
+      if (util::isVector(incConfig)) {
+        incouts = incConfig.getSubConfigurations();
+      } else {
+        incouts.push_back(incConfig);
+      }
+      for (eckit::LocalConfiguration & incout : incouts) {
+        if (incout.getString("grid type", "native") == "native") {
+          const eckit::LocalConfiguration incGeomConfig(incout, "geometry");
+          Geometry<MODEL> incGeom(incGeomConfig,
+                                  dx.states().geometry().getComm(),
+                                  dx.states().commTime());
+          ControlIncrement<MODEL, OBS> dxOutput(incGeom, dx);
+          dxOutput.write(incout);
+        } else {
+          ControlIncrement<MODEL, OBS> dxOutput(dx);
+          const StructuredGridWriter<MODEL> latlon(incout, dxOutput.states().geometry());
+          for (size_t jtime = 0; jtime < dxOutput.states().size(); ++jtime) {
+            latlon.interpolateAndWrite(dxOutput.states()[jtime], xxMemAnalysis.states()[jtime]);
+          }
+        }
       }
     }
 
-//  Compute final value of the cost function and, if an output configuration is specified,
-//  save the analysis trajectory (or state). For control member ONLY.
-    PostProcessor<State_> post;
-    if (mymember == 0) {
-      bool runLastEvaluate = false;
-      if (memberConf.has("output")) {
-        const eckit::LocalConfiguration outConfig(memberConf, "output");
-        post.enrollProcessor(new StateWriter<State_>(outConfig));
-        finalConfig.set("iteration", iouter);
-        runLastEvaluate = true;
-      }
-      if (finalConfig.has("analysis to structured grid")) {
-         const eckit::LocalConfiguration anLatlonConf(finalConfig, "analysis to structured grid");
-         post.enrollProcessor(new StructuredGridPostProcessor<MODEL, State_>(
-               anLatlonConf, xxMember.state().geometry() ));
-        runLastEvaluate = true;
-       }
-      if (finalConfig.has("prints")) {
-        const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
-        post.enrollProcessor(new StateInfo<State_>("final", prtConfig));
-        runLastEvaluate = true;
-      }
-      if (runLastEvaluate) {
-        J->evaluate(xxMember, finalConfig, post);
-      }
-    }
     Log::info() << "ControlPert: member " << mymember << " incremental assimilation done; "
                 << iouter << " iterations." << std::endl;
-
 
 //  Retrieve the ensemble members' (full-field) background state by converting xxPert back
 //  into a ControlIncrement object valid at the middle of the window. This is then added
@@ -329,17 +302,23 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 
 //    Save the ensemble members' analysis trajectory (or state) if an output configuration
 //    is specified
-      if (mymember > 0 &&
-         (memberConf.has("output") || (finalConfig.has("analysis to structured grid")))) {
-        PostProcessor<State_> postMember;
-        if (memberConf.has("output")) {
-          eckit::LocalConfiguration outConfig(memberConf, "output");
-          postMember.enrollProcessor(new StateWriter<State_>(outConfig));
+
+      ASSERT(!outConf.has("analysis to structured grid"));  // TODO(yt): remove
+      if (outConf.has("analysis")) {
+        const eckit::LocalConfiguration anConf(outConf, "analysis");
+        std::vector<eckit::LocalConfiguration> anouts;
+        if (util::isVector(anConf)) {
+          anouts = anConf.getSubConfigurations();
+        } else {
+          anouts.push_back(anConf);
         }
-        if (finalConfig.has("analysis to structured grid")) {
-          const eckit::LocalConfiguration anLatlonConf(finalConfig, "analysis to structured grid");
-          postMember.enrollProcessor(new StructuredGridPostProcessor<MODEL, State_>(
-          anLatlonConf, xxMemAnalysis.state().geometry() ));
+        PostProcessor<State_> postMember;
+        for (const eckit::Configuration & anout : anouts) {
+          if (anout.getString("grid type", "native") == "native") {
+            postMember.enrollProcessor(new StateWriter<State_>(anout));
+          } else {
+            postMember.enrollProcessor(new StructuredStateWriter<MODEL>(anout));
+          }
         }
         J->runNL(xxMemAnalysis, postMember);
       }

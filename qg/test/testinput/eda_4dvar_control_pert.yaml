@@ -88,15 +88,6 @@ assimilation:
         tstep: PT1H
         variable change: Identity
         name: QgTLM
-      online diagnostics:
-        write increment: true
-        increment:
-          state component:
-            datadir: Data
-            date: 2010-01-01T12:00:00Z
-            exp: eda_4dvar_control_pert.mem__mem_pad___iter0
-            type: in
-      prints: {}
     - geometry:
         nx: 40
         ny: 20
@@ -109,35 +100,25 @@ assimilation:
         tstep: PT1H
         variable change: Identity
         name: QgTLM
-      online diagnostics:
-        write increment: true
-        increment:
-          state component:
-            datadir: Data
-            date: 2010-01-01T12:00:00Z
-            exp: eda_4dvar_control_pert.mem__mem_pad___iter1
-            type: in
-      prints: {}
-  final:
+    prints: {}
+  output:
     increment:
       geometry:
         nx: 40
         ny: 20
         depths: [4500.0, 5500.0]
-      output:
-        state component:
-          datadir: Data
-          exp: eda_4dvar_control_pert.mem__mem_pad___full_increment
-          type: in
-        obs aux component:
-          write increment: true
-    prints: {}
-  output:
-    datadir: Data
-    exp: mem__mem_pad__.eda_4dvar_control_pert
-    first: PT0S
-    frequency: PT6H
-    type: an
+      state component:
+        datadir: Data
+        exp: eda_4dvar_control_pert.mem__mem_pad___full_increment
+        type: in
+      obs aux component:
+        write increment: true
+    analysis:
+      datadir: Data
+      exp: mem__mem_pad__.eda_4dvar_control_pert
+      first: PT0S
+      frequency: PT6H
+      type: an
 
 template:
   pattern with zero padding: __mem_pad__

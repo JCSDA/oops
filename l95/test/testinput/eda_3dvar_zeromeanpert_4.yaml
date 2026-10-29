@@ -43,8 +43,4 @@ variational:
       resol: 40
     ninner: 10
     gradient norm reduction: 1e-10
-output:
-  datadir: Data
-  exp: eda_3dvar_zeromeanpert.mem004
-  frequency: PT6H
-  type: an
+output: {}

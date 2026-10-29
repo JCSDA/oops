@@ -75,12 +75,7 @@ variational:
       name: Identity
       tstep: PT6H
       variable change: Identity
-output:
-  datadir: Data
-  exp: 4dfgat
-  first: PT3H
-  frequency: PT6H
-  type: an
+output: {}
 
 test:
   reference filename: testoutput/4dfgat.test

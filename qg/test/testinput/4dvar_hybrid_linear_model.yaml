@@ -14,7 +14,7 @@ cost function:
     tstep: PT15M
   background:
     date: 2010-01-01T00:00:00Z
-    filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
+    filename: Data/forecast_5level_pert.fc.2009-12-31T00:00:00Z.P1D.nc
   background error:
     covariance model: QgError
     horizontal_length_scale: 2.2e6
@@ -29,7 +29,7 @@ cost function:
         obs type: Stream
       obs space:
         obsdatain:
-          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+          obsfile: Data/truth_5level_pert.obs4d_24h.nc
         obsdataout:
           obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
         obs type: Stream
@@ -39,7 +39,7 @@ cost function:
         obs type: Wind
       obs space:
         obsdatain:
-          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+          obsfile: Data/truth_5level_pert.obs4d_24h.nc
         obsdataout:
           obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
         obs type: Wind
@@ -49,7 +49,7 @@ cost function:
         obs type: WSpeed
       obs space:
         obsdatain:
-          obsfile: Data/truth_5level_pert_heat.obs4d_24h.nc
+          obsfile: Data/truth_5level_pert.obs4d_24h.nc
         obsdataout:
           obsfile: Data/4dvar_hybrid_linear_model.obs4d_24h.nc
         obs type: WSpeed
@@ -117,8 +117,8 @@ variational:
           base filepath: Data/hybrid_linear_model_coeffs
           one file per task: true
       name: HTLM
-final:
   prints:
     frequency: PT1H
+output: {}
 test:
   reference filename: testoutput/4dvar_hybrid_linear_model.test

@@ -23,8 +23,8 @@ ecbuild_add_executable( TARGET  qg_gen_ens_pert_B.x
                         LIBS    qg
                       )
 
-ecbuild_add_executable( TARGET  qg_gen_hybrid_linear_model_coeffs.x
-                        SOURCES qgGenHybridLinearModelCoeffs.cc
+ecbuild_add_executable( TARGET  qg_gen_htlm.x
+                        SOURCES qgGenHTLM.cc
                         LIBS    qg
                       )
 

@@ -85,8 +85,4 @@ variational:
     ninner: 1
     gradient norm reduction: 1e-10
     test: on
-output:
-  datadir: Data
-  exp: eda_3dvar_pff.mem004
-  frequency: PT6H
-  type: a
+output: {}

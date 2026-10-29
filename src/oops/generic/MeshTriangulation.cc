@@ -443,10 +443,7 @@ class MeshTriangulationFactory {
     if (it != map.end()) {
       return *(it->second);
     }
-    const auto inserted = map.emplace(key,
-        std::make_unique<MeshTriangulation>(fspace, comm));
-    Log::debug() << "MeshTriangulationFactory: created new entry for key '"
-                 << key << "'." << std::endl;
+    const auto inserted = map.emplace(key, std::make_unique<MeshTriangulation>(fspace, comm));
     return *(inserted.first->second);
   }
 

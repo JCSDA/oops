@@ -5,7 +5,7 @@ geometry:
   perturbed heating: 0.1
 initial condition:
   date: 2010-01-01T00:00:00Z
-  filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
+  filename: Data/forecast_5level_pert.fc.2009-12-31T00:00:00Z.P1D.nc
 background error:
   covariance model: QgError
   horizontal_length_scale: 1.0e6
@@ -50,7 +50,7 @@ linear model:
         perturbed heating: 0.1
       nonlinear control:
         date: '2010-01-01T00:00:00Z'
-        filename: Data/forecast_5level_pert_heat.fc.2009-12-31T00:00:00Z.P1D.nc
+        filename: Data/forecast_5level_pert.fc.2009-12-31T00:00:00Z.P1D.nc
       nonlinear ensemble:
         generate:
           ensemble size: 3

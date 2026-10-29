@@ -75,11 +75,7 @@ variational:
       ny: 20
       depths: [4500.0, 5500.0]
     output a minus b: true
-output:
-  datadir: Data
-  exp: 3densvar
-  frequency: PT6H
-  type: an
+output: {}
 
 test:
   reference filename: testoutput/3densvar.test

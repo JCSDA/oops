@@ -60,15 +60,15 @@ variational:
     ninner: 10
     geometry:
       resol: 40
-final:
   prints:
     frequency: PT1H30M
 output:
-  datadir: Data
-  exp: 4dvar_alpha
-  first: PT3H
-  frequency: PT06H
-  type: an
+  increment:
+    datadir: Data
+    exp: 4dvar_alpha
+    first: PT3H
+    frequency: PT6H
+    type: in
 
 test:
   reference filename: testoutput/4dvar_alpha.test

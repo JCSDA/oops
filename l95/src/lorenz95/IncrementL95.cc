@@ -184,10 +184,14 @@ void IncrementL95::write(const eckit::Configuration & config) const {
     filename += "."+std::to_string(iter);
   }
 
-  const util::DateTime antime(config.getString("date"));
-  filename += "."+antime.toString();
-  const util::Duration step = time_ - antime;
-  filename += "."+step.toString();
+  if (config.has("date")) {
+    const util::DateTime antime(config.getString("date"));
+    filename += "."+antime.toString();
+    const util::Duration step = time_ - antime;
+    filename += "."+step.toString();
+  } else {
+    filename += "."+time_.toString();
+  }
   sf::swapNameMember(config, filename);
   filename += ".l95";
 

@@ -27,10 +27,6 @@
 #include "oops/base/instantiateCovarFactory.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/State.h"
-#include "oops/base/StateInfo.h"
-#include "oops/base/StateWriter.h"
-#include "oops/base/StructuredGridPostProcessor.h"
-#include "oops/base/StructuredGridWriter.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
 #include "oops/generic/instantiateModelFactory.h"
 #include "oops/mpi/mpi.h"
@@ -44,8 +40,8 @@ namespace oops {
 template <typename MODEL, typename OBS> class Variational : public Application {
   typedef Increment<MODEL>           Increment_;
   typedef State<MODEL>               State_;
-  typedef Model<MODEL>                 Model_;
-  typedef ModelAuxControl<MODEL>       ModelAux_;
+  typedef Model<MODEL>               Model_;
+  typedef ModelAuxControl<MODEL>     ModelAux_;
 
  public:
 // -----------------------------------------------------------------------------
@@ -75,85 +71,22 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     ControlVariable<MODEL, OBS> xx(J->jb().getBackground());
 
 //  Perform Incremental Variational Assimilation
-    eckit::LocalConfiguration varConf(fullConfig, "variational");
-    int iouter = IncrementalAssimilation<MODEL, OBS>(xx, *J, varConf);
+    const eckit::LocalConfiguration varConf(fullConfig, "variational");
+    const eckit::LocalConfiguration outConf(fullConfig, "output");
+
+    int iouter = IncrementalAssimilation<MODEL, OBS>(xx, *J, varConf, outConf);
+
     Log::info() << "Variational: incremental assimilation done "
                 << iouter << " iterations." << std::endl;
 
-//  Save analysis and final diagnostics
-    PostProcessor<State_> post;
-    bool runLastEvaluate = fullConfig.getBool("final j evaluation", true);
-
-    if (fullConfig.has("output")) {
-      const eckit::LocalConfiguration outConfig(fullConfig, "output");
-      post.enrollProcessor(new StateWriter<State_>(outConfig));
-      runLastEvaluate = true;
-    }
-
-    eckit::LocalConfiguration finalConfig = fullConfig.getSubConfiguration("final");
-    finalConfig.set("iteration", iouter);
-    finalConfig.set("total iterations", iouter);
-
-//  Save increment if desired
-    if (finalConfig.has("increment")) {
-      const eckit::LocalConfiguration incConfig(finalConfig, "increment");
-      ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
-      const eckit::LocalConfiguration incOutConfig(incConfig, "output");
-      // if geometry is specified, compute difference between analysis and
-      // background on that geometry (for example, background geometry).
-      if (incConfig.has("geometry")) {
-        const eckit::LocalConfiguration incGeomConfig(incConfig, "geometry");
-        Geometry<MODEL> incGeom(incGeomConfig,
-                                xx.states().geometry().getComm(),
-                                xx.states().commTime());
-        ControlIncrement<MODEL, OBS> dx_tmp(J->jb());
-        ControlIncrement<MODEL, OBS> dx(incGeom, dx_tmp);
-        dx.diff(xx, x_b);
-        dx.write(incOutConfig);
-      // otherwise, compute difference on the background geometry
-      } else {
-        ControlIncrement<MODEL, OBS> dx_tmp(J->jb());
-        ControlIncrement<MODEL, OBS> dx(xx.state().geometry(), dx_tmp);
-        dx.diff(xx, x_b);
-        dx.write(incOutConfig);
-      }
-    }
-
-    if (finalConfig.has("increment to structured grid")) {
-      const eckit::LocalConfiguration incLatlonConf(finalConfig, "increment to structured grid");
-
-      ControlVariable<MODEL, OBS> x_b(J->jb().getBackground());
-      ControlIncrement<MODEL, OBS> dx(J->jb());
-      dx.diff(xx, x_b);
-
-      const StructuredGridWriter<MODEL> latlon(incLatlonConf, dx.states().geometry());
-      for (size_t jtime = 0; jtime < dx.states().size(); ++jtime) {
-        latlon.interpolateAndWrite(dx.states()[jtime], xx.states()[jtime]);
-      }
-    }
-
-    if (finalConfig.has("prints")) {
-      const eckit::LocalConfiguration prtConfig(finalConfig, "prints");
-      post.enrollProcessor(new StateInfo<State_>("final", prtConfig));
-      runLastEvaluate = true;
-    }
-
-    if (finalConfig.has("analysis to structured grid")) {
-      const eckit::LocalConfiguration anLatlonConf(finalConfig, "analysis to structured grid");
-      post.enrollProcessor(new StructuredGridPostProcessor<MODEL, State_>(
-            anLatlonConf, xx.state().geometry() ));
-      runLastEvaluate = true;
-    }
-
-    if (runLastEvaluate || finalConfig.has("forecast from analysis")) {
-      J->evaluate(xx, finalConfig, post);
-    }
+    ASSERT(!fullConfig.has("final"));  // TODO(yt) remove
+    ASSERT(!outConf.has("prints"));    // TODO(yt) remove
 
 //  Save ObsAux
     xx.obsVar().write(cfConf);
 
-    if (finalConfig.has("forecast from analysis")) {
-      const eckit::LocalConfiguration fcFromAnConf(finalConfig, "forecast from analysis");
+    if (fullConfig.has("forecast from analysis")) {
+      const eckit::LocalConfiguration fcFromAnConf(fullConfig, "forecast from analysis");
 
       //  Setup Model
       const Model_ model(xx.state().geometry(), eckit::LocalConfiguration(fcFromAnConf, "model"));

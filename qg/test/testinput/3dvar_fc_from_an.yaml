@@ -59,61 +59,30 @@ variational:
       nx: 20
       ny: 10
       depths: [4500.0, 5500.0]
-    online diagnostics:
-      write increment: true
-      increment:
-        state component:
-          datadir: Data
-          date: 2010-01-01T12:00:00Z
-          exp: 3dvar.iter1
-          type: in
   - gradient norm reduction: 1.0e-10
     ninner: 10
     geometry:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-    online diagnostics:
-      write increment: true
-      increment:
-        state component:
-          datadir: Data
-          date: 2010-01-01T12:00:00Z
-          exp: 3dvar.iter2
-          type: in
-          analysis variables: [x]
 output:
-  datadir: Data
-  exp: 3dvar
-  frequency: PT6H
-  type: an
-final:
-  increment:
-    geometry:
-      nx: 40
-      ny: 20
-      depths: [4500.0, 5500.0]
-    output:
-      state component:
-        datadir: Data
-        date: 2010-01-01T12:00:00Z
-        exp: 3dvar.increment
-        type: in
-        analysis variables: [x]
-  forecast from analysis:
-    forecast length: P2D
-    model:
-      name: QG
-      tstep: PT1H
-    output:
-      datadir: Data
-      exp: forecast_from_an
-      frequency: P1D
-      type: fc
-    prints:
-      frequency: PT3H
-    model aux control: {}
-
+  analysis:
+    datadir: Data
+    exp: 3dvar
+    type: an
+forecast from analysis:
+  forecast length: P2D
+  model:
+    name: QG
+    tstep: PT1H
+  output:
+    datadir: Data
+    exp: forecast_from_an
+    frequency: P1D
+    type: fc
+  prints:
+    frequency: PT3H
+  model aux control: {}
 
 test:
   reference filename: testoutput/3dvar_fc_from_an.test

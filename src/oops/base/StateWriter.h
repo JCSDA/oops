@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Copyright 2026 UCAR
  * 
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0. 
@@ -15,6 +16,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/Logger.h"
 
 namespace oops {
 
@@ -31,7 +33,11 @@ template <typename FLDS> class StateWriter : public PostBase<FLDS> {
 
  private:
   const eckit::LocalConfiguration ppConfig_;
-  void doProcessing(const FLDS & xx) override {xx.write(ppConfig_);}
+  void doProcessing(const FLDS & xx) override {
+    Log::info() << "Writing State:" << xx << std::endl;
+    Log::test() << "Writing State:" << xx << std::endl;
+    xx.write(ppConfig_);
+  }
 };
 
 }  // namespace oops

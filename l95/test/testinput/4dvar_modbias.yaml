@@ -63,15 +63,9 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-final:
   prints:
     frequency: PT1H30M
-output:
-  datadir: Data
-  exp: 4dvar_modbias
-  first: PT3H
-  frequency: PT06H
-  type: an
+output: {}
 
 test:
   reference filename: testoutput/4dvar_modbias.test

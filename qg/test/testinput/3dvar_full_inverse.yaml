@@ -71,11 +71,7 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-output:
-  datadir: Data
-  exp: 3dvar_full_inverse
-  frequency: PT6H
-  type: an
+output: {}
 
 test:
   reference filename: testoutput/3dvar_full_inverse.test

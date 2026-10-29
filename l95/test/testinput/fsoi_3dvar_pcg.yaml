@@ -38,11 +38,7 @@ variational:
       input forecast sensitivity:
         date: 2010-01-02T00:00:00Z
         filename: Data/3dvar_4fsoi_pcg.iter1.in.2010-01-02T00:00:00Z.PT0S.l95
-output:
-  datadir: Data
-  exp: fsoi_3dvar_pcg
-  frequency: PT6H
-  type: an
+output: {}
 
 test:
   reference filename: testoutput/fsoi_3dvar_pcg.test

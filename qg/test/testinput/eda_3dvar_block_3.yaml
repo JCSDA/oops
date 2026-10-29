@@ -73,8 +73,4 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-output:
-  datadir: Data
-  exp: mem003.block_eda_3dvar
-  frequency: PT6H
-  type: an
+output: {}

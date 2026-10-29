@@ -1,0 +1,80 @@
+cost function:
+  cost type: 3D-Var
+  time window:
+    begin: 2010-01-01T09:00:00Z
+    length: PT6H
+  analysis variables: [x]
+  geometry:
+    nx: 40
+    ny: 20
+    depths: [4500.0, 5500.0]
+  background:
+    date: 2010-01-01T12:00:00Z
+    filename: Data/forecast.fc.2009-12-31T00:00:00Z.P1DT12H.nc
+  background error:
+    covariance model: QgError
+    horizontal_length_scale: 2.0e6
+    maximum_condition_number: 1.0e6
+    standard_deviation: 1.8e7
+    vertical_length_scale: 16000.0
+  observations:
+    obs perturbations: true
+    observers:
+    - obs error:
+        covariance model: diagonal
+        obs perturbations amplitude: 0.5
+      obs operator:
+        obs type: Stream
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/mem001.eda_3dvar.obs3d.nc
+        obs type: Stream
+        obs perturbations seed: 1
+    - obs error:
+        covariance model: diagonal
+        obs perturbations amplitude: 0.5
+      obs operator:
+        obs type: Wind
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/mem001.eda_3dvar.obs3d.nc
+        obs type: Wind
+        obs perturbations seed: 1
+    - obs error:
+        covariance model: diagonal
+        obs perturbations amplitude: 0.25
+      obs operator:
+        obs type: WSpeed
+      obs space:
+        obsdatain:
+          obsfile: Data/truth.obs3d.nc
+        obsdataout:
+          obsfile: Data/mem001.eda_3dvar.obs3d.nc
+        obs type: WSpeed
+        obs perturbations seed: 1
+variational:
+  minimizer:
+    algorithm: DRPCG
+  iterations:
+  - gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      nx: 20
+      ny: 10
+      depths: [4500.0, 5500.0]
+  - gradient norm reduction: 1.0e-10
+    ninner: 10
+    geometry:
+      nx: 40
+      ny: 20
+      depths: [4500.0, 5500.0]
+output:
+  analysis:
+    datadir: Data
+    exp: mem001.eda_3dvar
+    frequency: PT6H
+    type: an

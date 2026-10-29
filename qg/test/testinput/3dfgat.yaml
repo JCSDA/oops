@@ -64,11 +64,12 @@ variational:
       ny: 20
       depths: [4500.0, 5500.0]
 output:
-  datadir: Data
-  exp: 3dfgat
-  first: PT3H
-  frequency: PT6H
-  type: an
+  analysis:
+    datadir: Data
+    exp: 3dfgat
+    first: PT3H
+    frequency: PT6H
+    type: an
 
 test:
   reference filename: testoutput/3dfgat.test

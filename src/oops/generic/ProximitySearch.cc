@@ -209,8 +209,6 @@ class ProximitySearchFactory {
       return *(it->second);
     }
     const auto inserted = map.emplace(key, std::make_unique<ProximitySearch>(fspace, comm));
-    Log::debug() << "ProximitySearchFactory: created new entry for key '" << key << "'."
-                 << std::endl;
     return *(inserted.first->second);
   }
 

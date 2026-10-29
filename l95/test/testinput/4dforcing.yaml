@@ -64,15 +64,15 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-final:
   prints:
     frequency: PT1H30M
 output:
-  datadir: Data
-  exp: 4dforcing
-  first: PT3H
-  frequency: PT06H
-  type: an
+  analysis:
+    datadir: Data
+    exp: 4dforcing
+    first: PT3H
+    frequency: PT06H
+    type: an
 
 test:
   reference filename: testoutput/4dforcing.test

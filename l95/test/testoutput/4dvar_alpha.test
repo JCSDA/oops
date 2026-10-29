@@ -1,17 +1,29 @@
-CostJo   : Nonlinear Jo(Lorenz 95) = 1.2385634722309175e+02, nobs = 160, Jo/n = 7.7410217014432336e-01, err = 4.0000000596046370e-01
+CostJo   : Nonlinear Jo(Lorenz 95) = 1.2385634722309169e+02, nobs = 160, Jo/n = 7.7410217014432303e-01, err = 4.0000000596046370e-01
 CostJb   : Nonlinear Jb = 0.0000000000000000e+00
-CostFunction: Nonlinear J = 1.2385634722309175e+02
-DRPCGMinimizer: reduction in residual norm = 5.4057938873151787e-03
+CostFunction: Nonlinear J = 1.2385634722309169e+02
+DRPCGMinimizer: reduction in residual norm = 5.4057938873151822e-03
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-01T03:00:00Z
- Min=7.6015872327963967e+00, Max=8.7570933014857761e+00, Average=7.9991767966089515e+00
-CostJo   : Nonlinear Jo(Lorenz 95) = 8.5477547381046459e-01, nobs = 160, Jo/n = 5.3423467113154037e-03, err = 4.0000000596046370e-01
-CostJb   : Nonlinear Jb = 2.5664796200019837e+00
-CostFunction: Nonlinear J = 3.4212550938124484e+00
-DRPCGMinimizer: reduction in residual norm = 7.3976202483916453e-02
+ Min=7.6015872327963967e+00, Max=8.7570933014857744e+00, Average=7.9991767966089515e+00
+CostJo   : Nonlinear Jo(Lorenz 95) = 8.5477547381046515e-01, nobs = 160, Jo/n = 5.3423467113154072e-03, err = 4.0000000596046370e-01
+CostJb   : Nonlinear Jb = 2.5664796200019770e+00
+CostFunction: Nonlinear J = 3.4212550938124422e+00
+DRPCGMinimizer: reduction in residual norm = 7.3976202483909348e-02
 CostFunction::addIncrement: Analysis: 
  Valid time: 2010-01-01T03:00:00Z
- Min=7.6468870594335954e+00, Max=8.7931803808604165e+00, Average=8.0080153804052863e+00
-CostJo   : Nonlinear Jo(Lorenz 95) = 4.8312795885807375e-01, nobs = 160, Jo/n = 3.0195497428629611e-03, err = 4.0000000596046370e-01
-CostJb   : Nonlinear Jb = 2.6615851563324124e+00
-CostFunction: Nonlinear J = 3.1447131151904864e+00
+ Min=7.6468870594335945e+00, Max=8.7931803808604148e+00, Average=8.0080153804052863e+00
+Writing Increment:
+ Valid time: 2010-01-01T06:00:00Z
+ Min=-5.5407248067367743e-01, Max=7.7162810041490282e-01, Average=3.1765447263092120e-02
+Writing Increment:
+ Valid time: 2010-01-01T12:00:00Z
+ Min=-7.3425169833322368e-01, Max=6.6092805467605942e-01, Average=3.0262117591039472e-02
+Writing Increment:
+ Valid time: 2010-01-01T18:00:00Z
+ Min=-1.1032084309091275e+00, Max=7.0112310211905715e-01, Average=2.8719278825672691e-02
+Writing Increment:
+ Valid time: 2010-01-02T00:00:00Z
+ Min=-1.4116359055270218e+00, Max=1.3381497610420228e+00, Average=2.7088444292883086e-02
+CostJo   : Nonlinear Jo(Lorenz 95) = 4.8312795885807680e-01, nobs = 160, Jo/n = 3.0195497428629802e-03, err = 4.0000000596046370e-01
+CostJb   : Nonlinear Jb = 2.6615851563324062e+00
+CostFunction: Nonlinear J = 3.1447131151904832e+00

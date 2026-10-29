@@ -36,21 +36,17 @@ variational:
       resol: 40
     ninner: 10
     gradient norm reduction: 1e-10
-final:
-  increment:
-    geometry:
-      resol: 40
-    output:
-      state component:
-        datadir: Data
-        exp: 3dfgat
-        date: 2010-01-02T00:00:00Z
-        type: in
 output:
-  datadir: Data
-  exp: 3dfgat
-  times: ["2010-01-02T00:00:00Z"]
-  type: an
+  increment:
+    times: ["2010-01-02T00:00:00Z"]
+    datadir: Data
+    exp: 3dfgat
+    type: in
+  analysis:
+    times: ["2010-01-02T00:00:00Z"]
+    datadir: Data
+    exp: 3dfgat
+    type: an
 
 test:
   reference filename: testoutput/3dfgat.test

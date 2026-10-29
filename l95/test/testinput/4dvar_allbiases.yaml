@@ -67,15 +67,15 @@ variational:
         f: 8.5
         tstep: PT1H30M
       variable change: Identity
-final:
   prints:
     frequency: PT1H30M
 output:
-  datadir: Data
-  exp: 4dvar_allbiases
-  first: PT3H
-  frequency: PT06H
-  type: an
+  analysis:
+    datadir: Data
+    exp: 4dvar_allbiases
+    first: PT3H
+    frequency: PT06H
+    type: an
 
 test:
   reference filename: testoutput/4dvar_allbiases.test

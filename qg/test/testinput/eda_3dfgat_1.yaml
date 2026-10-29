@@ -72,9 +72,4 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-output:
-  datadir: Data
-  exp: mem001.eda_3dfgat
-  first: PT3H
-  frequency: PT6H
-  type: an
+output: {}

@@ -146,6 +146,7 @@ list(
   oops/base/Increment.h
   oops/base/Increment4D.h
   oops/base/IncrementSet.h
+  oops/base/IncrementWriter.h
   oops/base/Inflation.h
   oops/base/InflationBase.h
   oops/base/instantiateCovarFactory.h
@@ -199,6 +200,8 @@ list(
   oops/base/StateWriter.h
   oops/base/StructuredGridPostProcessor.h
   oops/base/StructuredGridWriter.h
+  oops/base/StructuredIncrementWriter.h
+  oops/base/StructuredStateWriter.h
   oops/base/TrajectorySaver.h
   oops/base/TrivialSamplingMethodSelector.h
   oops/base/variables_f.cc

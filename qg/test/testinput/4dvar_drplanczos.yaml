@@ -95,15 +95,15 @@ variational:
         tstep: PT1H
       tstep: PT1H
       variable change: Identity
-final:
   prints:
     frequency: PT1H
 output:
-  datadir: Data
-  exp: 4dvar_drplanczos
-  first: PT0S
-  frequency: PT6H
-  type: an
+  analysis:
+    datadir: Data
+    exp: 4dvar_drplanczos
+    first: PT0S
+    frequency: PT6H
+    type: an
 
 test:
   reference filename: testoutput/4dvar_drplanczos.test

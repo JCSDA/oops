@@ -16,13 +16,13 @@ analysis:
   date: *date
   members:
   - date: *date
-    filename: Data/eda_3dvar_control_pert.mem001_full_increment.in.2010-01-01T12:00:00Z.nc
+    filename: Data/eda_3dvar_control_pert.mem001.in.2010-01-01T12:00:00Z.nc
   - date: *date
-    filename: Data/eda_3dvar_control_pert.mem002_full_increment.in.2010-01-01T12:00:00Z.nc
+    filename: Data/eda_3dvar_control_pert.mem002.in.2010-01-01T12:00:00Z.nc
   - date: *date
-    filename: Data/eda_3dvar_control_pert.mem003_full_increment.in.2010-01-01T12:00:00Z.nc
+    filename: Data/eda_3dvar_control_pert.mem003.in.2010-01-01T12:00:00Z.nc
   - date: *date
-    filename: Data/eda_3dvar_control_pert.mem004_full_increment.in.2010-01-01T12:00:00Z.nc
+    filename: Data/eda_3dvar_control_pert.mem004.in.2010-01-01T12:00:00Z.nc
 analysis variables: [x]
 analysis type: "increment"
 inflation:

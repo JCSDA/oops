@@ -62,12 +62,12 @@ variational:
       tstep: PT1H30M
       variable change: Identity
       name: L95TLM
-final:
   prints:
     frequency: PT1H30M
 output:
-  datadir: Data
-  exp: eda_4dvar.mem003
-  first: PT3H
-  frequency: PT06H
-  type: an
+  analysis:
+    datadir: Data
+    exp: eda_4dvar.mem003
+    first: PT3H
+    frequency: PT06H
+    type: an

@@ -121,7 +121,6 @@ list( APPEND l95_test_input
   testinput/modelauxcontrol.yaml
   testinput/obs_iterator.yaml
   testinput/obsaux.yaml
-  testinput/obserrordiagparameters.yaml
   testinput/obslocalization.yaml
   testinput/obslocalizations.yaml
   testinput/obsoperator.yaml
@@ -173,6 +172,7 @@ list( APPEND l95_testoutput
   testoutput/3dfgat.test
   testoutput/4dfgat.test
   testoutput/4densvar.test
+  testoutput/4densvar_seq.test
   testoutput/4densvar_hybrid.test
   testoutput/4densvar_static_crosstime.test
   testoutput/4dforcing.test

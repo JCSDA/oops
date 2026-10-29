@@ -73,7 +73,8 @@ variational:
       ny: 20
       depths: [4500.0, 5500.0]
 output:
-  datadir: Data
-  exp: mem002.eda_3dvar
-  frequency: PT6H
-  type: an
+  analysis:
+    datadir: Data
+    exp: mem002.eda_3dvar
+    frequency: PT6H
+    type: an

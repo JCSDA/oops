@@ -46,6 +46,10 @@ class PostProcessor {
     if (pp != 0) processors_.push_back(pp);
   }
 
+  void append(const PostProcessor & pp) {
+    processors_.insert(processors_.end(), pp.processors_.begin(), pp.processors_.end());
+  }
+
   void initialize(const FLDS & xx, const util::DateTime & end,
                   const util::Duration & step) {
     for (auto & jp : processors_) {

@@ -109,15 +109,9 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-final:
   prints:
     frequency: PT1H
-output:
-  datadir: Data
-  exp: 4dvar_drplanczos_hybrid
-  first: PT0S
-  frequency: PT6H
-  type: an
+output: {}
 
 test:
   reference filename: testoutput/4dvar_drplanczos_hybrid.test

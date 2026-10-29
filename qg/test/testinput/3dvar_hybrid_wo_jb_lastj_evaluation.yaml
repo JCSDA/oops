@@ -87,20 +87,7 @@ variational:
       nx: 40
       ny: 20
       depths: [4500.0, 5500.0]
-
-final:
-  increment:
-    geometry:
-      nx: 40
-      ny: 20
-      depths: [4500.0, 5500.0]
-    output:
-      state component:
-        datadir: Data
-        date: 2010-01-01T12:00:00Z
-        exp: 3dvar_nojb_eval
-        type: in
-        analysis variables: [x]
+output: {}
 
 final j evaluation: false
 

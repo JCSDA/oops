@@ -52,21 +52,17 @@ variational:
           date: 2010-01-02T00:00:00Z
           exp: 3dvar.iter2
           type: in
-final:
-  increment:
-    geometry:
-      resol: 40
-    output:
-      state component:
-        datadir: Data
-        exp: 3dvar
-        date: 2010-01-02T00:00:00Z
-        type: in
 output:
-  datadir: Data
-  exp: 3dvar
-  times: ["2010-01-02T00:00:00Z"]
-  type: an
+  increment:
+    datadir: Data
+    exp: 3dvar
+    times: ["2010-01-02T00:00:00Z"]
+    type: in
+  analysis:
+    datadir: Data
+    exp: 3dvar
+    times: ["2010-01-02T00:00:00Z"]
+    type: an
 
 test:
   reference filename: testoutput/3dvar.test

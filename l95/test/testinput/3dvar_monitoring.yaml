@@ -35,11 +35,7 @@ variational:
     gradient norm reduction: 1e-10
     geometry:
       resol: 40
-output:
-  datadir: Data
-  exp: 3dvar_monitoring
-  frequency: PT6H
-  type: an
+output: {}
 
 test:
   reference filename: testoutput/3dvar_monitoring.test
