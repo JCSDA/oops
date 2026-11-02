@@ -37,7 +37,8 @@ class HtlmCalculatorCore {
                      const atlas::idx_t ensembleSize,
                      const atlas::FieldSet & rmsVals,
                      const std::vector<atlas::idx_t> & owned,
-                     const atlas::FieldSet & regularizationFieldSet);
+                     const atlas::FieldSet & regularizationFieldSet,
+                     const bool levelsAreTopDown);
   ~HtlmCalculatorCore();
 
   HtlmCalculatorCore(const HtlmCalculatorCore &) = delete;

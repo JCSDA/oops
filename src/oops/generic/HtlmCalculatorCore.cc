@@ -45,7 +45,8 @@ class HtlmCalculatorCore::Workspace {
             const atlas::idx_t ensembleSize,
             const atlas::FieldSet & rmsVals,
             const std::vector<atlas::idx_t> & owned,
-            const atlas::FieldSet & regularizationFieldSet);
+            const atlas::FieldSet & regularizationFieldSet,
+            const bool levelsAreTopDown);
 
   void setOfCoeffs(const std::vector<atlas::FieldSet> & linearEnsemble,
                    const std::vector<atlas::FieldSet> & linearErrors,
@@ -53,7 +54,7 @@ class HtlmCalculatorCore::Workspace {
 
  private:
   void singularValueDecomposition(
-      const atlas::idx_t, const atlas::array::Range &,
+      const atlas::idx_t, const atlas::idx_t, const atlas::array::Range &,
       const std::vector<std::vector<atlas::array::ArrayView<const double, 2>>> &,
       const std::vector<atlas::array::ArrayView<const double, 1>> &) const;
   void compute(const atlas::idx_t, const atlas::idx_t, const atlas::array::Range &,
@@ -66,6 +67,8 @@ class HtlmCalculatorCore::Workspace {
   const atlas::idx_t influenceSize_;
   const atlas::idx_t halfInfluenceSize_;
   const atlas::idx_t ensembleSize_;
+  const std::vector<atlas::idx_t> cutoffs_;
+  const bool levelsAreTopDown_;
   const atlas::idx_t vectorSize_;
   const std::vector<atlas::idx_t> & owned_;
   const atlas::FieldSet rmsVals_;
@@ -90,14 +93,29 @@ HtlmCalculatorCore::Workspace::Workspace(const eckit::Configuration & config,
                                          const atlas::idx_t ensembleSize,
                                          const atlas::FieldSet & rmsVals,
                                          const std::vector<atlas::idx_t> & owned,
-                                         const atlas::FieldSet & regularizationFieldSet)
+                                         const atlas::FieldSet & regularizationFieldSet,
+                                         const bool levelsAreTopDown)
 : updateVars_(updateVars), nLevels_(nLevels), influenceSize_(influenceSize),
   halfInfluenceSize_(influenceSize_ / 2), ensembleSize_(ensembleSize),
+  cutoffs_(config.getIntVector("ignore variables at and above levels", {})),
+  levelsAreTopDown_(levelsAreTopDown),
   vectorSize_(influenceSize_ * updateVars_.size()), owned_(owned), rmsVals_(rmsVals),
   M_(vectorSize_, ensembleSize_), linearErrorVector_(ensembleSize_),
   SVD_(vectorSize_, vectorSize_, Eigen::ComputeThinU),
   recipMaxCondNum_(1.0 / config.getDouble("regularization.max condition number", -1)),
   minSingVal_(config.getDouble("regularization.min singular value", 0.0)) {
+  // If cutoffs provided, check number matches no. update variables and that values are valid
+  if (!cutoffs_.empty()) {
+    if (cutoffs_.size() != updateVars_.size()) {
+      throw eckit::UserError("HtlmCalculator: number of cutoffs != number of update variables");
+    }
+    for (const auto& cutoff : cutoffs_) {
+      if ((cutoff >= 0 && cutoff < halfInfluenceSize_)
+          || (cutoff > nLevels_ - halfInfluenceSize_ - 1)) {
+        throw eckit::UserError("HtlmCalculator: at least one cutoff is invalid");
+      }
+    }
+  }
   // Check max condition number is > 1
   if (recipMaxCondNum_ >= 1.0) {
     throw eckit::UserError("HtlmCalculator: regularization max condition number must be > 1");
@@ -162,17 +180,18 @@ void HtlmCalculatorCore::Workspace::setOfCoeffs(const std::vector<atlas::FieldSe
 
   for (auto i : owned_) {
     atlas::array::Range range(0, influenceSize_);
-    singularValueDecomposition(i, range, linearEnsembleViews, rmsViews);
+    singularValueDecomposition(i, 0, range, linearEnsembleViews, rmsViews);
     for (auto k = 0; k < halfInfluenceSize_; k++) {
       compute(i, k, range, linearErrorsViews, rmsViews, coeffsViews);
     }
     for (auto k = halfInfluenceSize_; k < nLevels_ - halfInfluenceSize_; k++) {
       range = atlas::array::Range(k - halfInfluenceSize_, k + halfInfluenceSize_ + 1);
-      singularValueDecomposition(i, range, linearEnsembleViews, rmsViews);
+      singularValueDecomposition(i, k, range, linearEnsembleViews, rmsViews);
       compute(i, k, range, linearErrorsViews, rmsViews, coeffsViews);
     }
     range = atlas::array::Range(nLevels_ - influenceSize_, nLevels_);
-    singularValueDecomposition(i, range, linearEnsembleViews, rmsViews);
+    singularValueDecomposition(i, nLevels_ - halfInfluenceSize_, range, linearEnsembleViews,
+                               rmsViews);
     for (auto k = nLevels_ - halfInfluenceSize_; k < nLevels_; k++) {
       compute(i, k, range, linearErrorsViews, rmsViews, coeffsViews);
     }
@@ -183,6 +202,7 @@ void HtlmCalculatorCore::Workspace::setOfCoeffs(const std::vector<atlas::FieldSe
 
 void HtlmCalculatorCore::Workspace::singularValueDecomposition(
   const atlas::idx_t i,
+  const atlas::idx_t kCutoff,
   const atlas::array::Range & range,
   const std::vector<std::vector<atlas::array::ArrayView<const double, 2>>> & linearEnsembleViews,
   const std::vector<atlas::array::ArrayView<const double, 1>> & rmsViews)const {
@@ -198,6 +218,15 @@ void HtlmCalculatorCore::Workspace::singularValueDecomposition(
         M_(v * influenceSize_ + s, m) = values(s) / rms[s];
       }
     }
+  }
+  // If cutoff provided for a variable and we are at or above it (towards the model top), reset
+  // associated values to zero
+  for (size_t v = 0; v < cutoffs_.size(); v++) {
+    if (cutoffs_[v] < 0
+        || (levelsAreTopDown_ ? kCutoff > cutoffs_[v] : kCutoff < cutoffs_[v])) {
+      continue;
+    }
+    M_.block(v * influenceSize_, 0, influenceSize_, ensembleSize_).setZero();
   }
   SVD_.compute(M_ * M_.transpose());
 }
@@ -263,9 +292,10 @@ HtlmCalculatorCore::HtlmCalculatorCore(const eckit::Configuration & config,
                                        const atlas::idx_t ensembleSize,
                                        const atlas::FieldSet & rmsVals,
                                        const std::vector<atlas::idx_t> & owned,
-                                       const atlas::FieldSet & regularizationFieldSet)
+                                       const atlas::FieldSet & regularizationFieldSet,
+                                       const bool levelsAreTopDown)
 : impl_(std::make_unique<Workspace>(config, updateVars, nLevels, influenceSize, ensembleSize,
-                                    rmsVals, owned, regularizationFieldSet)) {}
+                                    rmsVals, owned, regularizationFieldSet, levelsAreTopDown)) {}
 
 HtlmCalculatorCore::~HtlmCalculatorCore() = default;
 

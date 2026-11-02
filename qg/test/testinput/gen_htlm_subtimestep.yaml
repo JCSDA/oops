@@ -26,6 +26,7 @@ hybrid linear model:
       begin: 2010-01-01T00:00:00Z
       length: PT24H
     calculator:
+      ignore variables at and above levels: [-1, -1]
       regularization:
         base value: 1e100
         parts:

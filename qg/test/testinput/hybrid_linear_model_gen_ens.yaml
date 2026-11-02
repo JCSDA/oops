@@ -39,6 +39,7 @@ linear model:
       length: PT24H
       begin: 2010-01-01T00:00:00Z
     calculator:
+      ignore variables at and above levels: [3]
     ensemble:
       model:
         name: QG

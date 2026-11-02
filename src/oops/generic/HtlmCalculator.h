@@ -22,6 +22,16 @@ namespace oops {
  * Configuration options for HtlmCalculator:
  *
  * Keys:
+ * "ignore variables at and above levels"
+ *                      : (Optional) List of levels at and above which each variable is removed from
+ *                        the regression (order corresponds to update variables). Each level must
+ *                        fall within range [halfInfluenceSize, nLevels - halfInfluenceSize - 1]
+ *                        inclusive, or a negative number if no cutoff is desired for the variable.
+ *                        Levels are model level indices; "above" means towards the model top, i.e.
+ *                        indices >= the cutoff if levels are bottom-up, <= if they are top-down.
+ *                        halfInfluenceSize is the number of levels above and below the level of
+ *                        interest which the regressions are performed over. This is configured via
+ *                        the HybridLinearModelCoeffs class.
  * ─────────────────────────────────────────────────────────────────────────────
  * "regularization"     : (Optional) configuration for regularization options
  *
@@ -102,7 +112,8 @@ HtlmCalculator<MODEL>::HtlmCalculator(const eckit::Configuration & config,
   ensembleSize_(ensemble.size()),
   core_(config, updateVars_, nLevels_, influenceSize, ensembleSize_,
         ensemble.getRmsVals(updateVars_, nLevels_), owned,
-        regularizationFieldSet(config, updateGeometry, updateVars_)) {}
+        regularizationFieldSet(config, updateGeometry, updateVars_),
+        updateGeometry.levelsAreTopDown()) {}
 
 //------------------------------------------------------------------------------
 
