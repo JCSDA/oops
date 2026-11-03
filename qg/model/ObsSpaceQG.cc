@@ -33,16 +33,16 @@ namespace qg {
 // initialization for the static map
 std::map < std::string, F90odb > ObsSpaceQG::theObsFileRegister_;
 int ObsSpaceQG::theObsFileCount_ = 0;
+int ObsSpaceQG::instances_ = 0;
 
 // -----------------------------------------------------------------------------
 
-ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                       const util::TimeWindow & timeWindow,
-                       const eckit::mpi::Comm & timeComm)
-  : oops::ObsSpaceBase(config, comm, timeWindow), obsname_(config.getString("obs type")),
-    timeWindow_(timeWindow), obsvars_()
+ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Comm &,
+                       const util::TimeWindow & timeWindow, const eckit::mpi::Comm & timeComm)
+  : obsname_(config.getString("obs type")), timeWindow_(timeWindow), obsvars_()
 {
   typedef std::map< std::string, F90odb >::iterator otiter;
+  ++instances_;
 
   eckit::LocalConfiguration fileconf(config);
   std::string ofin("-");
@@ -105,6 +105,20 @@ ObsSpaceQG::ObsSpaceQG(const eckit::Configuration & config, const eckit::mpi::Co
     qg_obsdb_generate_f90(key_, obsname_.size(), obsname_.c_str(), gconf,
                           start, freq, nobstimes, iobs);
   }
+
+  // Determine seed for random number generator that is reproducible when re-running
+  // but does not repeat itself over analysis cycles, ensemble members or obs type
+  util::DateTime era(1623, 6, 19, 0, 0, 0);
+  ASSERT(timeWindow.start() > era);
+  util::Duration dt(timeWindow.start() - era);
+  seed_ = dt.toSeconds();
+
+  // Won't repeat if more seconds between analysis cycles than members in EDA
+  seed_ += config.getInt("obs perturbations seed", 0);
+
+  //           31622400 seconds max in 1 year
+  //        12197962800 seed at this step for 2010-01-01T03:00:00Z
+  seed_ += 100000000000 * instances_;
 }
 
 // -----------------------------------------------------------------------------

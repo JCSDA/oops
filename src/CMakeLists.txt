@@ -172,8 +172,6 @@ list(
   oops/base/ObsLocalizations.h
   oops/base/ObsOperatorBase.h
   oops/base/ObsOperatorPert.h
-  oops/base/ObsSpaceBase.cc
-  oops/base/ObsSpaceBase.h
   oops/base/ObsSpaces.h
   oops/base/ObsVariables.cc
   oops/base/ObsVariables.h

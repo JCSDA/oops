@@ -39,14 +39,15 @@ namespace sf = util::stringfunctions;
 // -----------------------------------------------------------------------------
 namespace lorenz95 {
 // -----------------------------------------------------------------------------
+int ObsTable::instances_ = 0;
+// -----------------------------------------------------------------------------
 
-ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm & comm,
-                   const util::TimeWindow & timeWindow,
-                   const eckit::mpi::Comm & timeComm)
-  : oops::ObsSpaceBase(config, comm, timeWindow), comm_(timeComm),
-    timeWindow_(timeWindow), obsvars_(), assimvars_()
+ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm &,
+                   const util::TimeWindow & timeWindow, const eckit::mpi::Comm & timeComm)
+  : comm_(timeComm), timeWindow_(timeWindow), obsvars_(), assimvars_()
 {
   oops::Log::trace() << "ObsTable::ObsTable starting" << std::endl;
+  ++instances_;
   if (config.has("obsdatain")) {
     nameIn_ = config.getString("obsdatain.obsfile");
     otOpen(nameIn_);
@@ -60,6 +61,20 @@ ObsTable::ObsTable(const eckit::Configuration & config, const eckit::mpi::Comm &
     nameOut_ = config.getString("obsdataout.obsfile");
     sf::swapNameMember(config, nameOut_);
   }
+
+  // Determine seed for random number generator that is reproducible when re-running
+  // but does not repeat itself over analysis cycles, ensemble members or obs type
+  util::DateTime ref(1623, 6, 19, 0, 0, 0);
+  ASSERT(timeWindow.start() > ref);
+  util::Duration dt(timeWindow.start() - ref);
+  seed_ = dt.toSeconds();
+
+  // Won't repeat if more seconds between analysis cycles than members in EDA
+  seed_ += config.getInt("obs perturbations seed", 0);
+
+  //           31622400 seconds max in 1 year
+  //        12197962800 seed at this step for 2010-01-01T03:00:00Z
+  seed_ += 100000000000 * instances_;
   oops::Log::trace() << "ObsTable::ObsTable created nobs = " << nobs() << std::endl;
 }
 
@@ -226,8 +241,9 @@ void ObsTable::generateDistribution(const eckit::Configuration & config) {
 // -----------------------------------------------------------------------------
 
 void ObsTable::random(std::vector<double> & data) const {
-  util::NormalDistribution<double> x(data.size(), 0.0, 1.0, getSeed());
+  util::NormalDistribution<double> x(data.size(), 0.0, 1.0, seed_);
   for (size_t jj = 0; jj < data.size(); ++jj) data[jj] = x[jj];
+  ++seed_;
 }
 
 // -----------------------------------------------------------------------------

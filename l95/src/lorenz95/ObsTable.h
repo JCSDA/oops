@@ -19,10 +19,11 @@
 
 #include "eckit/mpi/Comm.h"
 
-#include "oops/base/ObsSpaceBase.h"
 #include "oops/base/ObsVariables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/ObjectCounter.h"
+#include "oops/util/Printable.h"
+#include "oops/util/TimeWindow.h"
 
 namespace eckit {
   class Configuration;
@@ -37,7 +38,7 @@ namespace lorenz95 {
  *  ObsTable defines a simple observation handler
  *  that mimicks the interfaces required from ODB.
  */
-class ObsTable : public oops::ObsSpaceBase,
+class ObsTable : public util::Printable,
                  private util::ObjectCounter<ObsTable> {
  public:
   static const std::string classname() {return "lorenz95::ObsTable";}
@@ -67,6 +68,7 @@ class ObsTable : public oops::ObsSpaceBase,
   const oops::ObsVariables & obsvariables() const { return obsvars_; }
   const oops::ObsVariables & assimvariables() const { return assimvars_; }
   const std::string & obsname() const {return obsname_;}
+  const util::TimeWindow & timeWindow() const {return timeWindow_;}
 
   /// iterator to the first observation
   ObsIterator begin() const;
@@ -89,6 +91,9 @@ class ObsTable : public oops::ObsSpaceBase,
   std::string nameIn_;
   std::string nameOut_;
   const std::string obsname_ = "Lorenz 95";
+
+  static int instances_;
+  mutable int64_t seed_;
 };
 // -----------------------------------------------------------------------------
 }  // namespace lorenz95

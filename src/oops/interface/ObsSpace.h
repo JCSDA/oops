@@ -56,9 +56,9 @@ class ObsSpace : public util::Printable,
   ObsSpace_ & obsspace() const {return *obsdb_;}  // const problem? YT
 
 /// Assimilation window
-  const util::DateTime windowStart() const {return obsdb_->windowStart();}
-  const util::DateTime windowEnd() const {return obsdb_->windowEnd();}
   const util::TimeWindow timeWindow() const {return obsdb_->timeWindow();}
+  const util::DateTime windowStart() const {return obsdb_->timeWindow().start();}
+  const util::DateTime windowEnd() const {return obsdb_->timeWindow().end();}
 
   const ObsVariables & obsvariables() const;
   const ObsVariables & assimvariables() const;

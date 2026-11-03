@@ -21,9 +21,9 @@
 #include "eckit/config/Configuration.h"
 #include "eckit/mpi/Comm.h"
 
-#include "oops/base/ObsSpaceBase.h"
 #include "oops/base/ObsVariables.h"
 #include "oops/util/DateTime.h"
+#include "oops/util/Printable.h"
 #include "oops/util/TimeWindow.h"
 
 #include "oops/qg/LocationsQG.h"
@@ -40,7 +40,7 @@ namespace qg {
 /// (i.e. different obstypes can be stored in the same Fortran structure).
 /// For mapping between ObsSpaceQG and Fortran structures,
 /// ObsSpaceQG::theObsFileRegister_ map is used
-class ObsSpaceQG : public oops::ObsSpaceBase {
+class ObsSpaceQG : public util::Printable {
  public:
   /// create full ObsSpace (read or generate data)
   ObsSpaceQG(const eckit::Configuration &, const eckit::mpi::Comm &,
@@ -86,6 +86,9 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
 
   bool has(const std::string &) const;
 
+  const util::TimeWindow & timeWindow() const {return timeWindow_;}
+  int64_t getSeed() const {return seed_;}
+
  private:
   void print(std::ostream &) const;
 
@@ -98,6 +101,9 @@ class ObsSpaceQG : public oops::ObsSpaceBase {
   // defines mapping for Fortran structures
   static std::map < std::string, F90odb > theObsFileRegister_;
   static int theObsFileCount_;  // number of files used
+
+  static int instances_;
+  mutable int64_t seed_;
 };
 
 }  // namespace qg
