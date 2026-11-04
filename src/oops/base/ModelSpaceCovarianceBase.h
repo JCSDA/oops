@@ -303,7 +303,7 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment4D_ & dxi,
       // Copy input increment and apply inverse variable change (K^{-1})
       Increment4D_ dxiTemp(dxi);
       for (size_t jt = 0; jt < dxiTemp.size(); ++jt) {
-        invLinVarChg_[jt]->changeVarTL(dxiTemp[jt], *anaVars_);
+        invLinVarChg_[jt]->changeVarTL(dxiTemp[jt], *BVars_);
       }
 
       // Create temporary output increment
@@ -314,7 +314,7 @@ void ModelSpaceCovarianceBase<MODEL>::inverseMultiply(const Increment4D_ & dxi,
 
       // Apply adjoint inverse variable change (K^T^{-1})
       for (size_t jt = 0; jt < dxoTemp.size(); ++jt) {
-        invLinVarChg_[jt]->changeVarAD(dxoTemp[jt], *BVars_);
+        invLinVarChg_[jt]->changeVarAD(dxoTemp[jt], *anaVars_);
       }
 
       // Copy to output increment
