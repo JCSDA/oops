@@ -162,6 +162,7 @@ list(
   oops/base/ObsAuxCovariances.h
   oops/base/ObsAuxIncrements.h
   oops/base/ObsAuxPreconditioners.h
+  oops/base/ObsBufferDescriptor.h
   oops/base/ObsEnsemble.h
   oops/base/ObsErrors.h
   oops/base/Observations.h
@@ -200,6 +201,8 @@ list(
   oops/base/StructuredGridWriter.h
   oops/base/StructuredIncrementWriter.h
   oops/base/StructuredStateWriter.h
+  oops/base/TimeInterpolationAccumulator.cc
+  oops/base/TimeInterpolationAccumulator.h
   oops/base/TrajectorySaver.h
   oops/base/TrivialSamplingMethodSelector.h
   oops/base/variables_f.cc
@@ -846,6 +849,11 @@ if(BUILD_TESTING)
                     SOURCES test/base/PostTimer.cc
                     ARGS    "test/testinput/empty.yaml"
                     LIBS    oops eckit)
+
+  ecbuild_add_test( TARGET  oops_base_getvalues_utils
+                    SOURCES test/base/GetValuesUtils.cc
+                    ARGS    "test/testinput/empty.yaml"
+                    LIBS    oops )
 
   if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Intel" )
     ecbuild_add_test( TARGET  oops_util_signal_trap_fpe_div_by_zero

@@ -22,7 +22,9 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/Locations.h"
+#include "oops/base/ObsBufferDescriptor.h"
 #include "oops/base/State.h"
+#include "oops/base/TimeInterpolationAccumulator.h"
 #include "oops/base/Variables.h"
 #include "oops/interface/GeoVaLs.h"
 #include "oops/interface/LocalInterpolator.h"
@@ -145,6 +147,13 @@ class GetValues : private util::ObjectCounter<GetValues<MODEL, OBS> > {
   // time-weighted sum in values_ot_sm_, so it interpolates into this persistent scratch instead.
   std::vector<std::vector<std::vector<double>>> tinterp_scratch_ot_sm_;
 
+  // How the send and receive buffers are laid out, i.e. how many obs each task
+  // holds for each sampling method. The two layouts use the two groupings of the
+  // same observations: send buffers are grouped by obs-owning task ("ot"),
+  // receive buffers by model-owning task ("mt").
+  ObsBufferDescriptor sendLayout_;
+  ObsBufferDescriptor recvLayout_;
+
   std::vector<std::vector<double>> send_buffers_;
   std::vector<std::vector<double>> recv_buffers_;
   std::vector<eckit::mpi::Request> send_reqs_;
@@ -247,6 +256,17 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
     }
   }
 
+  // Receive buffers hold the obs grouped by the task that interpolates them ("mt").
+  {
+    auto counts = std::vector(ntasks_, std::vector(nsms_, size_t{}));
+    for (int jtask = 0; jtask < ntasks_; ++jtask) {
+      for (int jsm = 0; jsm < nsms_; ++jsm) {
+        counts[jtask][jsm] = indices_mt_sm_[jtask][jsm].size();
+      }
+    }
+    recvLayout_ = ObsBufferDescriptor(std::move(counts));
+  }
+
 // Verify that an exception will not be thrown in the underlying eckit code.
   const std::string errorMessageSize =
     "The product of (the number of observation locations) and "
@@ -258,11 +278,7 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
     "Another way is to request fewer model variables.";
   const size_t maxSizeForCommunication = static_cast<size_t>(std::numeric_limits<int>::max());
   for (int jtask = 0; jtask < ntasks_; ++jtask) {
-    size_t biggestMessage = 0;
-    for (int jsm = 0; jsm < nsms_; ++jsm) {
-      biggestMessage += indices_mt_sm_[jtask][jsm].size() * varsizes_sm_[jsm];
-    }
-    if (biggestMessage >= maxSizeForCommunication) {
+    if (recvLayout_.bufferSize(jtask, varsizes_sm_) >= maxSizeForCommunication) {
       throw eckit::UserError(errorMessageSize, Here());
     }
   }
@@ -290,6 +306,17 @@ GetValues<MODEL, OBS>::GetValues(const eckit::Configuration & conf, const Geomet
       interp_ot_sm_[jtask][jsm] = std::make_unique<LocalInterpolator_>(conf, geom, lats, lons);
     }
     ASSERT(coords_ot[jtask].size() == ii);
+  }
+
+  // Send buffers hold the obs grouped by the task that owns them ("ot").
+  {
+    auto counts = std::vector(ntasks_, std::vector(nsms_, size_t{}));
+    for (int jtask = 0; jtask < ntasks_; ++jtask) {
+      for (int jsm = 0; jsm < nsms_; ++jsm) {
+        counts[jtask][jsm] = times_ot_sm_[jtask][jsm].size();
+      }
+    }
+    sendLayout_ = ObsBufferDescriptor(std::move(counts));
   }
 
   Log::trace() << "GetValues::GetValues done" << std::endl;
@@ -419,66 +446,14 @@ void GetValues<MODEL, OBS>::incInterpValues(
 {
   Log::trace() << "GetValues::incInterpValues start" << std::endl;
 
-  const double missing = util::missingValue<double>();
-
-// Get the state previous and next times and time-step
-  const util::DateTime tPrevious = tCurrent - halfWidth_;
-  const util::DateTime tNext = tCurrent + halfWidth_;
-  const double dt = static_cast<double>(halfWidth_.toSeconds());
-
-// Compute and add time weighted contribution from the input interpolated values
+// Compute and add time weighted contribution from the input interpolated values.
+// The accumulator owns both the weighting rule and the placement of the weighted
+// values within the destination block.
+  const TimeInterpolationAccumulator accumulator(tCurrent, halfWidth_);
   ASSERT(values.size() == stepValues.size());
-  auto lhs_ptr = values.begin();
-  auto rhs_ptr = stepValues.begin();
-  const int nb_obs = times_ot_sm_[jtask][jsm].size();
-  for (size_t jf = 0; jf < geovars_sm_[jsm].size(); ++jf) {
-    const int nb_levs = geolevels_sm_[jsm][jf];
-    const auto shape = atlas::array::ArrayShape{nb_obs, nb_levs};
-
-    // Get array views into interpolation results
-    std::unique_ptr<atlas::array::Array> lhs_array(
-        atlas::array::Array::wrap<double>(&*lhs_ptr, shape));
-    auto lhs = atlas::array::make_view<double, 2>(*lhs_array);
-    // Horrible cast to allow a standard ArrayView<double> from a const std::vector
-    std::unique_ptr<atlas::array::Array> rhs_array(
-        atlas::array::Array::wrap<double>(const_cast<double*>(&*rhs_ptr), shape));
-    auto rhs = atlas::array::make_view<double, 2>(*rhs_array);
-
-    for (int jloc = 0; jloc < nb_obs; ++jloc) {
-      if (mask[jloc]) {
-        // Compute time-interpolation weights
-        const util::DateTime & obCurrentTime = times_ot_sm_[jtask][jsm][jloc];
-        const bool isCurrentTime = (obCurrentTime == tCurrent);
-        const bool isFirst = (obCurrentTime > tCurrent);
-        double timeWeight = 0.;
-        if (!isCurrentTime) {
-          timeWeight = isFirst ?
-            static_cast<double>((tNext - obCurrentTime).toSeconds())/dt :
-            static_cast<double>((obCurrentTime - tPrevious).toSeconds())/dt;
-        }
-
-        for (int jlev = 0; jlev < nb_levs; ++jlev) {
-          if (rhs(jloc, jlev) == missing) {
-            lhs(jloc, jlev) = missing;
-          } else if (isCurrentTime) {
-            lhs(jloc, jlev) = rhs(jloc, jlev);
-          } else if (isFirst) {
-            lhs(jloc, jlev) = rhs(jloc, jlev) * timeWeight;
-          } else if (lhs(jloc, jlev) != missing) {
-            // Don't interpolate missing values
-            lhs(jloc, jlev) += rhs(jloc, jlev) * timeWeight;
-          }
-        }
-      }
-    }
-
-    const int step = nb_obs * nb_levs;
-    std::advance(lhs_ptr, step);
-    std::advance(rhs_ptr, step);
-  }
-
-  ASSERT(lhs_ptr == values.end());
-  ASSERT(rhs_ptr == stepValues.end());
+  const size_t consumed = accumulator.accumulate(times_ot_sm_[jtask][jsm], mask,
+                                                 geolevels_sm_[jsm], stepValues, values.data());
+  ASSERT(consumed == values.size());
 
   Log::trace() << "GetValues::incInterpValues done" << std::endl;
 }
@@ -527,11 +502,7 @@ void GetValues<MODEL, OBS>::finalize() {
   ASSERT(recv_tasks_.empty());
   recv_buffers_.resize(ntasks_);
   for (int jtask = 0; jtask < ntasks_; ++jtask) {
-    size_t buffer_size = 0;
-    for (int jsm = 0; jsm < nsms_; ++jsm) {
-      const size_t nobs = indices_mt_sm_[jtask][jsm].size();
-      buffer_size += nobs * varsizes_sm_[jsm];
-    }
+    const size_t buffer_size = recvLayout_.bufferSize(jtask, varsizes_sm_);
     if (buffer_size > 0) {
       recv_buffers_[jtask].resize(buffer_size);
       recv_reqs_.push_back(comm_.iReceive(&recv_buffers_[jtask][0], buffer_size, jtask, tag_));
@@ -573,11 +544,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLs(GeoVaLs_ & geovals) {
     const int itask = recv_tasks_[ireq];
     ASSERT(itask >=0 && itask < ntasks_);
 
-    size_t expected_size = 0;
-    for (int jsm = 0; jsm < nsms_; ++jsm) {
-      expected_size += indices_mt_sm_[itask][jsm].size() * varsizes_sm_[jsm];
-    }
-    ASSERT(recv_buffers_[itask].size() == expected_size);
+    ASSERT(recv_buffers_[itask].size() == recvLayout_.bufferSize(itask, varsizes_sm_));
 
     auto offset = recv_buffers_[itask].begin();
     for (int jsm = 0; jsm < nsms_; ++jsm) {
@@ -668,11 +635,7 @@ void GetValues<MODEL, OBS>::finalizeTL() {
   ASSERT(recv_tasks_.empty());
   recv_buffers_.resize(ntasks_);
   for (int jtask = 0; jtask < ntasks_; ++jtask) {
-    size_t buffer_size = 0;
-    for (int jsm = 0; jsm < nsms_; ++jsm) {
-      const size_t nobs = indices_mt_sm_[jtask][jsm].size();
-      buffer_size += nobs * linsizes_sm_[jsm];
-    }
+    const size_t buffer_size = recvLayout_.bufferSize(jtask, linsizes_sm_);
     if (buffer_size > 0) {
       recv_buffers_[jtask].resize(buffer_size);
       recv_reqs_.push_back(comm_.iReceive(&recv_buffers_[jtask][0], buffer_size, jtask, tag_));
@@ -714,11 +677,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLsTL(GeoVaLs_ & geovals) {
     const int itask = recv_tasks_[ireq];
     ASSERT(itask >=0 && itask < ntasks_);
 
-    size_t expected_size = 0;
-    for (int jsm = 0; jsm < nsms_; ++jsm) {
-      expected_size += indices_mt_sm_[itask][jsm].size() * linsizes_sm_[jsm];
-    }
-    ASSERT(recv_buffers_[itask].size() == expected_size);
+    ASSERT(recv_buffers_[itask].size() == recvLayout_.bufferSize(itask, linsizes_sm_));
 
     auto offset = recv_buffers_[itask].begin();
     for (int jsm = 0; jsm < nsms_; ++jsm) {
@@ -845,11 +804,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
   ASSERT(send_reqs_.empty());
   send_buffers_.resize(ntasks_);
   for (int jtask = 0; jtask < ntasks_; ++jtask) {
-    size_t buffer_size = 0;
-    for (int jsm = 0; jsm < nsms_; ++jsm) {
-      const size_t nobs = times_ot_sm_[jtask][jsm].size();
-      buffer_size += nobs * linsizes_sm_[jsm];
-    }
+    const size_t buffer_size = sendLayout_.bufferSize(jtask, linsizes_sm_);
     if (buffer_size > 0) {
       send_buffers_[jtask].resize(buffer_size, missing);
       send_reqs_.push_back(comm_.iReceive(&send_buffers_[jtask][0], buffer_size, jtask, tag_));
@@ -862,11 +817,7 @@ void GetValues<MODEL, OBS>::fillGeoVaLsAD(const GeoVaLs_ & geovals) {
   ASSERT(recv_reqs_.empty());
   recv_buffers_.resize(ntasks_);
   for (int jtask = 0; jtask < ntasks_; ++jtask) {
-    size_t buffer_size = 0;
-    for (int jsm = 0; jsm < nsms_; ++jsm) {
-      const size_t nobs = indices_mt_sm_[jtask][jsm].size();
-      buffer_size += nobs * linsizes_sm_[jsm];
-    }
+    const size_t buffer_size = recvLayout_.bufferSize(jtask, linsizes_sm_);
     if (buffer_size > 0) {
       recv_buffers_[jtask].resize(buffer_size);
 
