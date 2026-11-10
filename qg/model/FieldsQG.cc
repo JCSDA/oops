@@ -69,14 +69,6 @@ FieldsQG::FieldsQG(const FieldsQG & other, const GeometryQG & geom, const bool a
   }
 }
 // -----------------------------------------------------------------------------
-FieldsQG::FieldsQG(const FieldsQG & other, const oops::Variables & vars)
-  : geom_(other.geom_), vars_(vars), lbc_(other.lbc_), time_(other.time_)
-{
-// TODO(Benjamin): delete that ?
-  qg_fields_create_f90(keyFlds_, geom_->toFortran(), vars_, lbc_);
-  qg_fields_copy_f90(keyFlds_, other.keyFlds_);
-}
-// -----------------------------------------------------------------------------
 FieldsQG::~FieldsQG() {
   qg_fields_delete_f90(keyFlds_);
 }

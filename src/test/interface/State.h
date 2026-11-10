@@ -115,19 +115,6 @@ template <typename MODEL> void testStateConstructors() {
   EXPECT(oops::is_close(xx4.norm(), norm, tol));
   EXPECT(xx4.validTime() == vt);
   EXPECT(xx4.variables() == xx1->variables());
-
-// Test State(const Variables &, const State &) constructor (unless told not to)
-  const bool testVarChangeConstructor = Test_::test().getBool("test variable change constructor",
-                                                               true);
-  if (testVarChangeConstructor) {
-    EXPECT(Test_::test().has("construct to variables"));
-    const oops::Variables toVars(Test_::test(), "construct to variables");
-    EXPECT(toVars.size() > 0);
-    State_ xx5(toVars, *xx1);
-    EXPECT(xx5.norm() > 0.0);
-    EXPECT(xx5.validTime() == vt);
-    EXPECT(xx5.variables() == toVars);
-  }
 }
 
 // -----------------------------------------------------------------------------

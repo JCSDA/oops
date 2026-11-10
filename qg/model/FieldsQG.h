@@ -54,7 +54,6 @@ class FieldsQG : public util::Printable,
 // Constructors and basic operators
   FieldsQG(const GeometryQG &, const oops::Variables &, const bool &, const util::DateTime &);
   FieldsQG(const FieldsQG &, const GeometryQG &, const bool ad = false);
-  FieldsQG(const FieldsQG &, const oops::Variables &);
   FieldsQG(const FieldsQG &, const bool);
   FieldsQG(const FieldsQG &);
   ~FieldsQG();

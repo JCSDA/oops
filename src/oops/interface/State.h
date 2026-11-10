@@ -54,8 +54,6 @@ class State : public util::Printable,
   State(const Geometry_ & resol, const eckit::Configuration & conf);
   /// Copies \p other State, changing its resolution to \p geometry
   State(const Geometry_ & resol, const State & other);
-  /// Copies \p other State, changing its variables to \p vars
-  State(const Variables & vars, const State & other);
   /// Copy constructor
   State(const State &);
   /// Destructor (defined explicitly for timing and tracing)
@@ -158,18 +156,6 @@ State<MODEL>::State(const Geometry_ & resol, const State & other)
   Log::trace() << "State<MODEL>::State interpolated done" << std::endl;
 }
 
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
-State<MODEL>::State(const Variables & vars, const State & other)
-  : state_(), ID_(0)
-{
-  Log::trace() << "State<MODEL>::State variables starting" << std::endl;
-  util::Timer timer(classname(), "State");
-  state_.reset(new State_(vars, *other.state_));
-  this->setObjectSize(state_->serialSize()*sizeof(double));
-  Log::trace() << "State<MODEL>::State variables done" << std::endl;
-}
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>

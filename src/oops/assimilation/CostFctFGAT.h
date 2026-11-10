@@ -26,7 +26,6 @@
 #include "oops/base/StateSaver.h"
 #include "oops/base/TrajectorySaver.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/VariableChange.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/Logger.h"
@@ -45,7 +44,6 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
   typedef Geometry<MODEL>                 Geometry_;
   typedef State<MODEL>                    State_;
   typedef Model<MODEL>                    Model_;
-  typedef VariableChange<MODEL>           VarCha_;
   typedef CostJbTotal<MODEL, OBS>         JbTotal_;
   typedef CostJo<MODEL, OBS>              CostJo_;
   typedef CostTermBase<MODEL, OBS>        CostBase_;
@@ -181,7 +179,6 @@ void CostFctFGAT<MODEL, OBS>::doLinearize(const Geometry_ & res, const eckit::Co
   std::vector<std::string> antime = {timeWindow_.midpoint().toString()};
   eckit::LocalConfiguration halfwin;
   halfwin.set("times", antime);
-  halfwin.set("variables", hackBG_->variables().variables());
   saver_.reset(new StateSaver<State_>(halfwin));
   pp.enrollProcessor(saver_);
 

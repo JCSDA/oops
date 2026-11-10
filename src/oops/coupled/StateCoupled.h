@@ -38,7 +38,6 @@ class StateCoupled : public util::Printable {
   StateCoupled(const GeometryCoupled_ &, const Variables &, const util::DateTime &);
   StateCoupled(const GeometryCoupled_ &, const eckit::Configuration &);
   StateCoupled(const GeometryCoupled_ &, const StateCoupled &);
-  StateCoupled(const Variables &, const StateCoupled &);
   StateCoupled(const StateCoupled &);
   virtual ~StateCoupled();
   StateCoupled & operator=(const StateCoupled &);
@@ -80,8 +79,8 @@ class StateCoupled : public util::Printable {
  private:
   void print(std::ostream &) const;
   std::shared_ptr<const GeometryCoupled_> geom_;
-  std::shared_ptr<State<MODEL1>> xx1_;
-  std::shared_ptr<State<MODEL2>> xx2_;
+  std::shared_ptr<State<MODEL1>> xx1_ = nullptr;
+  std::shared_ptr<State<MODEL2>> xx2_ = nullptr;
   bool parallel_;
   Variables vars_;  // Add 'updateVars' method when implementing coupled variable change
 };
@@ -92,7 +91,7 @@ template<typename MODEL1, typename MODEL2>
 StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
                                            const Variables & vars,
                                            const util::DateTime & time)
-  : geom_(new GeometryCoupled_(resol)), xx1_(), xx2_(), parallel_(resol.isParallel()) {
+  : geom_(new GeometryCoupled_(resol)), parallel_(resol.isParallel()) {
   Log::trace() << "StateCoupled::StateCoupled starting" << std::endl;
   std::vector<Variables> splitvars = splitVariables(vars, resol.variables());
   if (parallel_) {
@@ -153,15 +152,6 @@ StateCoupled<MODEL1, MODEL2>::StateCoupled(const GeometryCoupled_ & resol,
   if (other.xx1_) xx1_ = std::make_shared<State<MODEL1>>(resol.geometry1(), *other.xx1_);
   if (other.xx2_) xx2_ = std::make_shared<State<MODEL2>>(resol.geometry2(), *other.xx2_);
   Log::trace() << "StateCoupled::StateCoupled interpolated done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL1, typename MODEL2>
-StateCoupled<MODEL1, MODEL2>::StateCoupled(const oops::Variables & vars, const StateCoupled & other)
-  : StateCoupled(other) {
-  throw eckit::NotImplemented("StateCoupled::StateCoupled(const oops::Variables &,"
-    " const StateCoupled &) not implemented", Here());
 }
 
 // -----------------------------------------------------------------------------

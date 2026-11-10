@@ -27,7 +27,6 @@
 #include "oops/base/State.h"
 #include "oops/base/StateSaver.h"
 #include "oops/base/TrajectorySaver.h"
-#include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
 #include "oops/util/FieldSetOperations.h"
@@ -131,7 +130,6 @@ double CostPert<MODEL, OBS, J>::evaluate(CtrlVar_ & fguess,
       std::vector<std::string> antime = {timeWindow_.midpoint().toString()};
       eckit::LocalConfiguration halfwin;
       halfwin.set("times", antime);
-      halfwin.set("variables", hackBG_->variables().variables());
       saver_.reset(new StateSaver<State_>(halfwin));
       postControl.enrollProcessor(saver_);
     }

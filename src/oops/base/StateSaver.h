@@ -10,7 +10,6 @@
 #include <memory>
 
 #include "oops/base/PostBase.h"
-#include "oops/base/Variables.h"
 
 #include "eckit/config/LocalConfiguration.h"
 #include "oops/interface/State.h"
@@ -21,7 +20,7 @@ namespace oops {
 template <typename FLDS> class StateSaver : public PostBase<FLDS> {
  public:
   explicit StateSaver(const eckit::Configuration & conf)
-    : PostBase<FLDS>(conf), vars_(conf.getStringVector("variables")), save_()
+    : PostBase<FLDS>(conf)
   {}
   ~StateSaver() {}
 
@@ -29,10 +28,9 @@ template <typename FLDS> class StateSaver : public PostBase<FLDS> {
   FLDS & getState() {return *save_;}
 
  private:
-  void doProcessing(const FLDS & xx) override {save_.reset(new FLDS(vars_, xx));}
+  void doProcessing(const FLDS & xx) override {save_.reset(new FLDS(xx));}
 
-  oops::Variables vars_;
-  std::unique_ptr<FLDS> save_;
+  std::unique_ptr<FLDS> save_ = nullptr;
 };
 
 }  // namespace oops
