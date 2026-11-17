@@ -10,6 +10,7 @@
 
 #include "oops/runs/Run.h"
 
+#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -89,14 +90,17 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
   for (int i = 1; i < argc; ++i) {
     std::string item = static_cast<std::string>(argv[i]);
     if (item == "-h" || item == "--help") {
-      eckit::PathName argv0 = static_cast<std::string>(argv[0]);
-      argv0 = argv0.baseName();
-      std::cout << "Usages:" << std::endl;
-      std::cout << "  # run main application:" << std::endl;
-      std::cout << "  " << argv0 << " input-file [output-file]" << std::endl;
-      std::cout << "  # print this help and exit:" << std::endl;
-      std::cout << "  " << argv0 << " --help" << std::endl;
-      is_print_help_only_ = true;
+      const std::string argv0 = eckit::PathName(argv[0]).baseName().asString();
+      const std::string usage =
+          "Usages:\n"
+          "  # run main application:\n"
+          "  " + argv0 + " input-file [output-file]\n"
+          "  # print this help and exit:\n"
+          "  " + argv0 + " --help\n";
+      std::cout << usage << std::flush;
+      // Exit here to keep --help mode from running any later code. Nothing was set up yet
+      // (no configuration, no LibOOPS init), so there is nothing to finalize or unwind.
+      std::exit(0);
     } else if (infilename.empty()) {
       infilename = item;
     } else if (outfilename.empty()) {
@@ -107,9 +111,7 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
   }
 
   if (infilename.empty()) {
-    if (!is_print_help_only_) {
-      ABORT("Positional argument 1 must be the file name of a YAML configuration file");
-    }
+    ABORT("Positional argument 1 must be the file name of a YAML configuration file");
   } else {
     // Read configuration
     eckit::PathName infilepathname = infilename;
@@ -137,17 +139,12 @@ Run::Run(int argc, char** argv) : eckit::Main(argc, argv, "OOPS_HOME"), config_(
 // -----------------------------------------------------------------------------
 
 Run::~Run() {
-  if (!is_print_help_only_) {
-    LibOOPS::instance().finalise();  // Finalize MPI and logs
-  }
+  LibOOPS::instance().finalise();  // Finalize MPI and logs
 }
 
 // -----------------------------------------------------------------------------
 
 int Run::execute(const Application & app, const eckit::mpi::Comm & comm) {
-  if (is_print_help_only_) {
-    return 0;
-  }
   int status = 1;
   try {
     // Start measuring performance

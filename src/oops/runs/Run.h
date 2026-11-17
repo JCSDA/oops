@@ -38,7 +38,6 @@ class Run : public eckit::Main {
   const eckit::Configuration & config() const {return *config_;}
 
  private:
-  bool is_print_help_only_ = false;
   std::unique_ptr<const eckit::YAMLConfiguration> config_;
 };
 
