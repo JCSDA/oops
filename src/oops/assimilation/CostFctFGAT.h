@@ -20,6 +20,7 @@
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
 #include "oops/base/Model.h"
+#include "oops/base/PostBase.h"
 #include "oops/base/PostProcessor.h"
 #include "oops/base/PostProcessorTLAD.h"
 #include "oops/base/State.h"
@@ -33,6 +34,37 @@
 namespace oops {
 
 /// 3D-FGAT Cost Function
+
+// -----------------------------------------------------------------------------
+
+/// Adds a time-constant increment to each state of a trajectory before passing it on.
+/// Used for the optional 3D-FGAT final evaluation, where the analysis at the
+/// observation times is the background trajectory plus the analysis increment.
+template<typename MODEL> class FGATIncrementRelay : public PostBase<State<MODEL>> {
+  typedef Increment<MODEL>  Increment_;
+  typedef State<MODEL>      State_;
+
+ public:
+  FGATIncrementRelay(PostProcessor<State_> & post, const Increment_ & dx)
+    : post_(post), dx_(dx) {}
+
+ private:
+  State_ addIncrement(const State_ & xb) {
+    dx_.updateTime(xb.validTime() - dx_.validTime());
+    State_ xx(xb);
+    xx += dx_;
+    return xx;
+  }
+  void doInitialize(const State_ & xb, const util::DateTime & end,
+                    const util::Duration & tstep) override {
+    post_.initialize(addIncrement(xb), end, tstep);
+  }
+  void doProcessing(const State_ & xb) override {post_.process(addIncrement(xb));}
+  void doFinalize(const State_ & xb) override {post_.finalize(addIncrement(xb));}
+
+  PostProcessor<State_> & post_;
+  Increment_ dx_;
+};
 
 // -----------------------------------------------------------------------------
 
@@ -51,6 +83,8 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
  public:
   CostFctFGAT(const eckit::Configuration &, const eckit::mpi::Comm &);
   virtual ~CostFctFGAT() {}
+
+  double evaluate(CtrlVar_ &, const eckit::Configuration &, PostProcessor<State_>) override;
 
   void runTLM(CtrlInc_ &, PostProcessorTLAD<MODEL> &,
               PostProcessor<Increment_>, const bool) const override;
@@ -80,10 +114,15 @@ template<typename MODEL, typename OBS> class CostFctFGAT : public CostFunction<M
   const Geometry_ resol_;
   Model_ model_;
   const Variables ctlvars_;
-  mutable bool fgat_;
+  bool fgat_;
   State_ * hackBG_;
   State_ * hackFG_;
   std::shared_ptr<StateSaver<State_>> saver_;
+  // Optional final evaluation at the observation times
+  const bool finalAtObsTimes_;
+  bool runANAT_;  // ANalysis at Appropriate Time
+  std::unique_ptr<State_> bgStart_;
+  mutable std::unique_ptr<Increment_> dxTotal_;
 };
 
 // =============================================================================
@@ -96,14 +135,38 @@ CostFctFGAT<MODEL, OBS>::CostFctFGAT(const eckit::Configuration & config,
     resol_(eckit::LocalConfiguration(config, "geometry"), comm),
     model_(resol_, eckit::LocalConfiguration(config, "model")),
     ctlvars_(config, "analysis variables"),
-    fgat_(false), hackBG_(nullptr), hackFG_(nullptr), saver_()
+    fgat_(false), hackBG_(nullptr), hackFG_(nullptr), saver_(),
+    finalAtObsTimes_(config.getBool("fgat final evaluation", false)),
+    runANAT_(false), bgStart_(), dxTotal_()
 {
   Log::trace() << "CostFctFGAT::CostFctFGAT start" << std::endl;
 
   this->setupTerms(config);  // Background is read here
 
   Log::info() << "FGAT window: " << timeWindow_ << std::endl;
+  if (finalAtObsTimes_) {
+    Log::info() << "FGAT final evaluation: background trajectory plus analysis increment"
+                << " at the observation times" << std::endl;
+  } else {
+    Log::info() << "FGAT final evaluation: analysis at the window midpoint for all"
+                << " observations" << std::endl;
+  }
   Log::trace() << "CostFctFGAT::CostFctFGAT done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename OBS>
+double CostFctFGAT<MODEL, OBS>::evaluate(CtrlVar_ & xx, const eckit::Configuration & conf,
+                                         PostProcessor<State_> post) {
+  Log::trace() << "CostFctFGAT::evaluate start" << std::endl;
+  // When requested, non-linearizing evaluations (the final one) evaluate H(x) of the
+  // analysis at the observation times.
+  runANAT_ = finalAtObsTimes_ && !conf.getBool("linearize", false);
+  const double zz = CostFct_::evaluate(xx, conf, post);
+  runANAT_ = false;
+  Log::trace() << "CostFctFGAT::evaluate done" << std::endl;
+  return zz;
 }
 
 // -----------------------------------------------------------------------------
@@ -148,6 +211,17 @@ void CostFctFGAT<MODEL, OBS>::runNL(CtrlVar_ & xx, PostProcessor<State_> & post)
     model_.forecast(xx.state(), xx.modVar(), timeWindow_.length(), post);
 
     ASSERT(xx.state().validTime() == timeWindow_.end());
+  } else if (runANAT_) {
+    ASSERT(xx.state().validTime() == timeWindow_.midpoint());
+
+    // Background trajectory, with the analysis increment added to each state
+    State_ xb(*bgStart_);
+    PostProcessor<State_> relay;
+    relay.enrollProcessor(new FGATIncrementRelay<MODEL>(post, *dxTotal_));
+
+    model_.forecast(xb, xx.modVar(), timeWindow_.length(), relay);
+
+    ASSERT(xb.validTime() == timeWindow_.end());
   } else {
     ASSERT(xx.state().validTime() == timeWindow_.midpoint());
 
@@ -172,6 +246,11 @@ void CostFctFGAT<MODEL, OBS>::doLinearize(const Geometry_ & res, const eckit::Co
   ASSERT(bg.states().is_3d());
   ASSERT(fg.states().is_3d());
   fgat_ = (conf.getInt("iteration") == 0);
+  if (fgat_ && finalAtObsTimes_) {
+    ASSERT(bg.state().validTime() == timeWindow_.start());
+    bgStart_.reset(new State_(bg.state()));
+    dxTotal_.reset();
+  }
   pp.enrollProcessor(new TrajectorySaver<MODEL>(conf, res, pptraj));
   hackBG_ = &bg.state();
   hackFG_ = &fg.state();
@@ -269,6 +348,13 @@ void CostFctFGAT<MODEL, OBS>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
   ASSERT(xx.state().validTime() == timeWindow_.midpoint());
   ASSERT(dx.state().validTime() == timeWindow_.midpoint());
   xx.state() += dx.state();
+  if (finalAtObsTimes_) {
+    if (dxTotal_) {
+      *dxTotal_ += dx.state();
+    } else {
+      dxTotal_.reset(new Increment_(dx.state()));
+    }
+  }
   Log::trace() << "CostFctFGAT::addIncr done" << std::endl;
 }
 

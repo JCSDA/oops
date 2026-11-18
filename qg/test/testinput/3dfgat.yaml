@@ -3,6 +3,7 @@ cost function:
   time window:
     begin: 2010-01-01T09:00:00Z
     length: PT6H
+  fgat final evaluation: true
   analysis variables: [x]
   geometry:
     nx: 40
@@ -67,8 +68,7 @@ output:
   analysis:
     datadir: Data
     exp: 3dfgat
-    first: PT3H
-    frequency: PT6H
+    times: ['2010-01-01T12:00:00Z']
     type: an
 
 test:
