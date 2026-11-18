@@ -66,11 +66,6 @@ cost function:
           filename: Data/forecast.ens.%mem%.2010-01-01T00:00:00Z.PT15H.l95
       pattern: %mem%
       nmembers: 10
-#  constraints:
-#  - jcdfi:
-#      alpha: 1000.0
-#      cutoff: PT3H
-#      filtered variables: [x]
 variational:
   minimizer:
     algorithm: DRPCG

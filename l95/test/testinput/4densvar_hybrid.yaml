@@ -77,11 +77,6 @@ cost function:
         standard_deviation: 0.6
       weight:
         value: 0.6
-#  constraints:
-#  - jcdfi:
-#      alpha: 1000.0
-#      cutoff: PT3H
-#      filtered variables: [x]
 variational:
   minimizer:
     algorithm: DRPCG

@@ -31,8 +31,10 @@ cost function:
   constraints:
   - jcdfi:
       filtered variables: [x]
-      alpha: 100.0
       cutoff: PT3H
+      norm:
+        name: "Scalar"
+        alpha: 100.0
 variational:
   minimizer:
     algorithm: GMRESR

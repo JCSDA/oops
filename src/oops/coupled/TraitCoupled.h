@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2021-2021 UCAR
+ * (C) Crown Copyright 2026, Met Office UK
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -43,6 +44,10 @@ struct TraitCoupled {
   typedef LinearVariableChangeCoupled<MODEL1, MODEL2> LinearVariableChange;
   typedef ErrorCovarianceCoupled<MODEL1, MODEL2>    Covariance;
   typedef ModelDataCoupled<MODEL1, MODEL2>          ModelData;
+
+  static void registerNorms() {
+    // Interface norms not yet implemented
+  }
 };
 
 }  // namespace oops

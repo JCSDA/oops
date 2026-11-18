@@ -37,11 +37,6 @@ cost function:
         obsdataout:
           obsfile: Data/4dsaddlepoint.2010-01-02T00:00:00Z.obt
       obs operator: {}
-#    constraints:
-#    - jcdfi:
-#        filtered variables: [x]
-#        alpha: 100.0
-#        cutoff: PT3H
 variational:
   minimizer:
     algorithm: SaddlePoint

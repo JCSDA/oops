@@ -53,6 +53,9 @@ class WeightedDiffTLAD : public PostBaseTLAD<MODEL> {
   virtual ~WeightedDiffTLAD() {}
 
   Increment_ * releaseDiff() {return wdiff_.releaseDiff();}
+  std::shared_ptr<const State_> releaseStateAtMidTime() {
+    return wdiff_.releaseStateAtMidTime();
+  }
   void setupTL(const Geometry_ &);
   void finalTL(Increment_ &);
   void setupAD(std::shared_ptr<const Increment_>);

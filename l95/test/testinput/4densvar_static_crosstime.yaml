@@ -42,11 +42,6 @@ cost function:
       date: 2010-01-01T03:00:00Z
       length_scale: 1.0
       standard_deviation: 1.2
-#  constraints:
-#  - jcdfi:
-#      alpha: 1000.0
-#      cutoff: PT3H
-#      filtered variables: [x]
 variational:
   minimizer:
     algorithm: DRPCG

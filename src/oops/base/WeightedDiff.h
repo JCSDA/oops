@@ -13,6 +13,7 @@
 
 #include <cmath>
 #include <map>
+#include <memory>
 
 #include "oops/base/Accumulator.h"
 #include "oops/base/Geometry.h"
@@ -43,6 +44,7 @@ class WeightedDiff : public PostBase<FLDS> {
   virtual ~WeightedDiff() {}
 
   INCR * releaseDiff();
+  std::shared_ptr<const FLDS> releaseStateAtMidTime();
 
  private:
   void doInitialize(const FLDS &, const util::DateTime &, const util::Duration &) override;
@@ -51,6 +53,7 @@ class WeightedDiff : public PostBase<FLDS> {
   WeightingFct & wfct_;
   std::map< util::DateTime, double > weights_;
   Accumulator<MODEL, INCR, FLDS> * avg_;
+  std::shared_ptr<const FLDS> stateAtMidTime_;
   double sum_;
   bool linit_;
   const util::DateTime vtime_;
@@ -72,7 +75,7 @@ WeightedDiff<MODEL, INCR, FLDS>::WeightedDiff(const Variables & vars,
                                               const Geometry_ & resol,
                                               WeightingFct & wfct)
   : PostBase<FLDS>(vt-span/2, vt+span/2),
-    wfct_(wfct), weights_(), avg_(0), sum_(0.0), linit_(false),
+    wfct_(wfct), weights_(), avg_(0), stateAtMidTime_(nullptr), sum_(0.0), linit_(false),
     vtime_(vt), bgn_(vt-span/2), end_(vt+span/2), tstep_(tstep),
     bgnleg_(), endleg_(), current_()
 {
@@ -86,6 +89,15 @@ INCR * WeightedDiff<MODEL, INCR, FLDS>::releaseDiff() {
   ASSERT(linit_);
   ASSERT(std::abs(sum_) < 1.0e-8);
   return avg_;
+}
+
+// -----------------------------------------------------------------------------
+
+template <typename MODEL, typename INCR, typename FLDS>
+std::shared_ptr<const FLDS>
+WeightedDiff<MODEL, INCR, FLDS>::releaseStateAtMidTime() {
+  ASSERT(linit_);
+  return stateAtMidTime_;
 }
 
 // -----------------------------------------------------------------------------
@@ -120,6 +132,9 @@ void WeightedDiff<MODEL, INCR, FLDS>::doProcessing(const FLDS & xx) {
     const double zz = weights_[now];
     avg_->accumul(zz, xx);
     sum_ += zz;
+  }
+  if (now == vtime_) {
+    stateAtMidTime_.reset(new FLDS(xx));
   }
   current_ = now;
 }

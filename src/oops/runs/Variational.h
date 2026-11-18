@@ -29,6 +29,7 @@
 #include "oops/base/State.h"
 #include "oops/generic/instantiateLinearModelFactory.h"
 #include "oops/generic/instantiateModelFactory.h"
+#include "oops/generic/instantiateNormFactory.h"
 #include "oops/mpi/mpi.h"
 #include "oops/runs/Application.h"
 #include "oops/util/DateTime.h"
@@ -51,6 +52,7 @@ template <typename MODEL, typename OBS> class Variational : public Application {
     instantiateMinFactory<MODEL, OBS>();
     instantiateModelFactory<MODEL>();
     instantiateLinearModelFactory<MODEL>();
+    instantiateNormFactory<MODEL>();
   }
 // -----------------------------------------------------------------------------
   virtual ~Variational() {}

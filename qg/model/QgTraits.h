@@ -1,5 +1,6 @@
 /*
  * (C) Copyright 2009-2016 ECMWF.
+ * (C) Crown Copyright 2026, Met Office UK.
  *
  * This software is licensed under the terms of the Apache Licence Version 2.0
  * which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
@@ -58,6 +59,8 @@ struct QgTraits {
   typedef qg::ModelData             ModelData;
 
   typedef qg::ObsLocQG              ObsLocalization;
+
+  static void registerNorms() {}
 };
 
 }  // namespace qg

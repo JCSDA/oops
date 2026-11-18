@@ -65,11 +65,13 @@ cost function:
   constraints:
   - jcdfi:
       filtered variables: [x]
-      alpha: 1.0e-13
       cutoff: PT3H
       ftime: 2010-01-01T06:00:00Z
       span: PT12H
       type: DolphChebyshev
+      norm:
+        name: "Scalar"
+        alpha: 1.0e-13
   - jcdfi:
       filtered variables: [x]
       alpha: 1.0e-13

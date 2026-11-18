@@ -158,6 +158,7 @@ list(
   oops/base/ModelBase.h
   oops/base/ModelSpaceCovarianceBase.h
   oops/base/MultiplicativeInflation.h
+  oops/base/NormBase.h
   oops/base/ObsAuxControls.h
   oops/base/ObsAuxCovariances.h
   oops/base/ObsAuxIncrements.h
@@ -273,6 +274,7 @@ list(
   oops/generic/IdentityModel.h
   oops/generic/instantiateLinearModelFactory.h
   oops/generic/instantiateModelFactory.h
+  oops/generic/instantiateNormFactory.h
   oops/generic/InterpolationCache.cc
   oops/generic/InterpolationCache.h
   oops/generic/LocalizationBase.h
@@ -280,6 +282,7 @@ list(
   oops/generic/MaskedVectorFieldSet.h
   oops/generic/MeshTriangulation.h
   oops/generic/MeshTriangulation.cc
+  oops/generic/NormScalar.h
   oops/generic/ProximitySearch.cc
   oops/generic/ProximitySearch.h
   oops/generic/PseudoLinearModelIncrement4D.h
@@ -312,6 +315,7 @@ list(
   oops/interface/ModelAuxIncrement.h
   oops/interface/Model.h
   oops/interface/ModelData.h
+  oops/interface/Norm.h
   oops/interface/ObsAuxControl.h
   oops/interface/ObsAuxCovariance.h
   oops/interface/ObsAuxIncrement.h

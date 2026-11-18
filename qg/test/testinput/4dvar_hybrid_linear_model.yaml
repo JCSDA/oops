@@ -56,9 +56,11 @@ cost function:
   constraints:
   - jcdfi:
       filtered variables: [x]
-      alpha: 1.0e-13
       cutoff: PT12H
       type: DolphChebyshev
+      norm:
+        name: "Scalar"
+        alpha: 1.0e-13
 variational:
   minimizer:
     algorithm: DRPCG

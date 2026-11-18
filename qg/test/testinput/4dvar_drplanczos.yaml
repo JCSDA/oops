@@ -47,10 +47,12 @@ cost function:
         covariance model: diagonal
   constraints:
   - jcdfi:
-      alpha: 1.0e-13
       cutoff: PT3H
       type: DolphChebyshev
       filtered variables: [x]
+      norm:
+        name: "Scalar"
+        alpha: 1.0e-13
   geometry:
     nx: 40
     ny: 20
