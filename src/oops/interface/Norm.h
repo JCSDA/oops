@@ -13,10 +13,10 @@
 
 #include "eckit/config/Configuration.h"
 
+#include "oops/base/Increment.h"
 #include "oops/base/NormBase.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
 #include "oops/util/Logger.h"
 #include "oops/util/Timer.h"
 
@@ -27,8 +27,8 @@ namespace interface {
 
 template <typename MODEL, typename IMPL>
 class Norm : public oops::NormBase<MODEL> {
-  typedef Increment<MODEL>              Increment_;
-  typedef State<MODEL>                  State_;
+  typedef oops::Increment<MODEL>        Increment_;
+  typedef oops::State<MODEL>            State_;
 
  public:
   static const std::string classname() {return "oops::interface::Norm";}
@@ -41,10 +41,6 @@ class Norm : public oops::NormBase<MODEL> {
   void computeGradient(Increment_ &) const override;
   void computeGradientInverse(Increment_ &) const override;
   const double computeNorm(const Increment_ &) const override;
-
-// Interfacing
-//  const IMPL & norm() const {return *norm_;}
-//  IMPL & norm() {return *norm_;}
 
  private:
   void print(std::ostream &) const override;
@@ -80,7 +76,7 @@ template <typename MODEL, typename IMPL>
 void Norm<MODEL, IMPL>::computeGradient(Increment_ & dx) const {
   Log::trace() << "Norm<MODEL, IMPL>::computeGradient starting" << std::endl;
   util::Timer timer(classname(), "computeGradient");
-  norm_->apply(dx.increment());
+  norm_->computeGradient(dx.increment());
   Log::trace() << "Norm<MODEL, IMPL>::computeGradient done" << std::endl;
 }
 
@@ -90,7 +86,7 @@ template <typename MODEL, typename IMPL>
 void Norm<MODEL, IMPL>::computeGradientInverse(Increment_ & dx) const {
   Log::trace() << "Norm<MODEL, IMPL>::computeGradientInverse starting" << std::endl;
   util::Timer timer(classname(), "computeGradientInverse");
-  norm_->applyInverse(dx.increment());
+  norm_->computeGradientInverse(dx.increment());
   Log::trace() << "Norm<MODEL, IMPL>::computeGradientInverse done" << std::endl;
 }
 

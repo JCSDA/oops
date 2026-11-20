@@ -13,9 +13,9 @@
 
 #include "eckit/config/Configuration.h"
 
+#include "oops/base/Increment.h"
+#include "oops/base/State.h"
 #include "oops/base/Variables.h"
-#include "oops/interface/Increment.h"
-#include "oops/interface/State.h"
 #include "oops/util/Factory.h"
 #include "oops/util/ObjectCounter.h"
 #include "oops/util/Printable.h"
