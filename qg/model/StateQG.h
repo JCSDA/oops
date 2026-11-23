@@ -25,6 +25,9 @@
 
 namespace eckit {
   class Configuration;
+  namespace mpi {
+    class Comm;
+  }
 }
 
 namespace oops {
@@ -72,14 +75,16 @@ class StateQG : public util::Printable,
   }
   const oops::Variables & variables() const {return fields_->variables();}
 
-/// Serialization
-  size_t serialSize() const;
-  void serialize(std::vector<double> &) const;
-  void deserialize(const std::vector<double> &, size_t &);
+  void allReduceInPlace(const eckit::mpi::Comm & commEns);
   void transpose(const StateQG & FCState, const eckit::mpi::Comm & global,
      const int ensNum, const int transNum) {
      throw eckit::NotImplemented("StateQG::transpose not implemented", Here());
   }
+
+/// Serialization
+  size_t serialSize() const;
+  void serialize(std::vector<double> &) const;
+  void deserialize(const std::vector<double> &, size_t &);
 
 /// ATLAS FieldSet
   void toFieldSet(atlas::FieldSet &) const;
@@ -88,6 +93,8 @@ class StateQG : public util::Printable,
 /// Other
   void zero();
   void accumul(const double &, const StateQG &);
+  void removeFields(const oops::Variables &);
+  void addFields(const oops::Variables &);
 
  private:
   void print(std::ostream &) const;

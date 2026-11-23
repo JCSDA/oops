@@ -146,9 +146,21 @@ double FieldL95::dot_product_with(const FieldL95 & other) const {
   return zz;
 }
 // -----------------------------------------------------------------------------
-void FieldL95::schur(const FieldL95 & rhs) {
+void FieldL95::schur_product(const FieldL95 & rhs) {
   ASSERT(rhs.resol_ == resol_);
   for (int jj = 0; jj < resol_; ++jj) x_[jj] *= rhs.x_[jj];
+}
+// -----------------------------------------------------------------------------
+void FieldL95::schur_quotient(const FieldL95 & rhs) {
+  ASSERT(rhs.resol_ == resol_);
+  for (int jj = 0; jj < resol_; ++jj) {
+    if (std::abs(rhs.x_[jj]) > 0.0) {
+      x_[jj] /= rhs.x_[jj];
+    } else if (std::abs(x_[jj]) > 0.0) {
+      // Error for finite/0 only; 0/0 returns 0.
+      throw eckit::BadValue("FieldL95::schur_quotient: divide by zero", Here());
+    }
+  }
 }
 // -----------------------------------------------------------------------------
 void FieldL95::random(const size_t & seed) {

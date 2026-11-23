@@ -20,6 +20,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
 
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -127,6 +128,10 @@ void IncrementQG::schur_product_with(const IncrementQG & dx) {
   fields_->schur_product_with(*dx.fields_);
 }
 // -----------------------------------------------------------------------------
+void IncrementQG::schur_quotient_with(const IncrementQG & dx) {
+  fields_->schur_quotient_with(*dx.fields_);
+}
+// -----------------------------------------------------------------------------
 double IncrementQG::dot_product_with(const IncrementQG & other) const {
   return dot_product(*fields_, *other.fields_);
 }
@@ -169,6 +174,10 @@ void IncrementQG::read(const eckit::Configuration & files) {
 // -----------------------------------------------------------------------------
 void IncrementQG::write(const eckit::Configuration & files) const {
   fields_->write(files);
+}
+// -----------------------------------------------------------------------------
+void IncrementQG::allReduceInPlace(const eckit::mpi::Comm & commEns) {
+  fields_->allReduceInPlace(commEns);
 }
 // -----------------------------------------------------------------------------
 /// Serialization

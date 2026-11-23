@@ -35,6 +35,9 @@
 
 namespace eckit {
   class Configuration;
+  namespace mpi {
+    class Comm;
+  }
 }
 
 namespace oops {
@@ -83,6 +86,7 @@ class IncrementQG : public util::Printable,
   void axpy(const double &, const IncrementQG &, const bool check = true);
   double dot_product_with(const IncrementQG &) const;
   void schur_product_with(const IncrementQG &);
+  void schur_quotient_with(const IncrementQG &);
   void random();
   void dirac(const eckit::Configuration &);
 
@@ -110,6 +114,9 @@ class IncrementQG : public util::Printable,
   void accumul(const double &, const StateQG &);
   oops::LocalIncrement getLocal(const GeometryQGIterator &) const;
   void setLocal(const oops::LocalIncrement &, const GeometryQGIterator &);
+
+/// Sum in place across the ensemble communicator commEns
+  void allReduceInPlace(const eckit::mpi::Comm & commEns);
 
 /// Serialization
   size_t serialSize() const override;

@@ -86,6 +86,7 @@ class IncrementCoupled : public util::Printable {
   IncrementCoupled & operator*=(const double &);
   double dot_product_with(const IncrementCoupled & other) const;
   void schur_product_with(const IncrementCoupled & other);
+  void schur_quotient_with(const IncrementCoupled & other);
   void axpy(const double & w, const IncrementCoupled & dx, const bool check = true);
 
   /// Returns this increment's geometry
@@ -97,6 +98,8 @@ class IncrementCoupled : public util::Printable {
   void zero();
   void zero(const util::DateTime &);
   void accumul(const double & zz, const StateCoupled_ & other);
+
+  void allReduceInPlace(const eckit::mpi::Comm & commEns);
 
   /// Serialize and deserialize
   size_t serialSize() const;
@@ -310,6 +313,16 @@ void IncrementCoupled<MODEL1, MODEL2>::schur_product_with(const IncrementCoupled
 // -----------------------------------------------------------------------------
 
 template<typename MODEL1, typename MODEL2>
+void IncrementCoupled<MODEL1, MODEL2>::schur_quotient_with(const IncrementCoupled & other) {
+  Log::trace() << "IncrementCoupled::schur_quotient_with starting" << std::endl;
+  if (dx1_) dx1_->schur_quotient_with(other.increment1());
+  if (dx2_) dx2_->schur_quotient_with(other.increment2());
+  Log::trace() << "IncrementCoupled::schur_quotient_with done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL1, typename MODEL2>
 void IncrementCoupled<MODEL1, MODEL2>::axpy(const double & w,
                      const IncrementCoupled & dx, const bool check) {
   if (dx1_) dx1_->axpy(w, *dx.dx1_, check);
@@ -410,6 +423,16 @@ IncrementCoupled<MODEL1, MODEL2> & IncrementCoupled<MODEL1, MODEL2>::operator*=(
   if (dx1_) *dx1_ *= k;
   if (dx2_) *dx2_ *= k;
   return *this;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL1, typename MODEL2>
+void IncrementCoupled<MODEL1, MODEL2>::allReduceInPlace(const eckit::mpi::Comm & commEns) {
+  Log::trace() << "IncrementCoupled::allReduceInPlace starting" << std::endl;
+  if (dx1_) dx1_->allReduceInPlace(commEns);
+  if (dx2_) dx2_->allReduceInPlace(commEns);
+  Log::trace() << "IncrementCoupled::allReduceInPlace done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

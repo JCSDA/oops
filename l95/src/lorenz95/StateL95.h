@@ -33,6 +33,9 @@
 
 namespace eckit {
   class Configuration;
+  namespace mpi {
+    class Comm;
+  }
 }
 
 namespace lorenz95 {
@@ -88,15 +91,20 @@ class StateL95 : public util::Printable,
 // For accumulator
   void zero();
   void accumul(const double &, const StateL95 &);
+  void removeFields(const oops::Variables &);
+  void addFields(const oops::Variables &);
+
+/// Sum in place across the ensemble communicator commEns
+  void allReduceInPlace(const eckit::mpi::Comm & commEns);
+  void transpose(const StateL95 & FCState, const eckit::mpi::Comm & global,
+     const int ensNum, const int transNum) {
+     throw eckit::NotImplemented("StateL95::transpose not implemented", Here());
+  }
 
 /// Serialize and deserialize
   size_t serialSize() const;
   void serialize(std::vector<double> &) const;
   void deserialize(const std::vector<double> &, size_t &);
-  void transpose(const StateL95 & FCState, const eckit::mpi::Comm & global,
-     const int ensNum, const int transNum) {
-     throw eckit::NotImplemented("StateL95::transpose not implemented", Here());
-  }
 
  private:
   void print(std::ostream &) const;

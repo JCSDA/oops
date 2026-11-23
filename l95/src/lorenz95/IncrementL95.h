@@ -33,6 +33,9 @@
 
 namespace eckit {
   class Configuration;
+  namespace mpi {
+    class Comm;
+  }
 }
 
 namespace oops {
@@ -80,6 +83,7 @@ class IncrementL95 : public util::Printable,
   void axpy(const double &, const IncrementL95 &, const bool check = true);
   double dot_product_with(const IncrementL95 &) const;
   void schur_product_with(const IncrementL95 &);
+  void schur_quotient_with(const IncrementL95 &);
   void random(const size_t & seed = 1);
 
 /// ATLAS
@@ -113,6 +117,9 @@ class IncrementL95 : public util::Printable,
   const oops::Variables & variables() const {return vars_;}
 
   void accumul(const double &, const StateL95 &);
+
+/// Sum in place across the ensemble communicator commEns
+  void allReduceInPlace(const eckit::mpi::Comm & commEns);
 
 /// Serialize and deserialize
   size_t serialSize() const override;

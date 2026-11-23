@@ -128,6 +128,24 @@ void FieldsQG::schur_product_with(const FieldsQG & dx) {
     qg_fields_self_schur_f90(keyFlds_, dx.keyFlds_);
 }
 // -----------------------------------------------------------------------------
+void FieldsQG::schur_quotient_with(const FieldsQG & dx) {
+    qg_fields_self_div_f90(keyFlds_, dx.keyFlds_);
+}
+// -----------------------------------------------------------------------------
+void FieldsQG::allReduceInPlace(const eckit::mpi::Comm & commEns) {
+  if (commEns.size() <= 1) {
+    return;
+  }
+  // qg_fields_serialize covers the field data only -- the valid time is appended
+  // separately by serialize() -- so the buffer can be summed directly.
+  const size_t size_fld = this->serialSize() - time_.serialSize();
+  std::vector<double> v_fld(size_fld, 0.0);
+  qg_fields_serialize_f90(keyFlds_, static_cast<int>(size_fld), v_fld.data());
+  commEns.allReduceInPlace(v_fld.data(), v_fld.size(), eckit::mpi::sum());
+  int index = 0;
+  qg_fields_deserialize_f90(keyFlds_, static_cast<int>(size_fld), v_fld.data(), index);
+}
+// -----------------------------------------------------------------------------
 void FieldsQG::random() {
   qg_fields_random_f90(keyFlds_);
 }

@@ -22,6 +22,7 @@
 #include <boost/noncopyable.hpp>
 
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/mpi/Comm.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/State.h"
@@ -31,7 +32,9 @@
 #include "oops/util/DateTime.h"
 #include "oops/util/dot_product.h"
 #include "oops/util/FieldSetHelpers.h"
+#include "oops/util/for_each.h"
 #include "oops/util/Logger.h"
+#include "test/interface/EnsembleCommunicators.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -168,6 +171,87 @@ template <typename MODEL> void testStateAtlasInterface() {
   xx.toFieldSet(fset2);
 
   EXPECT(util::compareFieldSets(geom.getComm(), fset, fset2));
+}
+
+// -----------------------------------------------------------------------------
+/*! \brief Tests State::removeFields and State::addFields
+ */
+template <typename MODEL> void testStateRemoveAddFields() {
+  typedef StateFixture<MODEL>   Test_;
+  typedef oops::State<MODEL>    State_;
+
+  const oops::Geometry<MODEL> & geom = Test_::resol();
+  const State_ xref(geom, eckit::LocalConfiguration(Test_::test(), "statefile"));
+  const oops::Variables allvars(xref.variables());
+
+  // Remove the yaml variables held by this State if given (a parallel coupled State only
+  // holds its own component's variables), otherwise the last one
+  oops::Variables rmvars;
+  if (Test_::test().has("remove fields variables")) {
+    rmvars = oops::Variables(Test_::test(), "remove fields variables");
+    rmvars.intersection(allvars);
+  } else if (allvars.size() > 0) {
+    rmvars.push_back(allvars[allvars.size() - 1]);
+  }
+
+  // Removing all fields is not allowed
+  State_ xall(xref);
+  EXPECT_THROWS(xall.removeFields(allvars));
+
+  oops::Variables subvars(allvars);
+  subvars -= rmvars;
+  if (rmvars.size() == 0 || subvars.size() == 0) {
+    oops::Log::info() << "testStateRemoveAddFields: cannot remove " << rmvars
+                      << " from " << allvars << " and keep at least one field, test skipped"
+                      << std::endl;
+    return;
+  }
+  oops::Log::info() << "testStateRemoveAddFields: removing " << rmvars
+                    << " and adding them back" << std::endl;
+
+  State_ xx(xref);
+  xx.removeFields(rmvars);
+  EXPECT(xx.variables() == subvars);
+  // Removing absent fields or adding existing fields is not allowed
+  EXPECT_THROWS(xx.removeFields(rmvars));
+  EXPECT_THROWS(xx.addFields(subvars));
+  xx.addFields(rmvars);
+  EXPECT(xx.variables() == allvars);
+  EXPECT(xx.validTime() == xref.validTime());
+
+  // Once all fields are removed and re-added, expect norm to be zero
+  if (Test_::test().getBool("test zero norm after adding fields", true)) {
+    State_ xz(xx);
+    xz.removeFields(subvars);
+    xz.addFields(subvars);
+    EXPECT(xz.norm() == 0.0);
+  }
+
+  const bool testAtlas = TestEnvironment::config().getBool("test atlas interface", true);
+  if (!testAtlas) { return; }
+
+  // Kept fields must be unchanged and re-added fields zero, on owned points only: a field's halo
+  // may be out of date (dirty), and is then not part of the State's value
+  atlas::FieldSet fref{};
+  atlas::FieldSet fset{};
+  xref.toFieldSet(fref);
+  xx.toFieldSet(fset);
+  for (const auto & var : allvars) {
+    EXPECT(fset.has(var.name()));
+    const bool retained = subvars.has(var);
+    int ok = 1;
+    util::for_each_value(util::ExecutionPattern::serial, util::IndexRange::exclude_halo,
+                         [&](const double value, const double ref) {
+                           const double expected = retained ? ref : 0.0;
+                           if (value != expected) ok = 0;
+                         },
+                         fset.field(var.name()), fref.field(var.name()));
+    geom.getComm().allReduceInPlace(ok, eckit::mpi::min());
+    oops::Log::info() << "testStateRemoveAddFields: " << var.name()
+                      << (retained ? " retained" : " re-added")
+                      << (ok ? " as expected" : " differs from the expected values") << std::endl;
+    EXPECT(ok == 1);
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -316,6 +400,63 @@ template <typename MODEL> void testStateDateTime() {
 }
 
 // -----------------------------------------------------------------------------
+
+/*! \brief allReduceInPlace test
+ *
+ * \details testStateAllReduceInPlace gives ensemble member m (0-based) the State (m+1) x0,
+ * with x0 the same on every task, and sums over the ensemble communicator. The result
+ * must be N(N+1)/2 r for N members.
+ *
+ * The test runs only in a parallel run. It reinterprets the test's T tasks as N ensemble
+ * members of T/N tasks each, with N set by the yaml option `allreduce members` under
+ * `state test:` (default T, i.e. each member on 1 task). N must divide T. A model that
+ * cannot run on T/N tasks must skip this test via `skip allreduce test: true`.
+ */
+
+template <typename MODEL> void testStateAllReduceInPlace() {
+  typedef StateFixture<MODEL>     Test_;
+  typedef oops::Geometry<MODEL>   Geometry_;
+  typedef oops::State<MODEL>      State_;
+
+  if (Test_::test().getBool("skip allreduce test", false)) {
+    oops::Log::info() << "testStateAllReduceInPlace skipped: skip allreduce test is set"
+                      << std::endl;
+    return;
+  }
+  if (oops::mpi::world().size() < 2) {
+    oops::Log::info() << "testStateAllReduceInPlace skipped: needs more than one task"
+                      << std::endl;
+    return;
+  }
+
+  // Reinterpret the test's tasks as an ensemble, and reduce over the ensemble communicator
+  const EnsembleCommunicators comms =
+    splitEnsembleCommunicators(Test_::test(), "test_state_allreduce_");
+  const eckit::mpi::Comm & commEns = comms.ens;
+  const Geometry_ memberGeom(eckit::LocalConfiguration(TestEnvironment::config(), "geometry"),
+                             comms.member);
+
+  // x0 is read on each member, then broadcast so that it is the same everywhere even when
+  // a model's file I/O does not give every task the same data on a task-local geometry.
+  State_ x0(memberGeom, eckit::LocalConfiguration(Test_::test(), "statefile"));
+  oops::mpi::broadcast(commEns, x0, 0);
+  EXPECT(x0.norm() > 0.0);
+
+  const double nn = static_cast<double>(commEns.size());
+  State_ xx(x0);
+  xx.zero();
+  xx.accumul(static_cast<double>(commEns.rank() + 1), x0);
+  State_ expected(x0);
+  expected.zero();
+  expected.accumul(nn * (nn + 1.0) / 2.0, x0);
+
+  xx.allReduceInPlace(commEns);
+
+  xx.accumul(-1.0, expected);
+  EXPECT(xx.norm() <= Test_::test().getDouble("tolerance") * expected.norm());
+}
+
+// -----------------------------------------------------------------------------
 /*! \brief Serialize and Deserialize test
  *
  * \details **testStateSerialize()** tests the serialization and deserialization of a state.
@@ -447,10 +588,14 @@ class State : public oops::Test {
       { testStateZeroAndAccumul<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateDateTime")
       { testStateDateTime<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateAllReduceInPlace")
+      { testStateAllReduceInPlace<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateSerialize")
       { testStateSerialize<MODEL>(); });
     ts.emplace_back(CASE("interface/State/testStateReadWrite")
       { testStateReadWrite<MODEL>(); });
+    ts.emplace_back(CASE("interface/State/testStateRemoveAddFields")
+      { testStateRemoveAddFields<MODEL>(); });
   }
 
   void clear() const override {}

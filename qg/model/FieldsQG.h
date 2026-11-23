@@ -35,6 +35,9 @@
 // Forward declarations
 namespace eckit {
   class Configuration;
+  namespace mpi {
+    class Comm;
+  }
 }
 
 namespace oops {
@@ -69,6 +72,7 @@ class FieldsQG : public util::Printable,
   void axpy(const double &, const FieldsQG &);
   double dot_product_with(const FieldsQG &) const;
   void schur_product_with(const FieldsQG &);
+  void schur_quotient_with(const FieldsQG &);
   void dirac(const eckit::Configuration &);
   void random();
 
@@ -100,6 +104,8 @@ class FieldsQG : public util::Printable,
 
   oops::LocalIncrement getLocal(const GeometryQGIterator &) const;
   void setLocal(const oops::LocalIncrement &, const GeometryQGIterator &);
+
+  void allReduceInPlace(const eckit::mpi::Comm & commEns);
 
 /// Serialization
   size_t serialSize() const override;

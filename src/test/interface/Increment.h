@@ -25,6 +25,7 @@
 
 #include "atlas/field.h"
 #include "eckit/config/LocalConfiguration.h"
+#include "eckit/mpi/Comm.h"
 #include "eckit/testing/Test.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Increment.h"
@@ -36,6 +37,7 @@
 #include "oops/util/dot_product.h"
 #include "oops/util/FieldSetHelpers.h"
 #include "oops/util/Logger.h"
+#include "test/interface/EnsembleCommunicators.h"
 #include "test/TestEnvironment.h"
 
 namespace test {
@@ -653,6 +655,88 @@ template <typename MODEL> void testIncrementSchur() {
   EXPECT(dx1.norm() == dx1in.norm());
 }
 
+// -----------------------------------------------------------------------------
+
+template <typename MODEL> void testIncrementSchurQuotient() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  // Dividing by a constant field is the same as scaling by its reciprocal
+  Increment_ dx1(Test_::resol(), Test_::ctlvars(), Test_::time());
+  dx1.random();
+  Increment_ expected(dx1);
+  expected *= 0.5;
+
+  Increment_ divisor(dx1, false);
+  divisor.ones();
+  divisor *= 2.0;
+  dx1.schur_quotient_with(divisor);
+
+  dx1 -= expected;
+  EXPECT(dx1.norm() < Test_::tolerance());
+
+  // 0/0 is tolerated and leaves the numerator alone (it arises in halos)
+  Increment_ zeros(dx1, false);
+  zeros.zero();
+  Increment_ dx2(zeros);
+  dx2.schur_quotient_with(zeros);
+  EXPECT(dx2.norm() == 0.0);
+}
+
+// -----------------------------------------------------------------------------
+
+/*! \brief allReduceInPlace test
+ *
+ * \details testIncrementAllReduceInPlace gives ensemble member m (0-based) the Increment
+ * (m+1) r, with r random and the same on every task, and sums over the ensemble
+ * communicator. The result must be N(N+1)/2 r for N members.
+ *
+ * The test runs only in a parallel run. It reinterprets the test's T tasks as N ensemble
+ * members of T/N tasks each, with N set by the yaml option `allreduce members` under
+ * `increment test:` (default T, i.e. each member on 1 task). N must divide T. A model that
+ * cannot run on T/N tasks must skip this test via `skip allreduce test: true`.
+ */
+template <typename MODEL> void testIncrementAllReduceInPlace() {
+  typedef IncrementFixture<MODEL>   Test_;
+  typedef oops::Geometry<MODEL>     Geometry_;
+  typedef oops::Increment<MODEL>    Increment_;
+
+  if (Test_::test().getBool("skip allreduce test", false)) {
+    oops::Log::info() << "testIncrementAllReduceInPlace skipped: skip allreduce test is set"
+                      << std::endl;
+    return;
+  }
+  if (oops::mpi::world().size() < 2) {
+    oops::Log::info() << "testIncrementAllReduceInPlace skipped: needs more than one task"
+                      << std::endl;
+    return;
+  }
+
+  // Reinterpret the test's tasks as an ensemble, and reduce over the ensemble communicator
+  const EnsembleCommunicators comms =
+    splitEnsembleCommunicators(Test_::test(), "test_increment_allreduce_");
+  const eckit::mpi::Comm & commEns = comms.ens;
+  const Geometry_ memberGeom(eckit::LocalConfiguration(TestEnvironment::config(), "geometry"),
+                             comms.member);
+
+  // r is broadcast so that it is the same everywhere whatever the model's random seeding.
+  Increment_ rr(memberGeom, Test_::ctlvars(), Test_::time());
+  rr.random();
+  oops::mpi::broadcast(commEns, rr, 0);
+  EXPECT(rr.norm() > 0.0);
+
+  const double nn = static_cast<double>(commEns.size());
+  Increment_ dx(rr);
+  dx *= static_cast<double>(commEns.rank() + 1);
+  Increment_ expected(rr);
+  expected *= nn * (nn + 1.0) / 2.0;
+
+  dx.allReduceInPlace(commEns);
+
+  dx -= expected;
+  EXPECT(dx.norm() <= Test_::tolerance() * expected.norm());
+}
+
 // =============================================================================
 
 template <typename MODEL>
@@ -703,6 +787,10 @@ class Increment : public oops::Test {
       { testIncrementTime<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementSchur")
       { testIncrementSchur<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementSchurQuotient")
+      { testIncrementSchurQuotient<MODEL>(); });
+    ts.emplace_back(CASE("interface/Increment/testIncrementAllReduceInPlace")
+      { testIncrementAllReduceInPlace<MODEL>(); });
     ts.emplace_back(CASE("interface/Increment/testIncrementSerialize")
       { testIncrementSerialize<MODEL>(); });
   }

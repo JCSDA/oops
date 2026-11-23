@@ -676,6 +676,7 @@ if(BUILD_TESTING)
     test/base/variables.F90
 
     test/interface/ErrorCovariance.h
+    test/interface/EnsembleCommunicators.h
     test/interface/FieldSet4D.h
     test/interface/Geometry.h
     test/interface/GeometryIterator.h

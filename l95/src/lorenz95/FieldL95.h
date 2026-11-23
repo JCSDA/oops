@@ -52,7 +52,8 @@ class FieldL95 : public util::Printable,
   void diff(const FieldL95 &, const FieldL95 &);
   void axpy(const double &, const FieldL95 &);
   double dot_product_with(const FieldL95 &) const;
-  void schur(const FieldL95 &);
+  void schur_product(const FieldL95 &);
+  void schur_quotient(const FieldL95 &);
   void random(const size_t &);
   void generate(const eckit::Configuration &);
 

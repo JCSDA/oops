@@ -71,6 +71,11 @@ class StateCoupled : public util::Printable {
   void zero();
   void accumul(const double & zz, const StateCoupled & other);
 
+  /// Remove or add fields in place (split between the components)
+  void removeFields(const Variables & vars);
+  void addFields(const Variables & vars);
+  void allReduceInPlace(const eckit::mpi::Comm & commEns);
+
   /// Serialize and deserialize
   size_t serialSize() const;
   void serialize(std::vector<double> & buf) const;
@@ -178,6 +183,42 @@ StateCoupled<MODEL1, MODEL2>::~StateCoupled() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL1, typename MODEL2>
+void StateCoupled<MODEL1, MODEL2>::removeFields(const Variables & vars) {
+  Log::trace() << "StateCoupled::removeFields starting" << std::endl;
+  std::vector<Variables> splitvars = splitVariables(vars, geom_->variables());
+  vars_ = Variables();
+  if (xx1_) {
+    if (splitvars[0].size() > 0) xx1_->removeFields(splitvars[0]);
+    vars_ += xx1_->variables();
+  }
+  if (xx2_) {
+    if (splitvars[1].size() > 0) xx2_->removeFields(splitvars[1]);
+    vars_ += xx2_->variables();
+  }
+  Log::trace() << "StateCoupled::removeFields done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL1, typename MODEL2>
+void StateCoupled<MODEL1, MODEL2>::addFields(const Variables & vars) {
+  Log::trace() << "StateCoupled::addFields starting" << std::endl;
+  std::vector<Variables> splitvars = splitVariables(vars, geom_->variables());
+  vars_ = Variables();
+  if (xx1_) {
+    if (splitvars[0].size() > 0) xx1_->addFields(splitvars[0]);
+    vars_ += xx1_->variables();
+  }
+  if (xx2_) {
+    if (splitvars[1].size() > 0) xx2_->addFields(splitvars[1]);
+    vars_ += xx2_->variables();
+  }
+  Log::trace() << "StateCoupled::addFields done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL1, typename MODEL2>
 StateCoupled<MODEL1, MODEL2> & StateCoupled<MODEL1, MODEL2>::operator=(const StateCoupled & rhs) {
   Log::trace() << "StateCoupled::operator= starting" << std::endl;
   if (xx1_) *xx1_ = *rhs.xx1_;
@@ -259,6 +300,14 @@ template<typename MODEL1, typename MODEL2>
 void StateCoupled<MODEL1, MODEL2>::accumul(const double & zz, const StateCoupled & other) {
   if (xx1_) xx1_->accumul(zz, *other.xx1_);
   if (xx2_) xx2_->accumul(zz, *other.xx2_);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL1, typename MODEL2>
+void StateCoupled<MODEL1, MODEL2>::allReduceInPlace(const eckit::mpi::Comm & commEns) {
+  if (xx1_) xx1_->allReduceInPlace(commEns);
+  if (xx2_) xx2_->allReduceInPlace(commEns);
 }
 
 // -----------------------------------------------------------------------------

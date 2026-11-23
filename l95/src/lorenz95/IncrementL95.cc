@@ -16,6 +16,7 @@
 
 #include "eckit/config/Configuration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
 
 #include "oops/base/LocalIncrement.h"
 #include "oops/util/abor1_cpp.h"
@@ -131,7 +132,11 @@ double IncrementL95::dot_product_with(const IncrementL95 & other) const {
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::schur_product_with(const IncrementL95 & rhs) {
-  fld_.schur(rhs.fld_);
+  fld_.schur_product(rhs.fld_);
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::schur_quotient_with(const IncrementL95 & rhs) {
+  fld_.schur_quotient(rhs.fld_);
 }
 // -----------------------------------------------------------------------------
 void IncrementL95::random(const size_t & seed) {
@@ -227,6 +232,14 @@ void IncrementL95::setLocal(const oops::LocalIncrement & gp, const Iterator & i)
   std::vector<double> vals;
   vals = gp.getVals();
   fld_[i.index()] = vals[0];
+}
+// -----------------------------------------------------------------------------
+void IncrementL95::allReduceInPlace(const eckit::mpi::Comm & commEns) {
+  if (commEns.size() <= 1) {
+    return;
+  }
+  std::vector<double> & x = fld_.asVector();
+  commEns.allReduceInPlace(x.data(), x.size(), eckit::mpi::sum());
 }
 // -----------------------------------------------------------------------------
 /// Serialize - deserialize

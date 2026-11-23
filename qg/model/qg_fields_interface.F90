@@ -317,6 +317,27 @@ call qg_fields_self_schur(self,rhs)
 
 end subroutine qg_fields_self_schur_c
 ! ------------------------------------------------------------------------------
+!> Elementwise division of fields
+subroutine qg_fields_self_div_c(c_key_self,c_key_rhs) bind(c,name='qg_fields_self_div_f90')
+
+implicit none
+
+! Passed variables
+integer(c_int),intent(in) :: c_key_self !< Fields
+integer(c_int),intent(in) :: c_key_rhs  !< Right-hand side
+
+! Local variables
+type(qg_fields),pointer :: self,rhs
+
+! Interface
+call qg_fields_registry%get(c_key_self,self)
+call qg_fields_registry%get(c_key_rhs,rhs)
+
+! Call Fortran
+call qg_fields_self_div(self,rhs)
+
+end subroutine qg_fields_self_div_c
+! ------------------------------------------------------------------------------
 !> Compute dot product for fields
 subroutine qg_fields_dot_prod_c(c_key_fld1,c_key_fld2,c_prod) bind(c,name='qg_fields_dot_prod_f90')
 

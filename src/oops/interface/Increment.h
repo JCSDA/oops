@@ -18,6 +18,8 @@
 
 #include "atlas/field.h"
 
+#include "eckit/mpi/Comm.h"
+
 #include "oops/base/FieldSet3D.h"
 #include "oops/base/GeneralizedDepartures.h"
 #include "oops/base/Geometry.h"
@@ -100,6 +102,9 @@ class Increment : public oops::GeneralizedDepartures,
   double dot_product_with(const Increment & other) const;
   /// Compute Schur product of this Increment with \p other, assign to this Increment
   void schur_product_with(const Increment & other);
+  /// Compute Schur quotient of this Increment by \p other, assign to this Increment.
+  /// Where the denominator \p other is zero: finite/0 is an error, 0/0 returns 0.
+  void schur_quotient_with(const Increment & other);
 
   /// Randomize the Increment (used in tests)
   void random();
@@ -127,6 +132,12 @@ class Increment : public oops::GeneralizedDepartures,
   /// a fieldset to another. A working example is available with the QUENCH testbed of SABER.
   void toFieldSet(atlas::FieldSet &) const;
   void fromFieldSet(const atlas::FieldSet &);
+
+  /// Sum this Increment in place across the ensemble communicator \p commEns.
+  /// Every task in \p commEns must hold identically decomposed data, e.g. one ensemble member
+  /// each on the same geometry decomposition (never the communicator the geometry itself is
+  /// decomposed across).
+  void allReduceInPlace(const eckit::mpi::Comm & commEns);
 
   /// Serialize and deserialize (used in 4DEnVar, weak-constraint 4DVar and Block-Lanczos minimizer)
   size_t serialSize() const override;
@@ -357,6 +368,17 @@ void Increment<MODEL>::schur_product_with(const Increment & dx) {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
+void Increment<MODEL>::schur_quotient_with(const Increment & dx) {
+  Log::trace() << "Increment<MODEL>::schur_quotient_with starting" << std::endl;
+  util::Timer timer(classname(), "schur_quotient_with");
+  if (fset_) fset_->clear();
+  increment_->schur_quotient_with(*dx.increment_);
+  Log::trace() << "Increment<MODEL>::schur_quotient_with done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
 void Increment<MODEL>::random() {
   Log::trace() << "Increment<MODEL>::random starting" << std::endl;
   util::Timer timer(classname(), "random");
@@ -458,6 +480,17 @@ size_t Increment<MODEL>::serialSize() const {
   Log::trace() << "Increment<MODEL>::serialSize" << std::endl;
   util::Timer timer(classname(), "serialSize");
   return increment_->serialSize();
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void Increment<MODEL>::allReduceInPlace(const eckit::mpi::Comm & commEns) {
+  Log::trace() << "Increment<MODEL>::allReduceInPlace starting" << std::endl;
+  util::Timer timer(classname(), "allReduceInPlace");
+  if (fset_) fset_->clear();
+  increment_->allReduceInPlace(commEns);
+  Log::trace() << "Increment<MODEL>::allReduceInPlace done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

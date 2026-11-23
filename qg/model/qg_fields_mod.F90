@@ -41,7 +41,8 @@ public :: qg_fields_registry
 public :: qg_fields_create,qg_fields_create_from_other,qg_fields_delete, &
         & qg_fields_zero,qg_fields_ones,qg_fields_dirac,qg_fields_random, &
         & qg_fields_copy,qg_fields_copy_lbc,qg_fields_self_add,qg_fields_self_sub,qg_fields_self_mul,qg_fields_axpy, &
-        & qg_fields_self_schur,qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr,qg_fields_change_resol, &
+        & qg_fields_self_schur,qg_fields_self_div,qg_fields_dot_prod,qg_fields_add_incr,qg_fields_diff_incr, &
+        & qg_fields_change_resol, &
         & qg_fields_change_resol_ad,qg_fields_read_file,qg_fields_write_file,qg_fields_analytic_init,qg_fields_gpnorm, &
         & qg_fields_rms,qg_fields_sizes,qg_fields_lbc,qg_fields_to_fieldset,qg_fields_to_fieldset_ad,qg_fields_from_fieldset, &
         & qg_fields_getvals, qg_fields_getvalsad, &
@@ -507,6 +508,103 @@ if (self%lbc.and.rhs%lbc) then
 endif
 
 end subroutine qg_fields_self_schur
+! ------------------------------------------------------------------------------
+!> Elementwise division of fields
+!!
+!! Error for finite/0 only; 0/0 return 0.
+subroutine qg_fields_self_div(self,rhs)
+
+implicit none
+
+! Passed variables
+type(qg_fields),intent(inout) :: self !< Fields
+type(qg_fields),intent(in)    :: rhs  !< Right-hand side
+
+! Check resolution
+call qg_fields_check_resolution(self,rhs)
+
+! Elementwise division
+if (allocated(self%x).and.allocated(rhs%x)) call qg_fields_div_array_3d(self%x,rhs%x,'x')
+if (allocated(self%q).and.allocated(rhs%q)) call qg_fields_div_array_3d(self%q,rhs%q,'q')
+if (allocated(self%u).and.allocated(rhs%u)) call qg_fields_div_array_3d(self%u,rhs%u,'u')
+if (allocated(self%v).and.allocated(rhs%v)) call qg_fields_div_array_3d(self%v,rhs%v,'v')
+if (self%lbc.and.rhs%lbc) then
+  call qg_fields_div_array_1d(self%x_north,rhs%x_north,'x_north')
+  call qg_fields_div_array_1d(self%x_south,rhs%x_south,'x_south')
+  call qg_fields_div_array_2d(self%q_north,rhs%q_north,'q_north')
+  call qg_fields_div_array_2d(self%q_south,rhs%q_south,'q_south')
+endif
+
+end subroutine qg_fields_self_div
+! ------------------------------------------------------------------------------
+!> Elementwise division of a rank-3 array
+subroutine qg_fields_div_array_3d(lhs,rhs,name)
+
+implicit none
+
+real(kind_real),intent(inout) :: lhs(:,:,:)
+real(kind_real),intent(in) :: rhs(:,:,:)
+character(len=*),intent(in) :: name
+
+integer :: i1,i2,i3
+
+do i3=1,size(lhs,3)
+  do i2=1,size(lhs,2)
+    do i1=1,size(lhs,1)
+      if (abs(rhs(i1,i2,i3)) > 0.0_kind_real) then
+        lhs(i1,i2,i3) = lhs(i1,i2,i3)/rhs(i1,i2,i3)
+      elseif (abs(lhs(i1,i2,i3)) > 0.0_kind_real) then
+        call abor1_ftn('qg_fields_self_div: divide by zero for field '//trim(name))
+      endif
+    enddo
+  enddo
+enddo
+
+end subroutine qg_fields_div_array_3d
+! ------------------------------------------------------------------------------
+!> Elementwise division of a rank-2 array
+subroutine qg_fields_div_array_2d(lhs,rhs,name)
+
+implicit none
+
+real(kind_real),intent(inout) :: lhs(:,:)
+real(kind_real),intent(in) :: rhs(:,:)
+character(len=*),intent(in) :: name
+
+integer :: i1,i2
+
+do i2=1,size(lhs,2)
+  do i1=1,size(lhs,1)
+    if (abs(rhs(i1,i2)) > 0.0_kind_real) then
+      lhs(i1,i2) = lhs(i1,i2)/rhs(i1,i2)
+    elseif (abs(lhs(i1,i2)) > 0.0_kind_real) then
+      call abor1_ftn('qg_fields_self_div: divide by zero for field '//trim(name))
+    endif
+  enddo
+enddo
+
+end subroutine qg_fields_div_array_2d
+! ------------------------------------------------------------------------------
+!> Elementwise division of a rank-1 array
+subroutine qg_fields_div_array_1d(lhs,rhs,name)
+
+implicit none
+
+real(kind_real),intent(inout) :: lhs(:)
+real(kind_real),intent(in) :: rhs(:)
+character(len=*),intent(in) :: name
+
+integer :: i1
+
+do i1=1,size(lhs,1)
+  if (abs(rhs(i1)) > 0.0_kind_real) then
+    lhs(i1) = lhs(i1)/rhs(i1)
+  elseif (abs(lhs(i1)) > 0.0_kind_real) then
+    call abor1_ftn('qg_fields_self_div: divide by zero for field '//trim(name))
+  endif
+enddo
+
+end subroutine qg_fields_div_array_1d
 ! ------------------------------------------------------------------------------
 !> Compute dot product for fields
 subroutine qg_fields_dot_prod(fld1,fld2,zprod)

@@ -17,6 +17,7 @@
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
 
 #include "lorenz95/FieldL95.h"
 #include "lorenz95/GomL95.h"
@@ -163,6 +164,23 @@ void StateL95::zero() {
 // -----------------------------------------------------------------------------
 void StateL95::accumul(const double & zz, const StateL95 & xx) {
   fld_.axpy(zz, xx.fld_);
+}
+// -----------------------------------------------------------------------------
+void StateL95::removeFields(const oops::Variables & vars) {
+  vars_ -= vars;
+}
+// -----------------------------------------------------------------------------
+void StateL95::addFields(const oops::Variables & vars) {
+  if (vars.has("x")) fld_.zero();
+  vars_ += vars;
+}
+// -----------------------------------------------------------------------------
+void StateL95::allReduceInPlace(const eckit::mpi::Comm & commEns) {
+  if (commEns.size() <= 1) {
+    return;
+  }
+  std::vector<double> & x = fld_.asVector();
+  commEns.allReduceInPlace(x.data(), x.size(), eckit::mpi::sum());
 }
 // -----------------------------------------------------------------------------
 /// Serialize - deserialize

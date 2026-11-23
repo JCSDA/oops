@@ -99,6 +99,7 @@ extern "C" {
   void qg_fields_self_mul_f90(const F90flds &, const double &);
   void qg_fields_axpy_f90(const F90flds &, const double &, const F90flds &);
   void qg_fields_self_schur_f90(const F90flds &, const F90flds &);
+  void qg_fields_self_div_f90(const F90flds &, const F90flds &);
   void qg_fields_dot_prod_f90(const F90flds &, const F90flds &, double &);
   void qg_fields_add_incr_f90(const F90flds &, const F90flds &);
   void qg_fields_diff_incr_f90(const F90flds &, const F90flds &, const F90flds &);

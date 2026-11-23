@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "eckit/config/Configuration.h"
+#include "eckit/mpi/Comm.h"
 #include "oops/base/FieldSet3D.h"
 #include "oops/base/Geometry.h"
 #include "oops/base/Variables.h"
@@ -61,9 +62,6 @@ class State : public util::Printable,
   /// Assignment operator
   State & operator =(const State &);
 
-  void transpose(const State_ &, const eckit::mpi::Comm &,
-       const int, const int);
-
   /// Accessor
   State_ & state() {if (fset_) {fset_.reset();} return *state_;}
   /// const accessor
@@ -90,6 +88,10 @@ class State : public util::Printable,
   void zero();
   /// Accumulate (add \p w * \p x to the state)
   void accumul(const double & w, const State & x);
+  /// Deallocate the fields for \p vars (other fields are unchanged; at least one must remain)
+  void removeFields(const Variables & vars);
+  /// Allocate zero-initialized fields for \p vars (existing fields are unchanged)
+  void addFields(const Variables & vars);
 
   /// ATLAS FieldSet interface
   /// For models that are not using ATLAS fieldsets for their own State data:
@@ -100,6 +102,14 @@ class State : public util::Printable,
   /// a fieldset to another. A working example is available with the QUENCH testbed of SABER.
   void toFieldSet(atlas::FieldSet &) const;
   void fromFieldSet(const atlas::FieldSet &);
+
+  /// Sum this State in place across the ensemble communicator \p commEns.
+  /// Every task in \p commEns must hold identically decomposed data, e.g. one ensemble member
+  /// each on the same geometry decomposition (never the communicator the geometry itself is
+  /// decomposed across).
+  void allReduceInPlace(const eckit::mpi::Comm & commEns);
+
+  void transpose(const State_ &, const eckit::mpi::Comm &, const int, const int);
 
   /// Serialize and deserialize (used in 4DEnVar, weak-constraint 4DVar and Block-Lanczos minimizer)
   size_t serialSize() const override;
@@ -183,19 +193,6 @@ State<MODEL>::~State() {
 // -----------------------------------------------------------------------------
 
 template<typename MODEL>
-void State<MODEL>::transpose(const State_ & DistState, const eckit::mpi::Comm & global,
-       const int ensNum, const int transNum) {
-  // The DistState has a distributed set of states. Transpose returns the local
-  // state from ensemble number ensNum on a smaller patch of geometry of the
-  // DAState or GlobalState
-  Log::trace() << "State<MODEL>::transpose interface starting" << std::endl;
-  state_->transpose(DistState, global, ensNum, transNum);
-  Log::trace() << "State<MODEL>::transpose interface done" << std::endl;
-}
-
-// -----------------------------------------------------------------------------
-
-template<typename MODEL>
 State<MODEL> & State<MODEL>::operator=(const State & rhs) {
   Log::trace() << "State<MODEL>::operator= starting" << std::endl;
   util::Timer timer(classname(), "operator=");
@@ -247,6 +244,30 @@ const Variables & State<MODEL>::variables() const {
   Log::trace() << "State<MODEL>::variables starting" << std::endl;
   util::Timer timer(classname(), "variables");
   return state_->variables();
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::allReduceInPlace(const eckit::mpi::Comm & commEns) {
+  Log::trace() << "State<MODEL>::allReduceInPlace starting" << std::endl;
+  util::Timer timer(classname(), "allReduceInPlace");
+  if (fset_) fset_->clear();
+  state_->allReduceInPlace(commEns);
+  Log::trace() << "State<MODEL>::allReduceInPlace done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::transpose(const State_ & DistState, const eckit::mpi::Comm & global,
+       const int ensNum, const int transNum) {
+  // The DistState has a distributed set of states. Transpose returns the local
+  // state from ensemble number ensNum on a smaller patch of geometry of the
+  // DAState or GlobalState
+  Log::trace() << "State<MODEL>::transpose interface starting" << std::endl;
+  state_->transpose(DistState, global, ensNum, transNum);
+  Log::trace() << "State<MODEL>::transpose interface done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -331,6 +352,34 @@ void State<MODEL>::accumul(const double & zz, const State & xx) {
   if (fset_) fset_->clear();
   state_->accumul(zz, *xx.state_);
   Log::trace() << "State<MODEL>::accumul done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::removeFields(const Variables & vars) {
+  Log::trace() << "State<MODEL>::removeFields starting" << std::endl;
+  util::Timer timer(classname(), "removeFields");
+  ASSERT(vars <= state_->variables());
+  // At least one field must remain
+  Variables remaining(state_->variables());
+  remaining -= vars;
+  ASSERT(remaining.size() > 0);
+  if (fset_) fset_.reset();
+  state_->removeFields(vars);
+  Log::trace() << "State<MODEL>::removeFields done" << std::endl;
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename MODEL>
+void State<MODEL>::addFields(const Variables & vars) {
+  Log::trace() << "State<MODEL>::addFields starting" << std::endl;
+  util::Timer timer(classname(), "addFields");
+  for (const auto & var : vars) ASSERT(!state_->variables().has(var));
+  if (fset_) fset_.reset();
+  state_->addFields(vars);
+  Log::trace() << "State<MODEL>::addFields done" << std::endl;
 }
 
 // -----------------------------------------------------------------------------

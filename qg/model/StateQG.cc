@@ -11,12 +11,14 @@
 #include "model/StateQG.h"
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "eckit/config/LocalConfiguration.h"
 #include "eckit/exception/Exceptions.h"
+#include "eckit/mpi/Comm.h"
 
 #include "oops/base/Variables.h"
 #include "oops/util/DateTime.h"
@@ -118,6 +120,10 @@ void StateQG::write(const eckit::Configuration & files) const {
   fields_->write(files);
 }
 // -----------------------------------------------------------------------------
+void StateQG::allReduceInPlace(const eckit::mpi::Comm & commEns) {
+  fields_->allReduceInPlace(commEns);
+}
+// -----------------------------------------------------------------------------
 /// Serialization
 // -----------------------------------------------------------------------------
 size_t StateQG::serialSize() const {
@@ -155,6 +161,24 @@ void StateQG::zero() {
 // -----------------------------------------------------------------------------
 void StateQG::accumul(const double & zz, const StateQG & xx) {
   fields_->axpy(zz, *xx.fields_);
+}
+// -----------------------------------------------------------------------------
+void StateQG::removeFields(const oops::Variables & vars) {
+  oops::Variables newvars(fields_->variables());
+  newvars -= vars;
+  std::unique_ptr<FieldsQG> flds(new FieldsQG(*fields_->geometry(), newvars, lbc_,
+                                              fields_->time()));
+  *flds = *fields_;
+  fields_ = std::move(flds);
+}
+// -----------------------------------------------------------------------------
+void StateQG::addFields(const oops::Variables & vars) {
+  oops::Variables newvars(fields_->variables());
+  newvars += vars;
+  std::unique_ptr<FieldsQG> flds(new FieldsQG(*fields_->geometry(), newvars, lbc_,
+                                              fields_->time()));
+  *flds = *fields_;
+  fields_ = std::move(flds);
 }
 // -----------------------------------------------------------------------------
 
