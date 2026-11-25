@@ -10,6 +10,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "eckit/config/Configuration.h"
@@ -29,12 +30,15 @@
 #include "oops/base/TrajectorySaver.h"
 #include "oops/util/DateTime.h"
 #include "oops/util/Duration.h"
-#include "oops/util/FieldSetOperations.h"
 #include "oops/util/Logger.h"
 
 namespace oops {
 
 /// 3D-Var Cost Function for the Pert members of Control-Pert EDA
+///
+/// The control variable holds the full Pert member state, starting from the member's
+/// background. The observation term sees it as a perturbation from the mid-window control
+/// background, through the linear observation operators linearized about the control.
 
 // -----------------------------------------------------------------------------
 
@@ -84,9 +88,6 @@ template<typename MODEL, typename OBS, class J> class CostPert : public J
     const eckit::mpi::Comm & comm_;
     bool shiftTime_;
     std::unique_ptr<CostFct3DVar_> Jmem_;
-    std::shared_ptr<CtrlVar_> xxMember_;
-    State_ * hackBG_;
-    std::shared_ptr<StateSaver<State_>> saver_;
 };
 // =============================================================================
 
@@ -97,8 +98,7 @@ CostPert<MODEL, OBS, J>::CostPert(const eckit::Configuration & controlConf,
                                   const bool & shiftTime)
   :J(controlConf.getSubConfiguration("cost function"), comm), contConf_(controlConf),
     timeWindow_(controlConf.getSubConfiguration("cost function.time window")),
-    memConf_(memberConf), comm_(comm), shiftTime_(shiftTime), Jmem_(), xxMember_(),
-    hackBG_(nullptr), saver_()
+    memConf_(memberConf), comm_(comm), shiftTime_(shiftTime), Jmem_()
 {
   Log::trace() << "CostPert::CostPert" << std::endl;
 }
@@ -124,14 +124,13 @@ double CostPert<MODEL, OBS, J>::evaluate(CtrlVar_ & fguess,
     iterconfs[0].set("linearize", true);
     iterconfs[0].set("iteration", 0);
     iterconfs[0].set("total iterations", innerConf.getInt("total iterations"));
-    CtrlVar_ xxControl(this->jb().getBackground());
+    std::shared_ptr<StateSaver<State_>> saver;
     if (shiftTime_) {
-      hackBG_ = &xxControl.state();
       std::vector<std::string> antime = {timeWindow_.midpoint().toString()};
       eckit::LocalConfiguration halfwin;
       halfwin.set("times", antime);
-      saver_.reset(new StateSaver<State_>(halfwin));
-      postControl.enrollProcessor(saver_);
+      saver = std::make_shared<StateSaver<State_>>(halfwin);
+      postControl.enrollProcessor(saver);
     }
     J::evaluate(fguess, iterconfs[0], postControl);
 
@@ -146,30 +145,34 @@ double CostPert<MODEL, OBS, J>::evaluate(CtrlVar_ & fguess,
     std::shared_ptr<State4D_>
             state(new State4D_(this->jb().jbState().geometry(),
                                eckit::LocalConfiguration(memConf_, "background")));
-    xxMember_.reset(new CtrlVar_(state, modBias, obsBias));
+    CtrlVar_ xxMember(state, modBias, obsBias);
 
-//  Change background to be the difference between the ensemble member and the control
-    CtrlInc_ xxPertInc(this->jb());
-
+//  Mid-window control background, from which the observation term takes the perturbations.
+//  Share it rather than copy it: for a 3D-Var control it is the Jb state background (which
+//  the Jb keeps after its background is replaced below), otherwise the saved control state.
+    std::shared_ptr<const State_> xref;
     if (shiftTime_) {
-      xxPertInc.state().updateTime(timeWindow_.length()/2);
-      *hackBG_ = saver_->getState();    // the state component of xxControl is updated via hackBG_
+      xref = std::shared_ptr<const State_>(saver, &saver->getState());
+    } else {
+      const std::shared_ptr<State4D_> bg = this->jb().jbState().background();
+      xref = std::shared_ptr<const State_>(bg, &(*bg)[0]);
     }
 
-    xxPertInc.diff(*xxMember_, xxControl);
-    CtrlVar_ xxPert(*xxMember_, false);
-    this->addIncrement(xxPert, xxPertInc);
-
-    CtrlVar_ xxPertCopy(xxPert);
-    this->getNonConstJb()->getBackground() = xxPertCopy;
-//  Set the obs operator to the linear obs operator
+//  Set the obs operator to the linear obs operator, applied to the perturbation of the member
+//  from the mid-window control background (bias coefficients taken from the control background)
 //  Perturb zero-valued obs ready for the pert member
-    this->getNonConstJo()->setObsPert(xxPertInc.state().geometry(), xxPertInc.state().variables());
+    this->getNonConstJo()->setObsPert(this->jb().jbState().geometry(),
+                                      this->jb().jbState().variables(), std::move(xref),
+                                      this->jb().getBackground().obsVar());
+
+//  The ensemble member background is the background of the pert member assimilation
+//  (ControlVariable assignment shares data, so the Jb gets a deep copy)
+    this->getNonConstJb()->getBackground() = CtrlVar_(xxMember);
 
 //  Set up pert member 3DVar cost function
 //  Runs 3DVar methods using pointers to the Jb & Jo already set up
     Jmem_.reset(new CostFct3DVar_(memConf_, comm_, this->getNonConstJb(), this->getNonConstJo()));
-    fguess = xxPert;
+    fguess = xxMember;  // shares the member background data; xxMember goes out of scope
   }
 //  Call evaluate on the pert cost function, without linearising
 //  Iteration is set to more than 0 to ensure filters aren't rerun
@@ -235,24 +238,9 @@ template<typename MODEL, typename OBS, class J>
 void CostPert<MODEL, OBS, J>::addIncr(CtrlVar_ & xx, const CtrlInc_ & dx,
                                       PostProcessor<Increment_>& post) const {
   Log::trace() << "CostPert::addIncr start" << std::endl;
-  if (iteration_ == 0) {
-    Log::trace() << "CostPert::addIncr doesn't exclude out of bounds values" << std::endl;
-    atlas::FieldSet fset = xx.state().fieldSet().fieldSet();
-    util::addFieldSets(fset, dx.state().fieldSet().fieldSet());
-    xx.state().synchronizeFields();
-  } else {
-    Log::trace() << "CostPert::addIncr removes out of bounds values" << std::endl;
-    ASSERT(dx.state().validTime() == timeWindow_.midpoint());
-    // If the state passed in is valid at the start of the window,
-    // but the increment is valid at the middle, the state is then set to be
-    // equal to the mid window control member state. This works because the control
-    // member is the only member that could have a state valid at the start of the window
-    // and so avoids repeating the model integration. Note that the state will be valid at the
-    // middle of the window following the call to addIncr.
-    if (xx.state().validTime() == timeWindow_.start()) xx.state() = saver_->getState();
-    ASSERT(xx.state().validTime() == timeWindow_.midpoint());
-    xx.state() += dx.state();
-  }
+  ASSERT(xx.state().validTime() == timeWindow_.midpoint());
+  ASSERT(dx.state().validTime() == timeWindow_.midpoint());
+  xx.state() += dx.state();
   Log::trace() << "CostPert::addIncr done" << std::endl;
 }
 

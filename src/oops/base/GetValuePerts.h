@@ -25,7 +25,8 @@
 namespace oops {
 
 
-/// \brief Fills GeoVaLs with requested variables at requested locations during model run
+/// \brief Fills GeoVaLs with the perturbation of the model state from a reference state,
+/// used only in Control-Pert EDA.
 template <typename MODEL, typename OBS>
 class GetValuePerts : public GetValuePosts<MODEL, OBS> {
   typedef State<MODEL>                           State_;
@@ -38,7 +39,7 @@ class GetValuePerts : public GetValuePosts<MODEL, OBS> {
  public:
 /// \brief Saves Locations and Variables to be processed
   GetValuePerts(const eckit::Configuration &, const std::shared_ptr<GetValueTLADs_> &,
-                const Variables &);
+                const Variables &, std::shared_ptr<const State_>);
 
   void append(GetValuePtr_) override {};
   void clear() override {};
@@ -51,6 +52,7 @@ class GetValuePerts : public GetValuePosts<MODEL, OBS> {
 
   std::shared_ptr<GetValueTLADs_> getValTL_;
   Variables incVars_;
+  std::shared_ptr<const State_> xref_;
 };
 
 // -----------------------------------------------------------------------------
@@ -58,8 +60,9 @@ class GetValuePerts : public GetValuePosts<MODEL, OBS> {
 template <typename MODEL, typename OBS>
 GetValuePerts<MODEL, OBS>::GetValuePerts(const eckit::Configuration & conf,
                                          const std::shared_ptr<GetValueTLADs_> & getValueTLADs,
-                                         const Variables & incVars)
-  : GetValuePosts_(conf), getValTL_(), incVars_(incVars)
+                                         const Variables & incVars,
+                                         std::shared_ptr<const State_> xref)
+  : GetValuePosts_(conf), getValTL_(), incVars_(incVars), xref_(std::move(xref))
 {
   getValTL_ = getValueTLADs;
   Log::trace() << "GetValuePerts::GetValuePerts" << std::endl;
@@ -82,10 +85,8 @@ template <typename MODEL, typename OBS>
 void GetValuePerts<MODEL, OBS>::doProcessing(const State_ & xx) {
   Log::trace() << "GetValuePerts::doProcessing start" << std::endl;
 
-  State_ zz_zero(xx);
-  zz_zero.zero();
   Increment_ zz_inc(xx.geometry(), incVars_, xx.validTime());
-  zz_inc.diff(xx, zz_zero);
+  zz_inc.diff(xx, *xref_);
 
   getValTL_->processTL(zz_inc);
 

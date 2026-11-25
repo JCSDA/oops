@@ -59,13 +59,16 @@ class ObsOperatorPert : public ObsOperatorBase<OBS>,
   /// Set up \p linoper under the guise of a regular observation operator.
   /// A regular obs operator also needs to be created with \p obsspace and \p parameters
   /// in order to access the Locations.
+  /// The bias correction coefficients passed to simulateObs are taken as a perturbation from
+  /// \p auxref.
   ObsOperatorPert(const ObsSpace_ & obsspace, const eckit::Configuration &,
-                  const LinObsOperator_ & linoper, bool trajSet = false);
+                  const LinObsOperator_ & linoper, const ObsAuxControl_ & auxref,
+                  bool trajSet = false);
   ~ObsOperatorPert();
 
   /// Compute forward operator \p y = LinearObsOperator (\p x).
-  /// \param[in]  x        obs operator input, Increment (under the guise of a State) interpolated
-  ///                      to observations locations.
+  /// \param[in]  x        obs operator input, perturbation of the State from the reference
+  ///                      State interpolated to observations locations.
   /// \param[out] y        result of computing obs operator on \p x.
   /// \param[in]  obsaux   additional input for computing H(x), e.g. bias correction coefficients
   ///                      or obs operator parameters.
@@ -74,7 +77,7 @@ class ObsOperatorPert : public ObsOperatorBase<OBS>,
                    const ObsDataInt_ & qc_flags,
                    ObsVector_ &, ObsDiags_ &) const;
 
-  /// Variables required from the model Increment (under the guise of a State) to compute
+  /// Variables required from the model perturbation to compute
   /// the forward operator. These variables will be provided in GeoVaLs passed to simulateObs.
   const Variables & requiredVars() const;
   /// Locations used for computing GeoVaLs that will be passed to simulateObs.
@@ -89,6 +92,7 @@ class ObsOperatorPert : public ObsOperatorBase<OBS>,
   const std::string name_;
   std::unique_ptr<ObsOperator_> oper_;  // Used to access Locations and computeReducedVars
   const LinObsOperator_ & linOper_;
+  const ObsAuxControl_ auxref_;
   bool trajectorySet;
 };
 
@@ -96,8 +100,10 @@ class ObsOperatorPert : public ObsOperatorBase<OBS>,
 
 template <typename OBS>
 ObsOperatorPert<OBS>::ObsOperatorPert(const ObsSpace_ & obsspace, const eckit::Configuration & conf,
-                                      const LinObsOperator_ & linoper, bool trajSet)
-  : name_("oops::ObsOperatorPert::"+obsspace.obsname()), linOper_(linoper), trajectorySet(trajSet)
+                                      const LinObsOperator_ & linoper,
+                                      const ObsAuxControl_ & auxref, bool trajSet)
+  : name_("oops::ObsOperatorPert::"+obsspace.obsname()), linOper_(linoper), auxref_(auxref),
+    trajectorySet(trajSet)
 {
   Log::trace() << "ObsOperatorPert<OBS>::ObsOperatorPert starting" << std::endl;
   util::Timer timer(name_, "ObsOperatorPert");
@@ -126,9 +132,8 @@ void ObsOperatorPert<OBS>::simulateObs(const GeoVaLs_ & gvals, ObsVector_ & yy,
   ASSERT(trajectorySet);
   Log::trace() << "ObsOperatorPert<OBS>::simulateObs starting" << std::endl;
   util::Timer timer(name_, "simulateObs");
-  ObsAuxControl_ auxcopy(aux, false);
-  ObsAuxIncrement_ auxInc(auxcopy.obspace(), auxcopy.config());
-  auxInc.diff(aux, auxcopy);    // In UFO implementation, auxInc does not include coefficients
+  ObsAuxIncrement_ auxInc(aux.obspace(), aux.config());
+  auxInc.diff(aux, auxref_);    // In UFO implementation, auxInc does not include coefficients
                                 // for static BC predictors but only variational ones
   linOper_.simulateObsTL(gvals, yy, auxInc);
   Log::trace() << "ObsOperatorPert<OBS>::simulateObs done" << std::endl;

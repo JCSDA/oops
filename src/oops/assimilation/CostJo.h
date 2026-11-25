@@ -114,7 +114,8 @@ template<typename MODEL, typename OBS> class CostJo : public CostTermBase<MODEL,
   /// Return gradient at first guess ie \f$ R^{-1} {\cal H}(x^t ) - y\f$.
   std::unique_ptr<GeneralizedDepartures> newGradientFG() const override;
 
-  void setObsPert(const Geometry_ &, const Variables &);
+  void setObsPert(const Geometry_ &, const Variables &, std::shared_ptr<const State_>,
+                  const ObsAuxCtrls_ &);
 
   /// Reset obs operator trajectory.
   void resetLinearization() override;
@@ -381,19 +382,24 @@ std::unique_ptr<GeneralizedDepartures> CostJo<MODEL, OBS>::newGradientFG() const
 // -----------------------------------------------------------------------------
 
 template<typename MODEL, typename OBS>
-void CostJo<MODEL, OBS>::setObsPert(const Geometry_ & geom, const Variables & incVars) {
+void CostJo<MODEL, OBS>::setObsPert(const Geometry_ & geom, const Variables & incVars,
+                                    std::shared_ptr<const State_> xref,
+                                    const ObsAuxCtrls_ & auxref) {
   std::vector<eckit::LocalConfiguration> subconfs =
       eckit::LocalConfiguration(conf_, "observers").getSubConfigurations();
 
 //  Reset the observation operators to be the linear observation operators contained in *linObsTLAD,
-//  wrapped inside ObsOperatorPert
+//  wrapped inside ObsOperatorPert. The model state and bias coefficients seen by the
+//  observers are taken as perturbations from xref and auxref.
   std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases;
   for (std::size_t jj = 0; jj < obspaces_.size(); ++jj) {
     const eckit::LocalConfiguration obsconf(subconfs[jj], "obs operator");
     obsOpBases.push_back(std::make_unique<ObsOperatorPert_>(obspaces_[jj], obsconf,
-                                                             (*obstlad_)[jj].linObsOp(), true));
+                                                             (*obstlad_)[jj].linObsOp(), auxref[jj],
+                                                             true));
   }
-  observers_->resetObsPert(geom, std::move(obsOpBases), obstlad_->posts(), incVars);
+  observers_->resetObsPert(geom, std::move(obsOpBases), obstlad_->posts(), incVars,
+                           std::move(xref));
   yobs_.reset(new Observations_(this->obspaces(), ""));
   // Perturb observations according to obs error statistics and save to output file
   yobs_->perturb(*Rmat_);

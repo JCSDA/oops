@@ -71,7 +71,8 @@ class Observers {
   void finalize(Observations_ &, std::vector<ObsDataInt_> &);
 
   void resetObsPert(const Geometry_ &, std::vector<std::unique_ptr<ObsOperatorBase_>>,
-                    const std::shared_ptr<GetValueTLADs_> &, const Variables &);
+                    const std::shared_ptr<GetValueTLADs_> &, const Variables &,
+                    std::shared_ptr<const State_>);
 
   void updateObservers(const eckit::Configuration &);
 
@@ -142,10 +143,11 @@ template <typename MODEL, typename OBS>
 void Observers<MODEL, OBS>::resetObsPert(const Geometry_ & geom,
                                          std::vector<std::unique_ptr<ObsOperatorBase_>> obsOpBases,
                                          const std::shared_ptr<GetValueTLADs_> & getValTLs,
-                                         const Variables & vars) {
+                                         const Variables & vars,
+                                         std::shared_ptr<const State_> xref) {
   oops::Log::trace() << "Observers<MODEL, OBS>::resetObsOp start" << std::endl;
 
-  posts_.reset(new GetValuePerts_(getValuesConf_, getValTLs, vars));
+  posts_.reset(new GetValuePerts_(getValuesConf_, getValTLs, vars, std::move(xref)));
   for (size_t jj = 0; jj < observers_.size(); ++jj) {
     observers_[jj]->resetObsPert(geom, std::move(obsOpBases[jj]), (*getValTLs)[jj]);
   }

@@ -203,12 +203,6 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 //  Initialize the control background
     ControlVariable<MODEL, OBS> xxMember(J->jb().getBackground());
 
-//  Create a copy of xxMember that will not be incremented as the run progresses
-//  for the analysis state (valid at the beginning of the assimilation window if
-//  the control member's cost function is anything other than 3D-Var;
-//  otherwise valid at the middle of the assimilation window)
-    ControlVariable<MODEL, OBS> xxMemAnalysis(xxMember);
-
 //  Retrieve individual members' configurations for variational DA
     eckit::LocalConfiguration varConf(memberConf, "variational");
     eckit::LocalConfiguration outConf(memberConf, "output");
@@ -238,14 +232,14 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
 
 //  Perform incremental variational assimilation
 //  xxMember starts as the control background
-//  It is updated within CostPert to reflect the pert member analysis
+//  For the Pert members, CostPert replaces it with the member background, so that on return it
+//  holds the Pert member analysis
     eckit::LocalConfiguration noOut;  // control-pert has its own I/O
     int iouter = IncrementalAssimilation<MODEL, OBS>(xxMember, *J, varConf, noOut, mymember == 0);
 
 //  Compute the full analysis increment
     ControlIncrement<MODEL, OBS> dx(J->jb());
-    ControlVariable<MODEL, OBS> xxPert(J->jb().getBackground());
-    dx.diff(xxMember, xxPert);
+    dx.diff(xxMember, J->jb().getBackground());
 
 //  Save the full analysis increment if desired
     ASSERT(!outConf.has("increment to structured grid"));  // TODO(yt): remove
@@ -269,7 +263,8 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
           ControlIncrement<MODEL, OBS> dxOutput(dx);
           const StructuredGridWriter<MODEL> latlon(incout, dxOutput.states().geometry());
           for (size_t jtime = 0; jtime < dxOutput.states().size(); ++jtime) {
-            latlon.interpolateAndWrite(dxOutput.states()[jtime], xxMemAnalysis.states()[jtime]);
+            latlon.interpolateAndWrite(dxOutput.states()[jtime],
+                                       (*J->jb().jbState().background())[jtime]);
           }
         }
       }
@@ -278,22 +273,15 @@ template <typename MODEL, typename OBS> class ControlPert : public Application {
     Log::info() << "ControlPert: member " << mymember << " incremental assimilation done; "
                 << iouter << " iterations." << std::endl;
 
-//  Retrieve the ensemble members' (full-field) background state by converting xxPert back
-//  into a ControlIncrement object valid at the middle of the window. This is then added
-//  to xxMemAnalysis (the control background for the pert members). In the call to addIncrement,
-//  if the control background is valid at the start of the window, it is set equal to its
-//  mid window state. We then add the Pert increment to give an intermediate analysis state
-//  (which itself has no physical relevance)
-    if (mymember > 0) {
-      ControlIncrement<MODEL, OBS> xxPertInc(J->jb());
-      ControlVariable<MODEL, OBS> xxEmpty(xxPert, false);
-      xxPertInc.diff(xxPert, xxEmpty);
-      J->addIncrement(xxMemAnalysis, xxPertInc);
-      J->addIncrement(xxMemAnalysis, dx);
-    }
-
 //  The following computations can only be performed if the control member's DA is run
     if (!pertonly) {
+//    Analysis state for this member, starting from the control background (valid at the
+//    beginning of the assimilation window if the control member's cost function is anything
+//    other than 3D-Var; otherwise valid at the middle of the window) for the control member,
+//    or from the Pert member analysis (valid at the middle of the window) for the Pert members
+      ControlVariable<MODEL, OBS> xxMemAnalysis(mymember > 0 ? xxMember
+                                                             : J->jb().getBackground());
+
 //    Add the control member's analysis increment (time-shifted to the middle of the window if
 //    necessary - not ideal);.
 //    This returns the analysis state for all members including the control member
